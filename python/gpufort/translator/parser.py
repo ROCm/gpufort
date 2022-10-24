@@ -255,11 +255,10 @@ def parse_fortran_code(statements,result_name=None):
             if type(curr) is tree.TTCase:
                 ascend_("case")
             try:
-                parse_result = tree.grammar.fortran_case.parseString(
-                    stmt, parseAll=True)
+                values = util.parsing.parse_case_statement(tokens)
                 descend_(
                     tree.TTCase(stmt, 0,
-                                parse_result.asList() + [[]]), "case")
+                                [values, []]), "case")
             except pyparsing.ParseException as e:
                 error_("case", e)
         elif util.parsing.is_case_default(tokens):

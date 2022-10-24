@@ -246,7 +246,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_use_statement(stmt))
             self.assertEqual(util.parsing.parse_use_statement(stmt),results[i])
-    def test_09_parse_fortran_argument(self):
+    def test_09parse_fortran_argument(self):
         statements = [
           "kind(hipSuccess)",
           "kind=4",
@@ -260,9 +260,9 @@ class TestParsingUtils(unittest.TestCase):
           ('kind', '2*dp+size(arr,dim=1)'),
         ]
         for i,stmt in enumerate(statements):
-            #print(util.parsing._parse_fortran_argument(stmt))
-            self.assertEqual(util.parsing._parse_fortran_argument(stmt),results[i])
-    def test_10_map_fortran_args_to_positional_args(self):
+            #print(util.parsing.parse_fortran_argument(stmt))
+            self.assertEqual(util.parsing.parse_fortran_argument(stmt),results[i])
+    def test_10map_fortran_args_to_positional_args(self):
         expressions = [
           "kind=4",
           "len=*",
@@ -290,7 +290,7 @@ class TestParsingUtils(unittest.TestCase):
           ['5', 'a*b'],
         ]
         for i,expr in enumerate(expressions):
-            result = util.parsing._map_fortran_args_to_positional_args(expr,positional_args)
+            result = util.parsing.map_fortran_args_to_positional_args(expr,positional_args)
             #print(result)
             self.assertEqual(result,results[i])
         expressions_fail = [
@@ -299,11 +299,11 @@ class TestParsingUtils(unittest.TestCase):
         ] 
         for expr in expressions_fail:
             try:
-                util.parsing._map_fortran_args_to_positional_args(expr,positional_args)
+                util.parsing.map_fortran_args_to_positional_args(expr,positional_args)
                 raise Exception("parsing '{}' should have failed".format(expr))
             except:
                 pass
-    def test_11_parse_character_type(self):
+    def test_11parse_fortran_character_type(self):
         expressions = [
           # f77
           "character*dp",
@@ -325,8 +325,8 @@ class TestParsingUtils(unittest.TestCase):
           ('CHARACTER', '3', 'C_CHAR', [], 6),
         ]
         for i,expr in enumerate(expressions):
-            #print(util.parsing._parse_character_type(expr,parse_all=True))
-            self.assertEqual(util.parsing._parse_character_type(expr,parse_all=True),results[i])
+            #print(util.parsing.parse_fortran_character_type(expr,parse_all=True))
+            self.assertEqual(util.parsing.parse_fortran_character_type(expr,parse_all=True),results[i])
         expressions_fail = [
           "character*dp+1",
           "character**",
@@ -337,11 +337,11 @@ class TestParsingUtils(unittest.TestCase):
         ] 
         for expr in expressions_fail:
             try:
-                util.parsing._parse_character_type(expr,parse_all=True)
+                util.parsing.parse_fortran_character_type(expr,parse_all=True)
                 raise Exception("parsing '{}' should have failed".format(expr))
             except:
                 pass
-    def test_12_parse_basic_type(self):
+    def test_12parse_fortran_basic_type(self):
         expressions = [
           # f77
           "logical*1",
@@ -375,8 +375,8 @@ class TestParsingUtils(unittest.TestCase):
           ('complex', None, 'c_double_complex', [], 2),
         ]
         for i,expr in enumerate(expressions):
-            #print(util.parsing._parse_basic_type(expr,parse_all=True))
-            self.assertEqual(util.parsing._parse_basic_type(expr),results[i])
+            #print(util.parsing.parse_fortran_basic_type(expr,parse_all=True))
+            self.assertEqual(util.parsing.parse_fortran_basic_type(expr),results[i])
         expressions_fail = [
           "integer*dp+1",
           "integer**",
@@ -388,11 +388,11 @@ class TestParsingUtils(unittest.TestCase):
         ] 
         for expr in expressions_fail:
             try:
-                util.parsing._parse_basic_type(expr,parse_all=True)
+                util.parsing.parse_fortran_basic_type(expr,parse_all=True)
                 raise Exception("parsing '{}' should have failed".format(expr))
             except:
                 pass
-    def test_13_parse_derived_type(self):
+    def test_13parse_fortran_derived_type(self):
         expressions = [
           "type(mytype)",
           "type(mytype(m))",
@@ -406,8 +406,8 @@ class TestParsingUtils(unittest.TestCase):
           ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*2+C'], 17),
         ]
         for i,expr in enumerate(expressions):
-            #print(util.parsing._parse_derived_type(expr,parse_all=True))
-            self.assertEqual(util.parsing._parse_derived_type(expr),results[i])
+            #print(util.parsing.parse_fortran_derived_type(expr,parse_all=True))
+            self.assertEqual(util.parsing.parse_fortran_derived_type(expr),results[i])
 
         expressions_fail = [
           "type(mytype",
@@ -417,7 +417,7 @@ class TestParsingUtils(unittest.TestCase):
         ] 
         for expr in expressions_fail:
             try:
-                util.parsing._parse_derived_type(expr,parse_all=True)
+                util.parsing.parse_fortran_derived_type(expr,parse_all=True)
                 raise Exception("parsing '{}' should have failed".format(expr))
             except:
                 pass
@@ -483,8 +483,8 @@ class TestParsingUtils(unittest.TestCase):
           ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*2+C'], 17),
         ]
         for i,expr in enumerate(expressions):
-            #print(util.parsing._parse_datatype(expr,parse_all=True))
-            self.assertEqual(util.parsing._parse_datatype(expr),results[i])
+            #print(util.parsing.parse_fortran_datatype(expr,parse_all=True))
+            self.assertEqual(util.parsing.parse_fortran_datatype(expr),results[i])
     def test_15_parse_declaration(self):
         statements = [
           "integer,parameter :: a(1) = (/1/), b = 5*2**3",
@@ -703,7 +703,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.mangle_fortran_var_expr(expr))
             self.assertEqual(util.parsing.mangle_fortran_var_expr(expr),results[i])
-    def test_27_parse_derived_type_statement(self):
+    def test_27parse_fortran_derived_type_statement(self):
         expressions = [
           'type mytype',
           'type :: mytype',
@@ -902,6 +902,50 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_interface_statement(expr))
             self.assertEqual(util.parsing.parse_interface_statement(expr),results[i])
+    def test_37_parse_case_statement(self):
+        expressions = [
+          "case (0)",
+          "case (0,1,2)",
+          "case (0,-1,2,A,B,C,D)",
+        ]
+        results = [
+          ['0'],
+          ['0', '1', '2'],
+          ['0', '-1', '2', 'A', 'B', 'C', 'D'],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_case_statement(expr))
+            self.assertEqual(util.parsing.parse_case_statement(expr),results[i])
+    def test_38_parse_dimension_statement(self):
+        expressions = [
+          "dim a(1)",
+          "DIMENSION a(2,3)",
+          "DIMENSION a(2,3), b(c,d,e:h)",
+        ]
+        results = [
+          [('a', ['1'])],
+          [('a', ['2', '3'])],
+          [('a', ['2', '3']), ('b', ['c', 'd', 'e:h'])],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_dimension_statement(expr))
+            self.assertEqual(util.parsing.parse_dimension_statement(expr),results[i])
+    def test_38_parse_external_statement(self):
+        expressions = [
+          "EXTERNAL a",
+          "external :: a",
+          "external a, b, c",
+          "EXTERNAL :: a, b, c",
+        ]
+        results = [
+          ['a'],
+          ['a'],
+          ['a', 'b', 'c'],
+          ['a', 'b', 'c'],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_external_statement(expr))
+            self.assertEqual(util.parsing.parse_external_statement(expr),results[i])
     
 if __name__ == '__main__':
     unittest.main() 

@@ -37,6 +37,7 @@ ignored_constructs = [
   #"interface",
 ]
 
+
 class Node():
 
     def __init__(self, kind, name, data, parent=None):
@@ -131,10 +132,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
     cuda_fortran  ,_ = util.kwargs.get_value("cuda_fortran",opts.cuda_fortran,**kwargs)
     openacc       ,_ = util.kwargs.get_value("openacc",opts.openacc,**kwargs)
     
-    default_implicit_spec =\
-      util.parsing.parse_implicit_statement(
-        "IMPLICIT integer (i-n), real (a-h,o-z)")
-    
     index = []
     root = Node("root", "root", data=index, parent=None)
     current_node = root
@@ -176,7 +173,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
 
     def get_current_implicit_rules_():
         if not len(implicit_spec_stack[-1]):
-            return default_implicit_spec
+            return types.DEFAULT_IMPLICIT_SPEC
         else:
             return implicit_spec_stack[-1]
 
@@ -482,6 +479,55 @@ def _parse_statements(linemaps, file_path,**kwargs):
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)
     
+    def Dimension():
+        """Add rank attribute to previously declared variables in same scope/declaration list.
+        Does not modify variables in other scopes.
+        """
+        nonlocal root
+        nonlocal current_node
+        nonlocal current_statement
+        # TODO need to parse implicit statements too
+        log_detection_("dimension")
+        if current_node != root:
+            msg = "begin to parse dimension statement '{}'".format(
+                current_statement)
+            log_begin_task(current_node, msg)
+            #
+            array_specs = util.parsing.parse_dimension_statement(current_statement)
+            for pair in array_specs:
+                var_name, var_bounds = pair 
+                found_decl = False
+                for ivar in current_node._data["variables"]:
+                    if ivar["name"] == var_name:
+                        found_decl = True
+                        if ivar["rank"] > 0:
+                            raise util.error.SyntaxError("variable '{}' has already 'dimension' attribute".format(var_name))
+                        ivar["rank"] = len(var_bounds)
+                        ivar["bounds"] = var_bounds
+                if not found_decl:
+                    module_name = current_node._data["name"] if current_node._data["kind"] == "module" else None
+                    for f_type,f_len,kind,letters in get_current_implicit_rules_():
+                        if var_name[0] in letters:
+                            found_decl = True
+                            ivar = types.create_index_var(f_type,
+                                                          f_len,
+                                                          kind,
+                                                          [],
+                                                          var_name,
+                                                          [],
+                                                          var_bounds,
+                                                          None,
+                                                          module_name,
+                                                          current_linemap["file"],
+                                                          current_linemap["lineno"])
+                            current_node._data["variables"].append(ivar)
+                            break
+                if not found_decl:
+                    raise util.error.SyntaxError("no declaration or applicable implicit specification found for variable '{}'".format(var_name))
+            #
+            msg = "finished to parse dimension statement '{}'".format(current_statement)
+            log_end_task(current_node, msg)
+    
     def Parameter():
         """Add parameter attribute to previously declared variables in same scope/declaration list.
         Does not modify variables in other scopes.
@@ -682,6 +728,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 Interface()
                             elif current_tokens[0] == "contains":
                                 Contains()
+                            elif current_tokens[0] in ["dimension","dim"]:
+                                Dimension()
                             elif current_tokens[0] == "parameter":
                                 Parameter()
                             elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a

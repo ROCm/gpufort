@@ -238,6 +238,11 @@ namespace {
     const double diff = a-b;
     return (diff>0.) ? diff : 0.;
   }
+ 
+  template <typename T>
+  __device__ __forceinline__ T mod(const T a, const T b) {
+    return a % b;
+  }
 } 
 
 #define sign(a,b) copysign(a,b)
@@ -247,4 +252,7 @@ namespace {
 {{ binop(op,n) }}
 {% endfor %}
 {% endfor %}
+
+#define min0 min
+#define max0 max
 #endif // _GPUFORT_H_

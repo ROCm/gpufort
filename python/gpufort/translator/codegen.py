@@ -29,9 +29,12 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
     Non-empty result names will be propagated to
     all return statements.
     """
-    ttvalues = analysis.find_all_matching_exclude_directives(ttprocedurebody.body,
-                                                             lambda ttnode: isinstance(ttnode,tree.TTValue))
+    ttvalues = analysis.find_all_matching_exclude_directives(
+            ttprocedurebody.body,lambda ttnode: isinstance(ttnode,tree.TTValue))
     _modify_array_expressions(ttprocedurebody, ttvalues, scope, **kwargs)
+    ttvalues = analysis.find_all_matching_exclude_directives(
+            ttprocedurebody.body,(lambda ttnode: isinstance(ttnode,tree.TTValue) 
+            and not ttnode.is_function_call()))
     
     c_body = tree.make_c_str(ttprocedurebody.body)
 
@@ -69,9 +72,9 @@ def _handle_reductions(ttloopnest,ttvalues,grid_dim):
                     kind=kind, var=var, tidx=tidx)
     return reduction_preamble
 
-def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
+def translate_loopnest_to_hip_kernel_body(ttcomputeconstruct, scope, **kwargs):
     r"""This routine generates an HIP/C kernel body.
-    :param ttloopnest: A translator tree node describing a loopnest
+    :param ttcomputeconstruct: A translator tree node describing a loopnest
     :param scope: A scope; see gpufort.indexer.scope
     :param \*\*kwargs: keyword arguments.
     
@@ -83,23 +86,23 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     map_to_flat_scalars,_     = util.kwargs.get_value("map_to_flat_scalars",opts.map_to_flat_scalars,**kwargs)
     fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
 
-    ttvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
+    ttvalues = analysis.find_all_matching_exclude_directives(ttcomputeconstruct.body,
                                                              lambda ttnode: isinstance(ttnode,tree.TTValue))
-    loops_generated = _modify_array_expressions(ttloopnest,ttvalues,scope,**kwargs)
-    if loops_generated: # tree was modified
-        ttvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
-                                                                 lambda ttnode: isinstance(ttnode,tree.TTValue))
-    #print([t.f_str() for t in ttvalues])
-    c_ranks = transformations.adjust_explicitly_mapped_arrays_in_rank(ttvalues,ttloopnest.all_mapped_vars())
+    _modify_array_expressions(ttcomputeconstruct,ttvalues,scope,**kwargs)
+    ttvalues = analysis.find_all_matching_exclude_directives(
+            ttcomputeconstruct.body,(lambda ttnode: isinstance(ttnode,tree.TTValue) 
+            and not ttnode.is_function_call()))
+    #print(ttvalues)
+    c_ranks = transformations.adjust_explicitly_mapped_arrays_in_rank(ttvalues,ttcomputeconstruct.all_mapped_vars())
     #TODO Investigate what happens if such an array is mapped to flat array
 
-    if ttloopnest.is_serial_construct():
+    if ttcomputeconstruct.is_serial_construct():
         ttdos        = []
         problem_size = ["1"]
         block_size   = ["1"]
         loop_vars    = []
     else:
-        ttdos = analysis.perfectly_nested_do_loops_to_map(ttloopnest) 
+        ttdos = analysis.perfectly_nested_do_loops_to_map(ttcomputeconstruct) 
         problem_size = analysis.problem_size(ttdos,**kwargs)
         block_size = [] # TODO
         loop_vars = analysis.loop_vars_in_loopnest(ttdos)
@@ -118,13 +121,13 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     else: # "collapse" or num_loops_to_map > 3
         grid_dim = 1
     
-    reduction_preamble = _handle_reductions(ttloopnest,ttvalues,grid_dim)
+    reduction_preamble = _handle_reductions(ttcomputeconstruct,ttvalues,grid_dim)
     
     # collapse and transform do-loops
-    if ttloopnest.is_serial_construct(): 
+    if ttcomputeconstruct.is_serial_construct(): 
         if len(reduction_preamble):
             reduction_preamble += "\n"
-        c_snippet = "{0}if ( threadIdx.x==0 ) {{\n{1}\n}}".format(reduction_preamble,tree.make_c_str(ttloopnest))
+        c_snippet = "{0}if ( threadIdx.x==0 ) {{\n{1}\n}}".format(reduction_preamble,tree.make_c_str(ttcomputeconstruct))
     else:
         if (num_loops_to_map <= 1 
            or (loop_collapse_strategy == "grid" 
@@ -133,7 +136,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
                 reduction_preamble += "\n"
             indices, conditions = transformations.map_loopnest_to_grid(ttdos)
             c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
-              "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest))
+              "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttcomputeconstruct))
         else: # collapse strategy or num_loops_to_map > 3
             if len(reduction_preamble):
                 reduction_preamble += "\n"
@@ -142,7 +145,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
                 "".join(indices),
                 "&&".join(conditions),
                 reduction_preamble,
-                tree.make_c_str(ttloopnest),
+                tree.make_c_str(ttcomputeconstruct),
                 "".join(preamble))
 
     return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, block_size, loop_vars, c_names, c_ranks

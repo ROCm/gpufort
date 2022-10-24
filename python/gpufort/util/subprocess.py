@@ -10,10 +10,10 @@ def run_subprocess(cmd,verbose=False):
     """
     logging.log_info("util.subprocess", "run_subprocess", " ".join(cmd))
     if verbose:
-        print(" ".join(cmd))
+        print(cmd)
      
     p = subprocess.Popen(cmd,
-                         shell=False,
+                         shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     status = p.wait()

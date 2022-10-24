@@ -42,6 +42,7 @@ if __name__ == "__main__":
       ("l1","1","logical(c_bool)"), 
       ("l4","4","logical"), 
       ("ch1", "1", "character(c_char)") ,
+      ("i1","1","integer(c_int8_t)"), 
       ("i2","2","integer(c_short)"), 
       ("i4", "4", "integer(c_int)") ,
       ("i8","8","integer(c_long)"), 

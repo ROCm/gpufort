@@ -8,8 +8,12 @@ from gpufort import util
 
 from .. import opts
 from .. import conv
+from .. import prepostprocess
+
 from . import base
 from . import grammar
+
+import enum
 
 def flatten_arithmetic_expression(expr, converter=base.make_c_str):
 
@@ -221,6 +225,10 @@ class TTNumber(base.TTNode):
 
     def f_str(self):
         return self._value
+    
+    def __str__(self):
+        return "TTNumber(val:"+str(self._value)+")"
+    __repr__ = __str__
 
 
 class TTIdentifier(base.TTNode):
@@ -234,13 +242,22 @@ class TTIdentifier(base.TTNode):
     def c_str(self):
         return self.f_str()
 
+    def __str__(self):    
+        return "TTIdentifier(name:"+str(self._name)+")"
+    __repr__ = __str__
+
 
 class TTFunctionCallOrTensorAccess(base.TTNode):
+    class Type(enum.Enum):
+        UNKNOWN = 0
+        ARRAY_ACCESS = 0
+        INTRINSIC_CALL = 1
+        FUNCTION_CALL = 2
 
     def _assign_fields(self, tokens):
         self._name = tokens[0]
         self._args = tokens[1]
-        self._is_tensor_access = base.Unknown3
+        self._type = TTFunctionCallOrTensorAccess.Type.UNKNOWN
 
     def range_args(self):
         """Returns all range args in the order of their appeareance.
@@ -267,6 +284,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         Tries to determine if the whole expression
         is function or not if no other hints are given
         """
+        #  TODO hacky old solution, evaluate if still needed
         name = base.make_c_str(self._name).lower()
         return len(self._args) == 0 or\
           name in opts.gpufort_cpp_symbols or\
@@ -274,44 +292,30 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
           name in grammar.ALL_DEVICE_ROUTINES
 
     def is_tensor(self):
-        if self._is_tensor_access == base.True3:
+        if self._type == TTFunctionCallOrTensorAccess.Type.ARRAY_ACCESS:
             return True
-        elif self._is_tensor_access == base.False3:
-            return False
-        else:
+        elif self._type == TTFunctionCallOrTensorAccess.Type.UNKNOWN:
             return self.has_range_args() or\
                    not self.__guess_it_is_function()
+        else:
+            return False
 
     def name_c_str(self):
-        raw_name = base.make_c_str(self._name).lower()
-        num_args = len(self._args)
-        if raw_name == "sign":
-            return "copysign"
-        elif raw_name in ["max", "amax1"]:
-            return "max" + str(num_args)
-        elif raw_name in ["min", "amin1"]:
-            return "min" + str(num_args)
-        else:
-            result = raw_name
-            for name in [
-              "abs",
-              "sqrt",
-              "sin",
-              "cos",
-              "tan",
-              "exp",
-              "log",
+        name = base.make_c_str(self._name).lower()
+        if self.is_tensor():
+            return name
+        elif self._type == TTFunctionCallOrTensorAccess.Type.INTRINSIC_CALL:
+            name = prepostprocess.modernize_fortran_function_name(name)
+            if name in [
+              "max",
+              "min",
               ]:
-                if raw_name == name + "1":
-                    result = raw_name[:-1]
-                    break
-                elif raw_name == "a" + name:
-                    result = raw_name[1:]
-                    break
-                elif raw_name == "a" + name + "1":
-                    result = raw_name[1:-1]
-                    break
-            return result
+                num_args = len(self._args)
+                return name + str(num_args)
+            else:
+                return name
+        else:
+            return name
 
     def c_str(self):
         name = self.name_c_str()
@@ -327,6 +331,10 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
             name,
             self._args.f_str()
             ])
+    
+    def __str__(self):
+        return "TTFunctionCallOrTensorAccess(name:"+str(self._name)+",is_tensor:"+str(self.is_tensor())+")"
+    __repr__ = __str__
 
 class TTValue(base.TTNode):
     
@@ -352,6 +360,20 @@ class TTValue(base.TTNode):
             return self._value.identifier_part(converter)
         else:
             return converter(self._value)
+    
+    def is_function_call(self):
+        """
+        :note: TTFunctionCallOrTensorAccess instances must be flagged as tensor beforehand.
+        """
+        #TODO check if detect all arrays in indexer/scope
+        # so that we do not need to know function names anymore.
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return not self._value.is_tensor()
+        elif type(self._value) is TTDerivedTypeMember:
+            # TODO support type bounds routines
+            return False
+        else:
+            return False
 
     def get_value(self):
         return self._value 
@@ -414,10 +436,14 @@ class TTValue(base.TTNode):
         return result.lower()
 
 class TTLValue(TTValue):
-    pass
+    def __str__(self):
+        return "TTLValue(val:"+str(self._value)+")"
+    __repr__ = __str__
 
 class TTRValue(TTValue):
-    pass
+    def __str__(self):
+        return "TTRValue(val:"+str(self._value)+")"
+    __repr__ = __str__
 
 def _inquiry_str(prefix,ref,dim,kind=""):
     result = prefix + "(" + ref
@@ -715,6 +741,10 @@ class TTDerivedTypeMember(base.TTNode):
     def f_str(self):
         return base.make_f_str(self._type) + "%" + base.make_f_str(
             self._element)
+    
+    def __str__(self):
+        return "TTDerivedTypeMember(name:"+str(self._type)+"member:"+str(self._element)+")"
+    __repr__ = __str__
 
 
 class TTSubroutineCall(base.TTNode):
@@ -1016,14 +1046,18 @@ class TTSelectCase(base.TTContainer):
 class TTCase(base.TTContainer):
 
     def _assign_fields(self, tokens):
-        self.case, self.body = tokens
+        self.cases, self.body = tokens
 
     def child_nodes(self):
-        return [self.case, self.body]
+        return [self.cases, self.body]
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
-        return "case {}:\n{}\n  break;".format(base.make_c_str(self.case),body_content)
+        result = ""
+        for case in self.cases:
+            result += "case ("+base.make_c_str(case)+"):\n"
+        result += body_content + "\n  break;"
+        return result
 
 class TTCaseDefault(base.TTContainer):
 

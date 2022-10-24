@@ -88,6 +88,11 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         launcher = self.__create_launcher_base_context(kind, debug_code,
                                                        used_modules)
         return launcher
+    
+    def render_gpu_kernel_prototype_cpp(self):
+        return [
+            render.render_hip_device_routine_prototype_cpp(self.kernel),
+        ]
 
     def render_gpu_kernel_cpp(self):
         return [

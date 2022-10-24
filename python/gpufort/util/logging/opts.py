@@ -12,3 +12,5 @@ log_filter = None
         # a regular expression or string that a substring of the log output must match; set this value to None if no log filtering should be applied.
 traceback = False
         # Log the traceback when logging errors.
+
+disable_logging = False # Disable all logging

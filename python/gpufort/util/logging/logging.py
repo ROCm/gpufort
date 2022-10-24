@@ -108,6 +108,8 @@ def _print_message(levelname, message):
 def log_info(prefix, func_name, raw_msg):
     global __LOGGING_IS_INITIALIZED
     global __LOG_LEVEL_AS_INT
+    if opts.disable_logging:
+        return
 
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
@@ -121,6 +123,8 @@ def log_info(prefix, func_name, raw_msg):
 
 def log_error(prefix, func_name, raw_msg):
     global __LOGGING_IS_INITIALIZED
+    if opts.disable_logging:
+        return
 
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
@@ -135,6 +139,8 @@ def log_error(prefix, func_name, raw_msg):
 
 def log_exception(prefix, func_name, raw_msg):
     global __LOGGING_IS_INITIALIZED
+    if opts.disable_logging:
+        return
 
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
@@ -152,6 +158,8 @@ def log_exception(prefix, func_name, raw_msg):
 
 def log_warning(prefix, func_name, raw_msg):
     global __LOGGING_IS_INITIALIZED
+    if opts.disable_logging:
+        return
 
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
@@ -168,6 +176,8 @@ def log_warning(prefix, func_name, raw_msg):
 def log_debug(prefix, func_name, raw_msg, debug_level=1):
     global __LOG_LEVEL_AS_INT
     global __LOGGING_IS_INITIALIZED
+    if opts.disable_logging:
+        return
 
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
@@ -221,6 +231,8 @@ def log_enter_function(prefix, func_name, args={}):
     :param str func_name: name of the function
     :param dict args: arguments (identifier and value) that have a meaningful string representation.
     """
+    if opts.disable_logging:
+        return
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
 
@@ -239,6 +251,8 @@ def log_leave_function(prefix, func_name, retvals={}):
     :param str func_name: name of the function
     :param dict retvals: arguments (identifier and value) that have a meaningful string representation.
     """
+    if opts.disable_logging:
+        return
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
 
@@ -268,6 +282,8 @@ def log_entry_and_exit(prefix,
     def inner1(func):
 
         def inner2(*args, **kwargs):
+            if opts.disable_logging:
+                return func(*args, **kwargs)
             enter_args = {}
             if print_args and len(*args):
                 enter_args += [{

@@ -79,6 +79,11 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 mykernelgen.render_begin_kernel_comment_cpp()
                 + mykernelgen.render_gpu_kernel_cpp()
                 + mykernelgen.render_end_kernel_comment_cpp())
+        if not is_kernel_subroutine:
+            cpp_filegen.rendered_types += (
+                mykernelgen.render_begin_kernel_comment_cpp()
+                + mykernelgen.render_gpu_kernel_prototype_cpp()
+                + mykernelgen.render_end_kernel_comment_cpp())
         rendered_launchers_cpp = []
         rendered_interfaces_f03 = []
  
@@ -188,7 +193,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
             stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
-                    stloopnest._linemaps[0]["file"],stloopnest.min_lineno(),stloopnest.max_lineno(),e.args[0])
+                    stprocedure._linemaps[0]["file"],stprocedure.min_lineno(),stprocedure.max_lineno(),e.args[0])
+            print(stprocedure.statements())
             e.args = (msg,)
             raise
     

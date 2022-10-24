@@ -10,6 +10,7 @@ headers:
 
 modules:
 	gpufort --only-create-mod-files cudafor.f90
+	gpufort --only-create-mod-files intrinsics.f90
 
 clean_all:
 	for expr in "*.json" "*.mod" "*.gpufort_mod" "*-fort2x.*" "*-gpufort.*" "*.h"; do find . -name "$$expr" -delete; done

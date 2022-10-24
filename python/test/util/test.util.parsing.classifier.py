@@ -368,6 +368,7 @@ class TestParsingStatementClassifier(unittest.TestCase):
           "character(len=3,kind=c_char) :: a(3,4*l+3)*k",
           "TYPE(MYTYPE(M,N,K=A*B+C)) :: A(3,4*L+3)",
           "type(mytype),intent(IN out) :: A(3,4)",
+          "type(*) :: input",
           "class(myclass),intent(IN out) :: this",
           "character(len=:),pointer :: a(:,:) => b",
         ]
@@ -388,6 +389,7 @@ class TestParsingStatementClassifier(unittest.TestCase):
           ('character', 'k', 'c_char', [], [], [], [('a', ['3', '4*l+3'], None)], 'character(len=3,kind=c_char)', []),
           ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*B+C'], [], [], [('A', ['3', '4*L+3'], None)], 'TYPE(MYTYPE(M,N,K=A*B+C))', []),
           ('type', None, 'mytype', [], ['intent(INout)'], [], [('A', ['3', '4'], None)], 'type(mytype)', ['intent(IN out)']),
+          ('type', None, '*', [], [], [], [('input', [], None)], 'type(*)', []),
           ('class', None, 'myclass', [], ['intent(INout)'], [], [('this', [], None)], 'class(myclass)', ['intent(IN out)']),
           ('character', ':', None, [], ['pointer'], [], [('a', [':', ':'], 'b')], 'character(len=:)', ['pointer']),
         ]
@@ -875,10 +877,12 @@ class TestParsingStatementClassifier(unittest.TestCase):
         expressions = [
           "interface",
           "INTERFACE myInterFace",
+          "attributes(std_f77) INTERFACE myInterFace",
         ]
         results = [
-          None,
-          "myInterFace",
+          ([], None),
+          ([], "myInterFace"),
+          (["std_f77"], "myInterFace"),
         ]
         for i,expr in enumerate(expressions):
             #print(self.classifier.parse_interface_statement(expr))

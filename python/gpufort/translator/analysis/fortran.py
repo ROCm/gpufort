@@ -67,10 +67,10 @@ class ArithExprInfo:
     #            self._compute_rank_action)
 
 
-class AssignmentType(enum.Enum):
-    UNIDENTIFIED = 0
-    LHS_ARRAY = 1
-    LHS_SCALAR_RHS_REDUCTION_INTRINSIC_EVAL = 2
+#class AssignmentType(enum.Enum):
+#    UNIDENTIFIED = 0
+#    LHS_ARRAY = 1
+#    LHS_SCALAR_RHS_REDUCTION_INTRINSIC_EVAL = 2
 
 class AssignmentInfo:
 
@@ -78,37 +78,29 @@ class AssignmentInfo:
         self._type = AssignmentType.UNIDENTIFIED
         self._assignment = ttassignment
         self._main_rvals_and_ops = []
+        self._scope = scope
         #
-        self._lvalue_ivar = None
-        self._lvalue_rank = 0
-        self._lookup_lvalue(scope)
-        self._determine_lvalue_rank(scope) 
-        self._identify_assignment_type(scope)
+        self._lvalue_ivar = self._lookup_lvalue()
+        self._implicit_loops_lhs = -1
 
-    def _lookup_lvalue(self,scope):
+    def _lookup_lvalue(self):
         lvalue_fstr = self._assignment._lhs.fstr()
-        self._lvalue_ivar = indexer.scope.search_scope_for_var(scope,lvalue_fstr)
+        return indexer.scope.search_scope_for_var(scope,lvalue_fstr)
 
-    def _determine_lvalue_rank(self,scope):
+    def _determine_implicit_loops_lhs(self,ttvalue,ivar):
         """:return: If the LHS expression is an identifier and the associated variable
                  is an array or if the LHS expression is an array colon expression 
                  such as `A(:,1:n)`.
         """
         loop_indices = [] 
-        if self._lvalue_ivar["rank"] > 0:
+        if ivar["rank"] > 0:
             lvalue_ranges_or_none = self._collect_ranges_in_ttvalue(ttlvalue,include_none_values=True)
             lvalue_ranges = [r for r in lvalue_ranges_or_none if r != None]
             if len(lvalue_ranges_or_none):
-                num_implicit_loops = len(lvalue_ranges)
+                num_implicit_loops_lhs = len(lvalue_ranges)
             else:
-                num_implicit_loops = livar["rank"]
-        self_lvalue_rank = num_implicit_loops
-
-    def _identify_assignment_type(self,scope):
-        if self._is_array_assignment(self._assignment.lhs,scope):
-            self._type = AssignmentType.LHS_ARRAY   
-        elif self._is_array_reduction_intrinsic_call(self._assignment.lhs,scope):
-            if self._lvalue_ivar
+                num_implicit_loops_lhs = livar["rank"]
+        return num_implicit_loops_lhs
 
     def _collect_ranges(self,function_call_args,include_none_values=False):
         ttranges = []
@@ -140,22 +132,46 @@ class AssignmentInfo:
             return result
         else:
             return []
+
+    def is_full_array_initialization_with_scalar_rhs(self):
+        """Is an expression of the form
+        a = 1
+        a(:,:) = b * 2*c ! b,c: main operators, scalar
+        a(:,:) = b(i) * 2*c(j) ! b(i),c(j): main operators, scalar
+        """
+        pass
+
+    def is_full_array_reduction_to_scalar(self):
+        pass    
+
+    def is_partial_array_reduction_to_scalar(self):
+        pass
+ 
+    @property
+    def is_array_initialization_with_scalar(self):
+        if self._implicit_loops_lhs < 0: # unitialized
+            self._implicit_loops_lhs = self._determine_implicit_loops_lhs(
+              self._assignment._lhs,
+              self._lvalue_ivar
+            )
+        return self._implicit_loops_lhs > 0
+
+    @property
+    def is_array_assignment(self):
+        if self._implicit_loops_lhs < 0: # unitialized
+            self._implicit_loops_lhs = self._determine_implicit_loops_lhs(
+              self._assignment._lhs,
+              self._lvalue_ivar
+            )
+        return self._implicit_loops_lhs > 0
+
     
-    def _is_array_assignment(self,ttlvalue,scope):
-        """
-        :return: If the LHS expression is an identifier and the associated variable
-                 is an array or if the LHS expression is an array colon expression 
-                 such as `A(:,1:n)`.
-        """
-        loop_indices = [] 
-        if self._lvalue_ivar["rank"] > 0:
-            lvalue_ranges_or_none = self._collect_ranges_in_ttvalue(ttlvalue,include_none_values=True)
-            lvalue_ranges = [r for r in lvalue_ranges_or_none if r != None]
-            if len(lvalue_ranges_or_none):
-                num_implicit_loops = len(lvalue_ranges)
-            else:
-                num_implicit_loops = livar["rank"]
-        return num_implicit_loops > 0
+
+    #def _identify_assignment_type(self,scope):
+    #    if self._is_array_assignment(self._assignment.lhs,scope):
+    #        self._type = AssignmentType.LHS_ARRAY   
+    #    elif self._is_array_reduction_intrinsic_call(self._assignment.lhs,scope):
+    #        if self._lvalue_ivar
     
     def _is_array_reduction_intrinsic_call(self,ttassignment,scope):
         """
@@ -245,10 +261,10 @@ class AssignmentInfo:
 #            lvalue_slices_or_none = self._collect_slices_in_ttvalue(ttlvalue,include_none_values=True)
 #            lvalue_slices = [r for r in lvalue_slices_or_none if r != None]
 #            if len(lvalue_slices_or_none):
-#                num_implicit_loops = len(lvalue_slices)
+#                num_implicit_loops_lhs = len(lvalue_slices)
 #            else:
-#                num_implicit_loops = livar["rank"]
-#        return num_implicit_loops > 0
+#                num_implicit_loops_lhs = livar["rank"]
+#        return num_implicit_loops_lhs > 0
 #
 #def analyze_assignment(ttassignment):
 #    if isinstance(ttassignment,tree.TTAssignment):

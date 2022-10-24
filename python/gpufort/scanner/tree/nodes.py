@@ -764,7 +764,7 @@ class STComputeConstruct(STNode):
                         result.append("else if ("+device_spec.get_activate_condition_fstr()+") then\n")
                 result.append(block_indent+"! extracted to HIP C++ file\n")
                 result.append(block_indent+"call {0}(&\n  {1})\n".format(launcher_name,",&\n  ".join(kernel_args)))
-                if num_specs > 1 and i == num_specs - 1 
+                if num_specs > 1 and i == num_specs - 1:
                     result.append("endif")
             indent = self.first_line_indent()
             return textwrap.indent("".join(result),indent), True

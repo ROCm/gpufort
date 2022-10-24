@@ -48,22 +48,39 @@ class StatementClassifier:
     def parse_result(self):
         assert self.__result_avail
         return self.__parse_result 
-    
+   
+
+    def _parse_attributes_list(self,tokens):
+        if not tokens.pop_front_equals_ignore_case("attributes","("):
+            self._raise_unclassified_error(tokens,"expected 'attributes' + '('")
+        attributes, num_consumed =  base.get_top_level_operands(tokens)
+        if not len(attributes):
+            raise self._raise_unclassified_error(tokens,"expected at least one attribute in the 'attributes' list")
+        tokens.pop_front(num_consumed)
+        if not tokens.pop_front_equals(")"):
+            raise self._raise_unclassified_error(tokens,"expected ')' after 'attributes' list")
+        return attributes
+ 
     def parse_interface_statement(self,statement):
         """Parse interface statements such as
         `interface`
         `INTERFACE myinterface`
+        `attributes(std_f77) INTERFACE myinterface`
+        The latter expression is a non-standard extension.
         """
-        tokens = base.tokenize(statement,padded_size=2)
-        if tokens[0].lower() != "interface":
-            raise error.SyntaxError("expected 'interface'")
-        name = tokens[1]
-        if name.isidentifier():
-           return name
-        elif name == "":
-           return None
+        tokens = ts.TokenStream(statement)
+        if tokens[0].lower() == "attributes":
+            attributes = self._parse_attributes_list(tokens)
         else:
-            raise error.SyntaxError("expected identifier after '{}'".format(tokens[0]))
+            attributes = []
+        if not tokens.pop_front_equals_ignore_case("interface"):
+            self._raise_unclassified_error(tokens,"expected 'interface'")
+        if len(tokens) and tokens[0].isidentifier():
+            name = tokens.pop_front()
+        else:
+            name = None
+        tokens.check_if_remaining_tokens_are_blank()
+        return (attributes, name)
     
     def parse_function_statement(self,statement):
         """Fortran function and subroutine statements can take
@@ -572,18 +589,26 @@ class StatementClassifier:
             base.check_if_all_tokens_are_blank(tokens[total_num_consumed:],parse_all)
             if len(types) == 1:
                 first_entry = types[0]
-                if len(first_entry) == 1 and first_entry[0].isidentifier():
+                if (
+                    len(first_entry) == 1 
+                    and ( first_entry[0].isidentifier() 
+                          or first_entry[0] == "*" )
+                ):
                     return (tokens[0],None,first_entry[0],[],total_num_consumed)
-                elif len(first_entry) >= 2 and first_entry[0].isidentifier() and first_entry[1] == "(":
+                elif (  # parametrized types
+                    len(first_entry) >= 2 
+                    and first_entry[0].isidentifier() 
+                    and first_entry[1] == "("
+                ):
                     params,num_params_tokens = base.get_top_level_operands(first_entry[2:])
                     if first_entry[2+num_params_tokens:] != [")"]:
                         raise error.SyntaxError("missing ')'")
                     base.check_if_all_tokens_are_blank(first_entry[2+num_params_tokens+1:],parse_all)
                     return (tokens[0],None,first_entry[0],params,total_num_consumed)
                 else:
-                    raise error.SyntaxError("expected identifier or identifier plus parameter list")
+                    raise error.SyntaxError("expected identifier, '*', or identifier plus parameter list")
             else:
-                raise error.SyntaxError("expected single identifier or identifier plus parameter list")
+                raise error.SyntaxError("expected single identifier, '*', or identifier plus parameter list")
         else:
             raise error.SyntaxError("expected 'type ('")
     
@@ -1787,6 +1812,15 @@ class StatementClassifier:
     @__no_parse_result
     def is_subroutine_call(self,tokens):
         return tokens[0] == "call" and tokens[1].isidentifier()
+    
+
+    @__produces_parse_result
+    def is_interface(self,tokens):
+        try:
+            self.__parse_result = self.parse_interface_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
     
     @__produces_parse_result
     def is_select_case(self,tokens):

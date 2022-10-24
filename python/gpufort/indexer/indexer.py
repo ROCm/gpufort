@@ -16,8 +16,8 @@ considered_constructs = [
   "type", "interface"
 ]
 ignored_constructs = [
-  "associate",
-  "block",
+  "associate", # todo
+  "block", # todo
   "case",
   "do",
   "forall",
@@ -50,7 +50,9 @@ class Node():
                 linemaps_of_node, "statements", self._begin[1], end[1])
         ]
     __repr__ = __str__
+
 statement_classifier = util.parsing.StatementClassifier()
+
 def create_index_records_from_declaration(module_name,statement,file_path,lineno):
     """:raise util.errorSyntaxError: If the syntax of the declaration statement is not
                                      as expected.
@@ -680,7 +682,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                         PublicOrPrivate()
                     elif current_tokens[0] == "implicit":
                         Implicit()
-                    elif current_tokens[0] == "interface":
+                    elif statement_classifier.is_interface(current_tokens):
                         Interface()
                     elif current_tokens[0] == "contains":
                         Contains()

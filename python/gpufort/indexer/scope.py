@@ -9,7 +9,6 @@ from gpufort import util
 from . import opts
 from . import indexer
 from . import indexertypes
-from . import intrinsics
 
 def _lookup_implicitly_declared_var(var_expr,implicit_specs):
     """

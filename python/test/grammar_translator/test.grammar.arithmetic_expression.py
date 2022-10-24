@@ -5,7 +5,17 @@ import os,sys
 import time
 import unittest
 import addtoplevelpath
-from gpufort import grammar
+
+USE_RAW_GRAMMAR = False
+if USE_RAW_GRAMMAR:
+    from gpufort import grammar as _grammar
+    grammar = _grammar.Grammar(
+      ignorecase=True
+    )
+    del _grammar    
+else:
+    from gpufort import translator
+    grammar = translator.tree.grammar
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -18,6 +28,8 @@ class TestGrammarArithmeticExpression(unittest.TestCase):
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_0(self):
         testdata = [
+          "a(1)",
+          "a(:,1)",
           "- ( +a - b*(-b +c ))",
           "- ( max ( m , n ) )",
           "MIN( jte )",

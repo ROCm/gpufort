@@ -446,36 +446,26 @@ def parse_fortran_code(code,result_name=None):
     return ttree
 
 # API
-def convert_arith_expr(fortran_snippet):
-    return (matrix_arith_expr | complex_arith_expr
-            | arith_expr).parseString(fortran_snippet)[0].cstr()
-
-
-def parse_attributes(ttattributes):
-    attribute = tree.make_fstr(ttattributes.qualifiers[0]).lower()
-    modified_vars = [tree.make_fstr(var).lower() for var in ttattributes._rhs]
-    return attribute, modified_vars
-
 # todo: parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
 
 
-def parse_compute_construct(fortran_statements, scope=None):
-    """:return: C snippet equivalent to original Fortran code.
-    """
-    ttcomputeconstruct = parse_fortran_code(fortran_statements).body[0]
-
-    ttcomputeconstruct.scope = scope
-    return ttcomputeconstruct
-
-
-def parse_procedure_body(fortran_statements, scope=None, result_name=None):
-    """Parse a function/subroutine body.
-    """
-    parse_result = parse_fortran_code(fortran_statements,result_name)
-    ttprocedurebody = tree.TTProcedureBody([parse_result.body])
-
-    ttprocedurebody.scope = scope
-    ttprocedurebody.result_name = result_name
-    return ttprocedurebody
+#def parse_compute_construct(fortran_statements, scope=None):
+#    """:return: C snippet equivalent to original Fortran code.
+#    """
+#    ttcomputeconstruct = parse_fortran_code(fortran_statements).body[0]
+#
+#    ttcomputeconstruct.scope = scope
+#    return ttcomputeconstruct
+#
+#
+#def parse_procedure_body(fortran_statements, scope=None, result_name=None):
+#    """Parse a function/subroutine body.
+#    """
+#    parse_result = parse_fortran_code(fortran_statements,result_name)
+#    ttprocedurebody = tree.TTProcedureBody([parse_result.body])
+#
+#    ttprocedurebody.scope = scope
+#    ttprocedurebody.result_name = result_name
+#    return ttprocedurebody

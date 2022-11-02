@@ -78,25 +78,32 @@ EMPTY_VAR = {
 def new_scope():
     return copy.deepcopy(EMPTY_SCOPE)
 
-def copy_scope(existing_scope,index=None,tag=None):
+def copy_scope(existing_scope,index=None,tag=None,implicit=None):
     """
-    :note: `index` is typically a huge object, we do not want to 
-           create a deep copy of it.
+    :note: All scope entry lists but not their members (dict references)
+           are copied as it is assumed that the copied scope's lists
+           are modified later on.
+           Scope entry list members can be numerous and large,
+           so a simple deep copy can quickly become too time consuming.
+    :note: Implicit rule is local to a scope and hence set to None here.
+    :note: 
     """
-    shallow_copy = copy.copy(existing_scope)
-    shallow_copy["index"] = None
-    shallow_copy["implicit"] = None
-    new_scope = copy.deepcopy(shallow_copy)
-    new_scope["index"] = index
-    if tag == None:
-        new_scope["tag" ] = existing_scope["tag"]
-    else:
-        new_scope["tag" ] = tag
-    if index == None:
-        new_scope["index" ] = existing_scope["index"]
-    else:
-        new_scope["index" ] = index
-    return new_scope
+    copied_scope = new_scope()
+    for scope_entry in SCOPE_ENTRY_TYPES:
+        copied_scope[scope_entry] += existing_scope[scope_entry] 
+    copied_scope["tag" ] = (
+      existing_scope["tag"] if tag == None
+      else tag
+    )
+    copied_scope["index" ] = (
+      existing_scope["index"] if index == None 
+      else index
+    )
+    copied_scope["implicit" ] = (
+      existing_scope["implicit"] if implicit == None
+      else implicit
+    )
+    return copied_scope
 
 def create_index_var(f_type,
                      f_len,

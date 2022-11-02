@@ -18,7 +18,7 @@ util.logging.init_logging("log.log",log_format,log_level)
 
 preproc_options=""
 
-PROFILING_ENABLE          = False
+PROFILING_ENABLE = False
 
 index = []
 
@@ -48,9 +48,9 @@ class TestParseIntrinsics(unittest.TestCase):
     
         indexer.update_index_from_linemaps(
           linemapper.read_file(
-            "intrinsics.f90",
+            "gpufort_intrinsics.f90",
             preproc_options=preproc_options,
-            include_dirs=["../../../include"],
+            include_dirs=["../../../include"]
           ),
           self.index
         )

@@ -294,19 +294,30 @@ def create_index_from_scope(scope):
         imodule[entry_type] = copy.deepcopy(scope[entry_type])
     return [ imodule ]
 
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def create_scope(index, tag):
+def create_basic_scope(index):
+    """Creates a basic scope that contains all intrinsics.
+    """
+    return create_scope(index, "gpufort_intrinsics", 
+                        prepend_intrinsics=False)
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def create_scope(index, tag, prepend_intrinsics=True):
     """
     :param str tag: a colon-separated list of strings. Ex: mymod:mysubroutine or mymod.
+    :param bool prepend_intrinsics: Prepend intrinsic procedures to the procedures of this list.
     :note: not thread-safe
     :note: tries to reuse existing scopes.
     :note: assumes that number of scopes will be small per file. Hence, uses list instead of tree data structure
            for storing scopes.
     """
-
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
-    existing_scope = indexertypes.new_scope()
+    if prepend_intrinsics: 
+        existing_scope = create_basic_scope(index) # todo deep copy is too expensive
+    else:
+        existing_scope = indexertypes.new_scope()
     nesting_level  = -1 # -1 implies that nothing has been found
     tag_tokens = tag.split(":")
     for s in opts.scopes:
@@ -325,7 +336,7 @@ def create_scope(index, tag):
           "variables in scope: {}".format(", ".join([var["name"] for var in existing_scope["variables"]])))
         return existing_scope
     else:
-        new_scope = indexertypes.copy_scope(existing_scope,index,tag)
+        new_scope = indexertypes.copy_scope(existing_scope,index,tag,None)
 
         # we already have a scope for this record
         if nesting_level >= 0:
@@ -354,6 +365,7 @@ def create_scope(index, tag):
 
         for d in range(begin, len(tag_tokens)):
             searched_name = tag_tokens[d]
+            record_found = False
             for current_record in current_record_list:
                 if current_record["name"] == searched_name:
                     scope_additions = indexertypes.new_scope()
@@ -380,8 +392,14 @@ def create_scope(index, tag):
 
                     #print("{}:{}".format(":".join(tag_tokens),[p["name"] for p in new_scope["procedures"]]))
                     current_record_list = current_record["procedures"]
+                    record_found = True
                     break
+            if not record_found:
+                raise util.error.LookupError(
+                  "no index record found for tag: '{}'".format(tag)
+                )
         # (shallow) copy implicit spec from scope-associated index record
+        assert current_record != None
         new_scope["implicit"] = current_record["implicit"]
         opts.scopes.append(new_scope)
         util.logging.log_leave_function(opts.log_prefix, "create_scope")

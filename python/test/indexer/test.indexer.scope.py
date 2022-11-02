@@ -3,6 +3,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import time
 import unittest
+import cProfile,pstats,io
 
 import addtoplevelpath
 from gpufort import indexer
@@ -18,6 +19,10 @@ preproc_options="-DCUDA"
 
 indexer.opts.error_handling="strict"
 
+PROFILING_ENABLE = False
+            
+profiler = cProfile.Profile()
+
 # scan index
 index = []
 
@@ -25,17 +30,37 @@ index = []
 class TestScoper(unittest.TestCase):
     def setUp(self):
         global index
+        if PROFILING_ENABLE:
+            profiler.enable()
         self.started_at = time.time()
     def tearDown(self):
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_0_donothing(self):
+        if PROFILING_ENABLE:
+            profiler.disable() 
+            s = io.StringIO()
+            sortby = 'cumulative'
+            stats = pstats.Stats(profiler, stream=s).sort_stats(sortby)
+            stats.print_stats(10)
+            print(s.getvalue())
+    def test_00_donothing(self):
         pass 
-    def test_1_indexer_scan_files(self):
+    def test_01_indexer_scan_files(self):
         indexer.update_index_from_linemaps(linemapper.read_file("test_modules_1.f90",preproc_options=preproc_options),index)
         indexer.update_index_from_linemaps(linemapper.read_file("test_modules_2.f90",preproc_options=preproc_options),index)
         indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",preproc_options=preproc_options),index)
-    def test_2_scope_search_for_vars(self):
+    def test_02_create_basic_scope(self):
+        indexer.update_index_from_linemaps(
+          linemapper.read_file(
+            "gpufort_intrinsics.f90",
+            preproc_options=preproc_options,
+            include_dirs=["../../../include"]
+          ),
+          index
+        )
+        scope_with_intrinsics = indexer.scope.create_basic_scope(index)
+        indexer.opts.scopes.clear()
+    def test_03_scope_search_for_vars(self):
         c   = indexer.scope.search_index_for_var(index,"test1","c") # included from module 'simple'
         indexer.opts.scopes.clear()
         t_b = indexer.scope.search_index_for_var(index,"test1",\
@@ -45,27 +70,27 @@ class TestScoper(unittest.TestCase):
         indexer.opts.scopes.clear()
         tc_t2list_t1list_a = indexer.scope.search_index_for_var(index,"test1","tc%t2list(indexlist%j)%t1list(i)%a") 
         indexer.opts.scopes.clear()
-    def test_3_scope_search_for_implicitly_declared_vars(self):
+    def test_04_scope_search_for_implicitly_declared_vars(self):
         _i0   = indexer.scope.search_index_for_var(index,"test1","_i0") # included from module 'simple'
         indexer.opts.scopes.clear()
-    def test_4_scope_search_for_vars_reuse_scope(self):
+    def test_05_scope_search_for_vars_reuse_scope(self):
         c   = indexer.scope.search_index_for_var(index,"test1","c") # included from module 'simple'
         t_b = indexer.scope.search_index_for_var(index,"test1","t%b") # type of t included from module 'simple'
         tc_t1list_a = indexer.scope.search_index_for_var(index,"test1","tc%t1list(i)%a") # type of t included from module 'simple'
         tc_t2list_t1list_a = indexer.scope.search_index_for_var(index,"test1",\
           "tc%t2list(indexlist%j)%t1list(i)%a") 
         indexer.opts.scopes.clear()
-    def test_5_scope_search_for_procedures(self):
+    def test_06_scope_search_for_procedures(self):
         func2 = indexer.scope.search_index_for_procedure(index,"test1","func2")
         func3 = indexer.scope.search_index_for_procedure(index,"nested_procedures:func2","func3")
         func4 = indexer.scope.search_index_for_procedure(index,"nested_procedures:func2","func4")
         func4 = indexer.scope.search_index_for_procedure(index,"nested_procedures:func2:func3","func4")
         type1 = indexer.scope.search_index_for_type(index,"complex_types","type1")
         indexer.opts.scopes.clear()
-    def test_6_scope_search_for_top_level_procedures(self):
+    def test_07_scope_search_for_top_level_procedures(self):
         func2 = indexer.scope.search_index_for_procedure(index,"test1","top_level_subroutine")
         indexer.opts.scopes.clear()
-    def test_7_scope_check_accessibility(self):
+    def test_08_scope_check_accessibility(self):
         public_proc1  = indexer.scope.search_index_for_procedure(index,"test1","public_proc1")
         try:
             private_proc1 = indexer.scope.search_index_for_procedure(index,"test1","private_proc1")
@@ -88,7 +113,7 @@ class TestScoper(unittest.TestCase):
         except util.error.LookupError:
             pass
         indexer.opts.scopes.clear()
-    def test_8_combine_only_use_statements(self):
+    def test_09_combine_only_use_statements(self):
         use_statements=[
           "use a, only: b1 => a1",
           "use a, only: b2 => a2",
@@ -112,7 +137,7 @@ class TestScoper(unittest.TestCase):
             self.assertEqual(iused_modules[i]["attributes"],result[i]["attributes"])
             self.assertEqual(iused_modules[i]["renamings"],result[i]["renamings"])
             self.assertEqual(iused_modules[i]["only"],result[i]["only"])
-    def test_9_combone_mixed_use_statements(self):
+    def test_10_combine_mixed_use_statements(self):
         use_statements=[
           "use a, b1 => a1",
           "use a, b2 => a2",

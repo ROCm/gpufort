@@ -19,7 +19,7 @@ util.logging.init_logging("log.log",log_format,log_level)
 
 preproc_options="-DCUDA"
 
-PROFILING_ENABLE          = False
+PROFILING_ENABLE = False
 
 index = []
 

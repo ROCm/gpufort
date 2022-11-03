@@ -9,8 +9,7 @@ from gpufort import indexer
 
 from .. import nodes
 from .. import opts
-from .. import translator.tree.grammar
-
+ 
 class STCufDirective(nodes.STDirective):
 
     """This class has the functionality of a kernel if the stored lines contain

@@ -315,7 +315,7 @@ def create_scope(index, tag, prepend_intrinsics=True):
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
     if prepend_intrinsics: 
-        existing_scope = create_basic_scope(index) # todo deep copy is too expensive
+        existing_scope = create_basic_scope(index)
     else:
         existing_scope = indexertypes.new_scope()
     nesting_level  = -1 # -1 implies that nothing has been found

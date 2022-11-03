@@ -11,10 +11,12 @@ from gpufort import translator
 from gpufort import linemapper
 from . import opts
 from . import indexertypes
+
 considered_constructs = [
   "program", "module", "subroutine", "function",
   "type", "interface"
 ]
+
 ignored_constructs = [
   "associate", # todo
   "block", # todo
@@ -29,6 +31,7 @@ ignored_constructs = [
   
   #"interface",
 ]
+
 class Node():
     def __init__(self, kind, name, data, parent=None):
         self._kind = kind
@@ -82,6 +85,7 @@ def create_index_records_from_declaration(module_name,statement,file_path,lineno
                                       lineno)
         context.append(ivar)
     return context
+
 def create_index_record_from_use_statement(statement):
     module, qualifiers, renamings, only = statement_classifier.parse_use_statement(statement)
     
@@ -724,7 +728,22 @@ def _read_json_file(file_path):
     #print(file_path,file=sys.stderr)
     with open(file_path, "r") as infile:
         return json.load(infile)
+
 # API
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def init_index(index):
+    """Loads standard definitions such as intrinsics.
+    :param index: Inout argument.
+    """
+    parent_dir = os.path.dirname(__file__)
+    gpufort_include_dir = os.path.abspath(
+      os.path.join(
+        parent_dir, "..", "..","..","include"
+      )
+    )
+    print(gpufort_include_dir)
+    load_gpufort_module_files([gpufort_include_dir],index)
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_linemaps(linemaps, index,**kwargs):
     """Updates index from a number of linemaps."""
@@ -732,16 +751,20 @@ def update_index_from_linemaps(linemaps, index,**kwargs):
         index += _parse_statements(linemaps,
                                    file_path=linemaps[0]["file"],
                                    **kwargs)
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_snippet(index, snippet, **kwargs):
     linemaps = linemapper.preprocess_and_normalize(snippet.splitlines(),
                                                    file_path="dummy.f90", **kwargs)
     update_index_from_linemaps(linemaps, index, **kwargs)
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def create_index_from_snippet(snippet, **kwargs):
     index = []
+    init_index(index)
     update_index_from_snippet(index, snippet, **kwargs)
     return index
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_derived_types(imodule, search_procedures=True):
     """Search through a module (or program)
@@ -767,6 +790,7 @@ def search_derived_types(imodule, search_procedures=True):
         opts.log_prefix, "_search_derived_types",
         {"typenames": str([itype["name"] for itype in itypes.values()])})
     return itypes
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def write_gpufort_module_files(index, output_dir):
     """
@@ -778,6 +802,7 @@ def write_gpufort_module_files(index, output_dir):
     for mod in index:
         file_path = output_dir + "/" + mod["name"] + opts.gpufort_module_file_suffix
         _write_json_file(mod, file_path)
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def load_gpufort_module_files(input_dirs, index):
     """
@@ -797,6 +822,7 @@ def load_gpufort_module_files(input_dirs, index):
                     mod_index = _read_json_file(
                         os.path.join(input_dir, child))
                     index.append(mod_index)
+
 def search_index_for_top_level_entry(index, name, kinds=[]):
     """Search the index for module, program, subroutine,
     or function entity that do not have a parent themselves.
@@ -816,6 +842,7 @@ def search_index_for_top_level_entry(index, name, kinds=[]):
     else:
         raise util.error.LookupError(
           "no index record found with name '{}'".format(name))
+
 def search_index_for_procedure_or_program(index, tag):
     """Search the index for program, subroutine, or function entity.
     :param str tag: lower case tag of the searched entry."""

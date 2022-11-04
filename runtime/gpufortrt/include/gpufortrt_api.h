@@ -5,17 +5,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+  typedef char const* gpufortrt_device_t;
   int gpufortrt_get_num_devices();
   
-  void gpufortrt_set_device_num(int dev_num);
-  int gpufortrt_get_device_num();
-  
+  void gpufortrt_set_device_num(int dev_num, gpufortrt_device_t dev_type = "AMD");
+  int gpufortrt_get_device_num(gpufortrt_device_t dev_type = "AMD");
+  // Explicit Fortran interfaces that assume device number starts from 1
+  void gpufortrt_set_device_num_f(int dev_num, gpufortrt_device_t dev_type = "AMD");
+  int gpufortrt_get_device_num_f(gpufortrt_device_t dev_type = "AMD");
+  #ifdef notNecessary
   size_t gpufortrt_get_property(int dev_num,
                                 gpufortrt_device_property_t property);
   const 
   char* gpufortrt_get_property_string(int dev_num,
                                       gpufortrt_device_property_t property);
-  
+  #endif
   void gpufortrt_init();
   void gpufortrt_shutdown();
 
@@ -105,6 +109,16 @@ extern "C" {
           int async_arg,
           bool never_deallocate);
 
+// Same as copyin?
+  void* gpufortrt_copy(
+          void* hostptr,
+          std::size_t num_bytes,
+          bool never_deallocate);
+  void gpufortrt_copy_async(
+          void* hostptr,
+          std::size_t num_bytes,
+          int async_arg,
+          bool never_deallocate);
   // other runtime calls
 
   void gpufortrt_update_self(

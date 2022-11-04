@@ -43,7 +43,7 @@ void gpufortrt::internal::queue_record_t::destroy() {
 
 bool gpufortrt::internal::queue_record_t::test() {
   bool result = hipStreamQuery(this->queue) == hipSuccess;
-  LOG_INFO(4,"<test queue; " << *this" <<; result:" << result << )
+  LOG_INFO(4,"<test queue; " << *this <<" ; result:" << result )
   return result;
 }
 

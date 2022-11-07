@@ -523,22 +523,20 @@ void* gpufortrt_copy(void* hostptr,std::size_t num_bytes,bool never_deallocate) 
     gpufortrt_counter_dynamic,
     hostptr,
     num_bytes,
-    gpufortrt_map_kind_copyin,
+    gpufortrt_map_kind_copy,
     never_deallocate,
-    true,/*blocking*/
+    true/*blocking*/,
     gpufortrt_async_noval);
 }
-void gpufortrt_copy_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
-  bool blocking; int async_val;
-  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
-  create_increment_action(
+void* gpufortrt_copy_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
+  return ::create_increment_action(
     gpufortrt_counter_dynamic,
     hostptr,
     num_bytes,
-    gpufortrt_map_kind_copyin,
+    gpufortrt_map_kind_copy,
     never_deallocate,
-    blocking,
-    async_val);
+    false/*blocking*/,
+    async_arg);
 }
 
 namespace {

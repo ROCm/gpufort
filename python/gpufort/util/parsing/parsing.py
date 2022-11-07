@@ -1942,6 +1942,10 @@ def is_declaration(tokens):
 def is_blank_line(statement):
     return not len(statement.strip())
 
+def is_acc_rtlib(statement, modern_fortran):
+    """If the statement is an OpenACC runtime library function or subroutine"""
+    """ToDo: Add more complicated cases"""
+    return ("call acc_" in statement) or ("= acc_" in statement) or ("=acc_" in statement)
 
 def is_fortran_directive(statement,modern_fortran):
     """If the statement is a directive."""

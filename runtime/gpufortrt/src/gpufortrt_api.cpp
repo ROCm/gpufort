@@ -517,27 +517,6 @@ void gpufortrt_copyin_async(void* hostptr,std::size_t num_bytes,int async_arg,bo
     blocking,
     async_val);
 }
-// Same as copyin?
-void* gpufortrt_copy(void* hostptr,std::size_t num_bytes,bool never_deallocate) {
-  return ::create_increment_action(
-    gpufortrt_counter_dynamic,
-    hostptr,
-    num_bytes,
-    gpufortrt_map_kind_copy,
-    never_deallocate,
-    true/*blocking*/,
-    gpufortrt_async_noval);
-}
-void* gpufortrt_copy_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
-  return ::create_increment_action(
-    gpufortrt_counter_dynamic,
-    hostptr,
-    num_bytes,
-    gpufortrt_map_kind_copy,
-    never_deallocate,
-    false/*blocking*/,
-    async_arg);
-}
 
 namespace {
   template <bool update_host,bool blocking>

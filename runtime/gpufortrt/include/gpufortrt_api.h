@@ -108,16 +108,6 @@ extern "C" {
           int async_arg,
           bool never_deallocate);
 
-  void* gpufortrt_copy(
-         void* hostptr,
-         std::size_t num_bytes,
-         bool never_deallocate);
-  void* gpufortrt_copy_async(
-         void* hostptr,
-         std::size_t num_bytes,
-         int async_arg,
-         bool never_deallocate);
-
   // other runtime calls
 
   void gpufortrt_update_self(

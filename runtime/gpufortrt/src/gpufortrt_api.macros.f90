@@ -171,7 +171,7 @@ end subroutine
 {#######################################################################################}
 {% macro render_basic_copy_routines() %}
 {#######################################################################################}
-{% for clause in ["create","copyin","copy"] %}
+{% for clause in ["create","copyin"] %}
 !> Map and directly return the corresponding deviceptr.
 function gpufortrt_{{clause}}_b(hostptr,num_bytes,never_deallocate,&
     async_arg) result(deviceptr)
@@ -227,7 +227,7 @@ end function
 {#######################################################################################}
 {% macro render_specialized_copy_routines(datatypes,max_rank) %}
 {#######################################################################################}
-{% for clause in ["create","copyin","copy"] %}
+{% for clause in ["create","copyin"] %}
 {%   for triple in datatypes -%}
 !> Map and directly return the corresponding deviceptr.
 !> (Specialized version for Fortran scalar arguments)
@@ -342,7 +342,7 @@ end function
 {{ render_interface("gpufortrt_"+clause,datatypes,max_rank,False) }}
 
 {% endfor %}
-{% for clause in ["create","copyin","copy"] %}
+{% for clause in ["create","copyin"] %}
 {{ render_interface("gpufortrt_"+clause,datatypes,max_rank) }}
 
 {% endfor %}

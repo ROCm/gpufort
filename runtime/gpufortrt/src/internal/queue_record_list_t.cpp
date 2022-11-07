@@ -18,6 +18,10 @@ const gpufortrt::internal::queue_record_t& gpufortrt::internal::queue_record_lis
   return this->records[i];  
 }
 
+size_t gpufortrt::internal::queue_record_list_t::size() {
+  return this->records.size();
+}
+
 void gpufortrt::internal::queue_record_list_t::reserve(int capacity) {
   this->records.reserve(capacity); 
 }

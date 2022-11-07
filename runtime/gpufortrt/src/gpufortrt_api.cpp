@@ -18,16 +18,16 @@ void gpufortrt_set_default_async(int async_arg) {
   gpufortrt::internal::default_async_arg = async_arg;
 }
 
-void gpufortrt_set_device_num(int dev_num, gpufortrt_device_t dev_type) {
+void gpufortrt_set_device_num(int dev_num) {
   HIP_CHECK(hipSetDevice(dev_num)) // TODO backend specific, externalize
 }
 
-int gpufortrt_get_device_num(gpufortrt_device_t dev_type) {
+int gpufortrt_get_device_num() {
   int dev_num;
   HIP_CHECK(hipGetDevice(&dev_num))
   return dev_num;
 }
-#ifdef notNecessary
+
 size_t gpufortrt_get_property(int dev_num,
                               gpufortrt_device_property_t property) {
   switch ( property ) {
@@ -37,11 +37,11 @@ size_t gpufortrt_get_property(int dev_num,
       HIP_CHECK(hipMemGetInfo(&free, &total))
       return total;
       break;
-    case gpufortrt_free_memory:
-      size_t free;
-      size_t total;
-      HIP_CHECK(hipMemGetInfo(&free, &total))
-      return free;
+    case gpufortrt_property_free_memory:
+      size_t freeMem;
+      size_t totalMem;
+      HIP_CHECK(hipMemGetInfo(&freeMem, &totalMem))
+      return freeMem;
       break;
     case gpufortrt_property_shared_memory_support:
       int result;
@@ -69,13 +69,13 @@ char* gpufortrt_get_property_string_f(int dev_num,
                                       gpufortrt_device_property_t property) {
   return gpufortrt_get_property_string(dev_num-1,property);
 }
-#endif
+
 // Explicit Fortran interfaces that assume device number starts from 1
-void gpufortrt_set_device_num_f(int dev_num, gpufortrt_device_t dev_type) {
-  gpufortrt_set_device_num(dev_num-1,dev_type);
+void gpufortrt_set_device_num_f(int dev_num) {
+  gpufortrt_set_device_num(dev_num-1);
 }
-int gpufortrt_get_device_num_f(gpufortrt_device_t dev_type) {
-  return gpufortrt_get_device_num(dev_type)+1;
+int gpufortrt_get_device_num_f() {
+  return gpufortrt_get_device_num()+1;
 }
 
 void gpufortrt_mapping_init(
@@ -671,7 +671,7 @@ int gpufortrt_async_test_device(int wait_arg, int dev_num) {
 }
 
 int gpufortrt_async_test_all() {
-  for (size_t i = 0; i < gpufortrt::internal::queue_record_list.records.size(); i++) {
+  for (size_t i = 0; i < gpufortrt::internal::queue_record_list.size(); i++) {
     auto& queue = gpufortrt::internal::queue_record_list[i].queue;
     HIP_CHECK(hipStreamQuery(queue))// TODO backend specific, externalize
   } 

@@ -10,6 +10,7 @@ LDFLAGS = $(shell gpufort --print-acc-ldflags) -lgfortran
 
 # sources
 TEST_SRC      = \
+				./test_acc_is_present.f90 \
 				./test_structured_region_00.f90 \
 				./test_structured_region_01.f90 \
 				./test_structured_region_02.f90 \

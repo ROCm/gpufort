@@ -38,10 +38,10 @@ size_t gpufortrt_get_property(int dev_num,
       return total;
       break;
     case gpufortrt_property_free_memory:
-      size_t freeMem;
-      size_t totalMem;
-      HIP_CHECK(hipMemGetInfo(&freeMem, &totalMem))
-      return freeMem;
+      size_t free_mem;
+      size_t total_mem;
+      HIP_CHECK(hipMemGetInfo(&free_mem, &total_mem))
+      return free_mem;
       break;
     case gpufortrt_property_shared_memory_support:
       int result;

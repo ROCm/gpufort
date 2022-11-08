@@ -292,31 +292,26 @@ contains
     resultptr = gpufortrt_use_device_c_impl(hostptr,opt_if_arg,opt_if_present_arg)
   end function
 
-  function gpufortrt_is_present(data_arg, bytes) result(isOnDeviceMemory) 
+  logical function gpufortrt_is_present(data_arg, bytes) 
     use iso_c_binding
+    implicit none
     !
     type(*), target, dimension(..)::data_arg
     integer(c_int),value,intent(in) :: bytes
     !
-    logical::isOnDeviceMemory
+    logical::is_on_device_memory
     !
     interface
-      function gpufortrt_is_present_c_impl(data_arg, bytes) &
-        bind(c,name="gpufortrt_present") result(isOnDeviceMemory) 
+      type(c_ptr) function gpufortrt_is_present_c_impl(data_arg, bytes) &
+        bind(c,name="gpufortrt_present") 
           use iso_c_binding
+          implicit none
           !
           type(c_ptr), value::data_arg
           integer(c_size_t),value :: bytes
-          !
-          type(c_ptr)::isOnDeviceMemory
-          !
       end function
     end interface
-    if(c_associated(gpufortrt_is_present_c_impl(c_loc(data_arg),int(bytes,kind=c_size_t)))) then
-      isOnDeviceMemory = .true.
-    else
-      isOnDeviceMemory = .false.
-    end if
+    gpufortrt_is_present = c_associated(gpufortrt_is_present_c_impl(c_loc(data_arg),int(bytes,kind=c_size_t)))
   end function
 
 end module

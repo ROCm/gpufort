@@ -299,8 +299,6 @@ contains
     type(*), target, dimension(..)::data_arg
     integer(c_int),value,intent(in) :: bytes
     !
-    logical::is_on_device_memory
-    !
     interface
       type(c_ptr) function gpufortrt_is_present_c_impl(data_arg, bytes) &
         bind(c,name="gpufortrt_present") 
@@ -308,7 +306,7 @@ contains
           implicit none
           !
           type(c_ptr), value::data_arg
-          integer(c_size_t),value :: bytes
+          integer(c_size_t), value :: bytes
       end function
     end interface
     gpufortrt_is_present = c_associated(gpufortrt_is_present_c_impl(c_loc(data_arg),int(bytes,kind=c_size_t)))

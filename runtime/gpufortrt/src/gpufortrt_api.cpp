@@ -30,18 +30,15 @@ int gpufortrt_get_device_num() {
 
 size_t gpufortrt_get_property(int dev_num,
                               gpufortrt_device_property_t property) {
+  size_t free, total;
   switch ( property ) {
     case gpufortrt_property_memory:
-      size_t free;
-      size_t total;
       HIP_CHECK(hipMemGetInfo(&free, &total))
       return total;
       break;
     case gpufortrt_property_free_memory:
-      size_t free_mem;
-      size_t total_mem;
-      HIP_CHECK(hipMemGetInfo(&free_mem, &total_mem))
-      return free_mem;
+      HIP_CHECK(hipMemGetInfo(&free, &total))
+      return free;
       break;
     case gpufortrt_property_shared_memory_support:
       int result;

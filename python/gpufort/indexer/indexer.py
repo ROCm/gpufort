@@ -741,7 +741,6 @@ def init_index(index):
         parent_dir, "..", "..","..","include"
       )
     )
-    print(gpufort_include_dir)
     load_gpufort_module_files([gpufort_include_dir],index)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)

@@ -589,24 +589,18 @@ def search_scope_for_value_expr(scope,expr):
              and index record if available. (No index record might be
              returned if expression refers to intrinsic)
     """
-    value_type = indexertypes.ValueType.UNKNOWN
-    index_record = None
     try:
-       index_record = search_scope_for_var(scope, expr, 
+       irecord = search_scope_for_var(scope, expr, 
           consider_implicit = False)
-       value_type = indexertypes.ValueType.VARIABLE
     except util.error.LookupError:
         try:
             # todo: check EXTERNAL procedures too 
-            index_record = search_scope_for_procedure(scope, expr) # just check if the procedure exists
-            value_type = indexertypes.ValueType.PROCEDURE
+            irecord = search_scope_for_procedure(scope, expr) # just check if the procedure exists
         except util.error.LookupError:
-            if is_intrinsic(expr):
-                value_type = indexertypes.ValueType.INTRINSIC
-            else:
-                try:
-                    index_record = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
-                    value_type = indexertypes.ValueType.VARIABLE
-                except:
-                    raise util.error.LookupError("expression '"+expr+"' could not be associated with any variable (explicitly or implicitly declared), procedure, or intrinsic")
-    return (value_type, index_record)
+            try:
+                irecord = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
+            except:
+                raise util.error.LookupError(
+                  "expression '"+expr+"' could not be associated with any variable (explicitly or implicitly declared), procedure, or intrinsic"
+                )
+    return irecord

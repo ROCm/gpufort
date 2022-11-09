@@ -4,33 +4,33 @@ import enum
 
 from .. import tree
 
-def _visit_values(expr,parents,lvalues,rvalues):
-  """Traversal action that collects lvalues and rvalues, 
-  excludes numbers and characters."""
-  if isinstance(expr,tree.TTValue):
-      if isinstance(expr._value,(tree.TTNumber,
-                                 tree.TTCharacter)):
-          pass
-      elif isinstance(expr,tree.TTRvalue):
-          rvalues.append(expr)
-      elif isinstance(expr,tree.TTLvalue):
-          lvalues.append(expr)
+#def _visit_values(expr,parents,lvalues,rvalues):
+#  """Traversal action that collects lvalues and rvalues, 
+#  excludes numbers and characters."""
+#  if isinstance(expr,tree.TTValue):
+#      if isinstance(expr._value,(tree.TTNumber,
+#                                 tree.TTCharacter)):
+#          pass
+#      elif isinstance(expr,tree.TTRvalue):
+#          rvalues.append(expr)
+#      elif isinstance(expr,tree.TTLvalue):
+#          lvalues.append(expr)
 
 def find_lvalues_and_rvalues(ttnode,lvalues,rvalues):
     """Collect lvalues and rvalues, exclude numbers and characters."""
-    tree.traversals.traverse(
-        ttnode,
-        _visit_values,
-        tree.traversals.no_action,
-        tree.traversals.no_crit,
-        lvalues,
-        rvalues)
+    for child in ttnode.walk_preorder():
+        if isinstance(child,tree.TTRvalue):
+            rvalues.append(child)
+        elif isinstance(child,tree.TTLvalue):
+            lvalues.append(child)
 
-def search_index_for_value(ttvalue,scope):
-    pass
-
-def search_scope_for_value(ttvalue,scope):
-    pass
+    #tree.traversals.traverse(
+    #    ttnode,
+    #    _visit_values,
+    #    tree.traversals.no_action,
+    #    tree.traversals.no_crit,
+    #    lvalues,
+    #    rvalues)
 
 class ArithExprInfo:
     """:todo: For the time being, we ignore
@@ -66,16 +66,9 @@ class ArithExprInfo:
     #            self._ttarithexpr,
     #            self._compute_rank_action)
 
-
-#class AssignmentType(enum.Enum):
-#    UNIDENTIFIED = 0
-#    LHS_ARRAY = 1
-#    LHS_SCALAR_RHS_REDUCTION_INTRINSIC_EVAL = 2
-
 class AssignmentInfo:
 
     def __init__(self,ttassignment,scope):
-        self._type = AssignmentType.UNIDENTIFIED
         self._assignment = ttassignment
         self._main_rvals_and_ops = []
         self._scope = scope

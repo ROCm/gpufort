@@ -3,6 +3,9 @@
 class SyntaxError(Exception):
     pass
 
+class SemanticError(Exception):
+    pass
+
 class LimitationError(Exception):
     pass
 

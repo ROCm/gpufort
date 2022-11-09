@@ -235,7 +235,6 @@ def find_all_matching_exclude_directives(ttnode,
                 traverse_(el)
     traverse_(ttnode)
     return result
-
 def search_value_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
     """All lvalue and ralue exprs in the subtree.
     :note: Returns simplified expressions, stripped off all array indexing syntax.
@@ -263,7 +262,7 @@ def vars_in_subtree(ttnode, scope):
         cond1 = (isinstance(node,tree.TTValue)
                 and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTTensorEval)))
         if cond1 and isinstance(node._value, tree.TTTensorEval):
-            return node._value.is_tensor()
+            return node._value.is_array_access()
         else:
             return cond1 
     result = search_value_exprs_in_subtree(ttnode, search_filter, scope)
@@ -275,7 +274,7 @@ def arrays_in_subtree(ttnode, scope):
         cond1 = (isinstance(node,tree.TTValue) 
                 and isinstance(node._value, tree.TTTensorEval))
         if cond1 and isinstance(node._value, tree.TTTensorEval):
-            return node._value.is_tensor()
+            return node._value.is_array_access()
         else:
             return cond1 
 
@@ -288,7 +287,7 @@ def inout_arrays_in_subtree(ttnode, scope):
         cond1 = (isinstance(node,tree.TTLvalue) 
                 and isinstance(node._value, tree.TTTensorEval))
         if cond1 and isinstance(node._value, tree.TTTensorEval):
-            return node._value.is_tensor()
+            return node._value.is_array_access()
         else:
             return cond1 
 

@@ -52,6 +52,7 @@ gpufort_cpp_symbols = {
 max_directive_line_width = 80
 unconverted = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
 depend_todo = "TODO(gpufort) - specify depend inputs"
+
 fortran_2_c_type_map = {
     "character": {
         "": "char",
@@ -123,6 +124,32 @@ fortran_2_c_type_map = {
     "type": {
       "dim3" : "dim3",
     },
+}
+
+bytes_2_c_type = {
+  "character": {
+     1: "char",
+  },
+  "complex": {
+     8: "hipDoubleComplex",
+     4: "hipFloatComplex",
+  },
+  "real": {
+     16: "long double",
+     8: "double",
+     4: "float",
+     2: "_Float16",
+  },
+  "integer": {
+     8: "long",
+     4: "int",
+     2: "short",
+     1: "char",
+  },
+  "logical": {
+     4: "int",
+     1: "bool",
+  },
 }
 
 fortran_type_2_bytes_map = { # x86_64

@@ -154,7 +154,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
 
             stcomputeconstruct.problem_size = mykernelgen.problem_size
             stcomputeconstruct.block_size = mykernelgen.block_size
-        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+        except (util.error.SyntaxError, util.error.SemanticError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
                     stcomputeconstruct._linemaps[0]["file"],stcomputeconstruct.min_lineno(),stcomputeconstruct.max_lineno(),e.args[0])
             e.args = (msg,)
@@ -191,7 +191,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                                      fortran_filegen)
             
             stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
-        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+        except (util.error.SyntaxError, util.error.SemanticError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
                     stprocedure._linemaps[0]["file"],stprocedure.min_lineno(),stprocedure.max_lineno(),e.args[0])
             print(stprocedure.statements())

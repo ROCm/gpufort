@@ -897,6 +897,7 @@ def run_checked(*args,**kwargs):
             IOError,
             FileNotFoundError,
             util.error.SyntaxError,
+            util.error.SemanticError,
             util.error.LimitationError,
             util.error.LookupError) as e:
         msg = str(e)

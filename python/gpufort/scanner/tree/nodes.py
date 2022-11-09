@@ -354,7 +354,7 @@ class STNode:
                   self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
                 if transformed:
                     self._modify_linemaps(transformed_code)
-        except (util.error.SyntaxError,
+        except (util.error.SyntaxError, util.errorSematicError
                 util.error.LimitationError,
                 util.error.LookupError) as err:
             filepath = self._linemaps[0]["file"]
@@ -584,7 +584,7 @@ class STProcedure(STContainerBase):
                 self.c_result_type = "void"
                 self.parse_result = translator.parse_procedure_body(
                     self.code, scope, None)
-        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+        except (util.error.SyntaxError, util.error.SemanticError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
                     self._linemaps[0]["file"],self.min_lineno(),self.max_lineno(),e.args[0])
             e.args = (msg,)
@@ -687,7 +687,7 @@ class STComputeConstruct(STNode):
         # todo: pass linemaps to the translator, will improve error messages too
         try:
             self.parse_result = translator.parse_compute_construct(self.code, scope)
-        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+        except (util.error.SyntaxError, util.error.SemanticError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
                     self._linemaps[0]["file"],self.min_lineno(),self.max_lineno(),e.args[0])
             e.args = (msg,)

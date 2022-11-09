@@ -3,7 +3,7 @@
 import re
 
 # third-party modules
-#import cPyparsing as pyp, todo: unfortunately, evhub/cpyparsing seems to generate different parse tree
+#import cPyparsing as pyp # todo: unfortunately, evhub/cpyparsing seems to generate different parse tree
 # underlying pyparsing implementation might be too oudated (is from "python2.4 times").
 # Substantial performance gains might make it worth it to investigate this further.
 
@@ -80,10 +80,9 @@ class Grammar:
     def _init_data_types(self,ignorecase):
         flags = self._re_flags(ignorecase)
         self.identifier = pyp.pyparsing_common.identifier.copy()
-        self.integer    = pyp.pyparsing_common.integer.copy()
-        self.number     = pyp.Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
+        self.number = pyp.Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
         self.logical = pyp.Regex(r"\.(true|false)\.", flags)
-        self.character  = pyp.QuotedString('"', escQuote='\\') | pyp.QuotedString("'", escQuote="\\")
+        self.character = pyp.QuotedString("'", escQuote="\\")
 
     def _init_arith_expr(self,
           ignorecase,
@@ -155,18 +154,27 @@ class Grammar:
         derived_type_rvalue <<= self.derived_type_elem | self.tensor_eval | self.identifier
        
         # self.rvalue, self.lvalue 
-        self.conversion = pyp.Forward()
-        self.inquiry_function = pyp.Forward()
+        #self.conversion = pyp.Forward()
+        #self.inquiry_function = pyp.Forward()
         self.rvalue = (
-          self.conversion 
-          | self.inquiry_function 
-          | self.derived_type_elem 
+          self.derived_type_elem 
           | self.tensor_eval 
           | self.identifier 
           | self.logical 
           | self.character 
           | self.number
         )# |: ordered OR, order is import
+        # legacy
+        #self.rvalue = (
+        #  self.conversion 
+        #  | self.inquiry_function 
+        #  | self.derived_type_elem 
+        #  | self.tensor_eval 
+        #  | self.identifier 
+        #  | self.logical 
+        #  | self.character 
+        #  | self.number
+        #)# |: ordered OR, order is import
         self.lvalue = (
           self.derived_type_elem 
           | self.tensor_eval 
@@ -210,64 +218,64 @@ class Grammar:
         # for now, always assume conversion between complex and float types
         # todo: handle directly in function call
         # todo: better support for intrinsics in indexer
-        func_kind = (
-          self.COMMA 
-          + ( self.KIND + self.EQ + self.arith_expr )
-        ) # emits one token # todo: generalize to keyword argument
-        single_arg_plus_kind = (
-          self.LPAR 
-          + (~func_kind+self.arith_expr) 
-          + pyp.Optional(func_kind,default=None) 
-          + self.RPAR
-        ) # emits 2 tokens: *,*,*
-        double_arg_plus_kind = (
-          self.LPAR 
-          + (~func_kind+self.arith_expr) 
-          + pyp.Optional(self.COMMA 
-          + (~func_kind+self.arith_expr),default="0") 
-          + pyp.Optional(func_kind,default=None)
-          + self.RPAR 
-        ) # emits 2 tokens: *,*
-        
-        self.convert_to_extract_real   = ( self.REAL | self.FLOAT ) + single_arg_plus_kind # emits 2 tokens,
-        self.convert_to_double         = self.DBLE   + single_arg_plus_kind # emits 2 tokens,
-        self.convert_to_complex        = self.CMPLX  + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
-        self.convert_to_double_complex = self.DCMPLX + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
-        self.extract_imag              = self.AIMAG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> y
-        self.conjugate                 = self.CONJG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
-        self.conjugate_double_complex  = self.DCONJG + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
-        
-        self.conversion <<= (
-          self.convert_to_extract_real
-          | self.convert_to_double
-          | self.convert_to_complex
-          | self.convert_to_double_complex
-          | self.extract_imag
-          | self.conjugate
-          | self.conjugate_double_complex
-        )        
-        # inquiry functions
-        inquiry_function_arg = ( 
-          self.lvalue 
-          + pyp.Optional(
-              self.COMMA
-              + pyp.Optional(self.DIM + self.EQ) 
-              + self.arith_expr,default=None
-          ) 
-          + pyp.Optional(
-              self.COMMA
-              + pyp.Optional(self.KIND + self.EQ)
-              + self.arith_expr,default=None
-          )
-        )
-        self.size_inquiry = self.SIZE   + self.LPAR + inquiry_function_arg + self.RPAR  
-        self.lbound_inquiry = self.LBOUND + self.LPAR + inquiry_function_arg + self.RPAR 
-        self.ubound_inquiry = self.UBOUND + self.LPAR + inquiry_function_arg + self.RPAR 
-        self.inquiry_function <<= (
-          self.size_inquiry
-          | self.lbound_inquiry
-          | self.ubound_inquiry
-        )
+        #func_kind = (
+        #  self.COMMA 
+        #  + ( self.KIND + self.EQ + self.arith_expr )
+        #) # emits one token # todo: generalize to keyword argument
+        #single_arg_plus_kind = (
+        #  self.LPAR 
+        #  + (~func_kind+self.arith_expr) 
+        #  + pyp.Optional(func_kind,default=None) 
+        #  + self.RPAR
+        #) # emits 2 tokens: *,*,*
+        #double_arg_plus_kind = (
+        #  self.LPAR 
+        #  + (~func_kind+self.arith_expr) 
+        #  + pyp.Optional(self.COMMA 
+        #  + (~func_kind+self.arith_expr),default="0") 
+        #  + pyp.Optional(func_kind,default=None)
+        #  + self.RPAR 
+        #) # emits 2 tokens: *,*
+        #
+        #self.convert_to_extract_real   = ( self.REAL | self.FLOAT ) + single_arg_plus_kind # emits 2 tokens,
+        #self.convert_to_double         = self.DBLE   + single_arg_plus_kind # emits 2 tokens,
+        #self.convert_to_complex        = self.CMPLX  + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
+        #self.convert_to_double_complex = self.DCMPLX + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
+        #self.extract_imag              = self.AIMAG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> y
+        #self.conjugate                 = self.CONJG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+        #self.conjugate_double_complex  = self.DCONJG + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+        #
+        #self.conversion <<= (
+        #  self.convert_to_extract_real
+        #  | self.convert_to_double
+        #  | self.convert_to_complex
+        #  | self.convert_to_double_complex
+        #  | self.extract_imag
+        #  | self.conjugate
+        #  | self.conjugate_double_complex
+        #)        
+        ## inquiry functions
+        #inquiry_function_arg = ( 
+        #  self.lvalue 
+        #  + pyp.Optional(
+        #      self.COMMA
+        #      + pyp.Optional(self.DIM + self.EQ) 
+        #      + self.arith_expr,default=None
+        #  ) 
+        #  + pyp.Optional(
+        #      self.COMMA
+        #      + pyp.Optional(self.KIND + self.EQ)
+        #      + self.arith_expr,default=None
+        #  )
+        #)
+        #self.size_inquiry = self.SIZE   + self.LPAR + inquiry_function_arg + self.RPAR  
+        #self.lbound_inquiry = self.LBOUND + self.LPAR + inquiry_function_arg + self.RPAR 
+        #self.ubound_inquiry = self.UBOUND + self.LPAR + inquiry_function_arg + self.RPAR 
+        #self.inquiry_function <<= (
+        #  self.size_inquiry
+        #  | self.lbound_inquiry
+        #  | self.ubound_inquiry
+        #)
 
     def _init_fortran_statements(self,ignorecase):
         self.fortran_subroutine_call = self.CALL + self.tensor_eval

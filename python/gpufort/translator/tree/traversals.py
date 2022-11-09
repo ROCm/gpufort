@@ -53,11 +53,8 @@ def find_all_matching(obj, filter_expr=lambda x: True, N=-1):
         elif isinstance(curr, base.TTNode):
             for child in curr.child_nodes():
                 descend_(child)
-
     descend_(obj)
     return result
-
-
 def find_first_matching(obj, filter_expr=lambda x: True):
     """
     Find first node in tree where the filte returns true.
@@ -87,7 +84,6 @@ def find_all(obj, ):
                 descend(child)
     descend(obj)
     return result
-
 def find_all(obj, searched_type, N=-1):
     """Find all nodes in tree of type 'searched_type'.
     """
@@ -106,8 +102,6 @@ def find_all(obj, searched_type, N=-1):
                 descend(child)
     descend(obj)
     return result
-
-
 def find_first(obj, searched_type):
     """Find first node in tree of type 'searched_type'.
     """

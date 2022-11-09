@@ -5,3 +5,4 @@ from .analysis import *
 from . import fortran
 from . import acc
 from . import cuf
+from . import semantics

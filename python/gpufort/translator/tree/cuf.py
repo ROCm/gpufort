@@ -91,12 +91,11 @@ class TTCufKernelDo(base.TTNode):
                     self._stream = launch_params[-1] # optional
 
         def child_nodes(self):
-            return [self._num_outer_loops_to_map,
-                    self._grid,
-                    self._block,
-                    self._sharedmem,
-                    self._stream]
-
+            yield self._num_outer_loops_to_map
+            yield self._grid
+            yield self._block
+            yield self._sharedmem
+            yield self._stream
 #    def discover_reduction_candidates(self):
 #        return True
 #

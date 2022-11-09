@@ -36,43 +36,43 @@ EMPTY_TYPE = {
 }
 
 EMPTY_PROCEDURE = {
-    "name": None,
-    "kind": None,
-    "result_name": None,
-    "attributes": [],
-    "dummy_args": [],
-    "variables": [],
-    "procedures": [],
-    "used_modules": [],
-    # meta information
-    "file" : None,
-    "lineno" : -1,
+  "name": None,
+  "kind": None,
+  "result_name": None,
+  "attributes": [],
+  "dummy_args": [],
+  "variables": [],
+  "procedures": [],
+  "used_modules": [],
+  # meta information
+  "file" : None,
+  "lineno" : -1,
 }
 
 EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": [], "index": [], "implicit": None}
 SCOPE_ENTRY_TYPES = ["types", "variables", "procedures"]
 
 EMPTY_VAR = {
-        "name"   : None,
-        "f_type" : None,
-        "len"    : None,
-        "kind"   : None,
-        "params" : [],
-        # todo: bytes per element can be computed on the fly
-        "bytes_per_element" : None,
-        "c_type" : None,
-        "attributes" : [],
-        # ACC/OMP
-        "declare_on_target" : None,
-        # arrays
-        "bounds" : [],
-        "rank"   : -1,
-        # parse rhs if necessary
-        "rhs" : None,
-        # meta information
-        "module": None, # todo: Compare vs parent_tag in scope variables
-        "file" : None,
-        "lineno" : -1,
+  "name"   : None,
+  "f_type" : None,
+  "len"    : None,
+  "kind"   : None,
+  "params" : [],
+  # todo: bytes per element can be computed on the fly
+  "bytes_per_element" : None,
+  "c_type" : None,
+  "attributes" : [],
+  # ACC/OMP
+  "declare_on_target" : None,
+  # arrays
+  "bounds" : [],
+  "rank"   : -1,
+  # parse rhs if necessary
+  "rhs" : None,
+  # meta information
+  "module": None, # todo: Compare vs parent_tag in scope variables
+  "file" : None,
+  "lineno" : -1,
 }
 
 def new_scope():

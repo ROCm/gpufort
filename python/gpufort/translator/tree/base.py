@@ -37,12 +37,20 @@ class TTNode(object):
         return self.__class__.__name__ + ':' + str(self.__dict__)
 
     def child_nodes(self):
-        result = []
-        for key, value in self.__dict__.items():
-            if key != "parent":
-                result.append(value)
-        return result
+        """yield from empty tuple"""
+        yield from ()
+    
+    def walk_preorder(self):
+        yield self
+        for child in self.child_nodes():
+            yield from child.walk_preorder()
+    
 
+    def walk_postorder(self):
+        for child in self.child_nodes():
+            yield from child.walk_postorder()
+        yield self
+  
     def overwrite_fstr(self,expr):
         self._fstr = expr
     
@@ -67,12 +75,11 @@ class TTNone(TTNode):
     def __iter__(self):
         return None
     def child_nodes(self):
-        return [] 
+        return []
     def cstr(self):
         return "" 
     def fstr(self):
         return ""
-
 class FlowStatementMarker:
     pass
 
@@ -99,7 +106,8 @@ class TTContainer(TTNode,FlowStatementMarker):
         self.body.append(node)
 
     def child_nodes(self):
-        return self.body
+        for child in self.body:
+            yield child
 
     def header_cstr(self):
         return ""

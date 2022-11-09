@@ -15,309 +15,15 @@ from . import traversals
 
 import enum
 
-class TTSimpleToken(base.TTNode):
+class VarExpr(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._text = " ".join(tokens)
-
-    def cstr(self):
-        return "{};".format(self._text.lower())
-
-    def fstr(self):
-        return str(self._text)
-
-class TTReturn(base.TTNode,base.FlowStatementMarker):
-
-    def _assign_fields(self, tokens):
-        self._result_name = ""
-
-    def cstr(self):
-        if self._result_name != None and len(self._result_name):
-            return "return " + self._result_name + ";"
-        else:
-            return "return;"
-
-    def fstr(self):
-        return "return"
-
-class TTLabel(base.TTNode,base.FlowStatementMarker):
-
-    def _assign_fields(self, tokens):
-        self._label = tokens[0]
-        self.is_exit_marker = False
-        self.is_standalone = False
-
-    def cstr(self):
-        result = "_"+self._label+":"
-        if self.is_exit_marker:
-            result = "_" + result
-        if self.is_standalone:
-            result += " ;"
-        return result
-
-class TTContinue(base.TTNode,base.FlowStatementMarker):
-    def cstr(self):
-        return ";"
-
-    def fstr(self):
-        return "continue"
-
-class TTCycle(base.TTNode,base.FlowStatementMarker):
-
-    def _assign_fields(self, tokens):
-        self._result_name = ""
-        self._in_loop = True
-
-    def cstr(self):
-        if self._label != None:
-            # cycle label in loop is prefixed by single "_"
-            return "goto _{};".format(self._label)    
-        else:
-            if self._in_loop:
-                return "continue;"
-            elif self._result_name != None and len(self._result_name):
-                return "return " + self._result_name + ";"
-            else:
-                return "return;"
-
-    def fstr(self):
-        return "cycle {}".format(self.label)
-
-class TTExit(base.TTNode,base.FlowStatementMarker):
-
-    def _assign_fields(self, tokens):
-        self._label = tokens[0]
-        self._result_name = ""
-        self._in_loop = True
-
-    def cstr(self):
-        if self._label != None:
-            # exit label after loop is prefixed by "__"
-            return "goto __{};".format(self._label)    
-        else:
-            if self._in_loop:
-                return "break;"
-            elif self._result_name != None and len(self._result_name):
-                return "return " + self._result_name + ";"
-            else:
-                return "return;"
-
-    def fstr(self):
-        return "exit {}".format(self.label)
-
-class TTUnconditionalGoTo(base.TTNode,base.FlowStatementMarker):
-    #todo: More complex expressions possible with jump label list
-    #todo: Target numeric label can be renamed to identifier (deleted Fortran feature)
-    def _assign_fields(self, tokens):
-        self._label = tokens[0]
-
-    def cstr(self):
-        return "goto _{};".format(self._label.rstrip("\n"))
-
-class TTBlank(base.TTNode):
-    
-    def _assign_fields(self, tokens):
-        self._text = tokens[0] 
-
-    def cstr(self):
-        return self._text 
-
-    def fstr(self):
-        return self._text 
-
-class TTCommentedOut(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._text = " ".join(tokens)
-
-    def cstr(self):
-        return "// {}".format(self._text)
-
-
-class TTIgnore(base.TTNode):
-
-    def cstr(self):
-        return ""
-
-class TTLiteral(base.TTNode):
-    LOGICAL = "logical"
-    CHARACTER = "character"
-    INTEGER = "integer"
-    REAL = "real"
-            
-    def _assign_fields(self, tokens):
-        """
-        Expected inputs for 
-        """
-        self._raw_value = tokens[0]
-        self._value = self._raw_value
-        self._kind = None
-        if "_" in self._raw_value:
-            parts = self._raw_value.rsplit("_",maxsplit=1)
-            if not parts[1].endswith("'"):
-                # '_' was not in the middle of character string
-                self._value = parts[0]
-                self._kind = parts[1] 
-        self._size = None
-    
-    @property
-    def value(self):
-        return self._value
-    
-    @property
-    def kind(self):
-        return self._kind
-
-    @property
-    def resolved(self):
-        return self._size != None
-
-    @property
-    def size(self):
-        assert self._size != None
-        return self._size
-
-    @size.setter
-    def set_size(self,size):
-        self._size = size 
-   
-    @property
-    def rank(self):
-        return 0
-
-    def fstr(self):
-        return self._raw_value
- 
-class TTCharacter(TTLiteral):
-
-    @property
-    def type(self):
-        return TTLiteral.CHARACTER 
-    
-    def cstr(self):
-        raise util.error.LimitationError("not supported")
-
-    def fstr(self):
-        return self._value
-
-class TTLogical(TTLiteral):
-
-    @property
-    def type(self):
-        return TTLiteral.LOGICAL
-
-    def cstr(self):
-        if self.size == "1":
-            return "true" if self._value.lower() == ".true." else "false"
-        else:
-            return "1" if self._value.lower() == ".true." else "0"
-
-class TTNumber(TTLiteral):
-
-    def _assign_fields(self, tokens):
-        TTLiteral._assign_fields(tokens)
-        if "." in self._value:
-            self._type = TTLiteral.REAL 
-        else:
-            self._type = TTLiteral.INTEGER
-    
-    @property
-    def type(self):
-        return self._type
-
-#    def is_real_of_kind(self,kind):
-#        """:return: If the number is a real (of a certain kind)."""
-#        if self._kind == None:
-#            return kind == None
-#        else:
-#            if kind in opts.fortran_type_2_bytes_map["real"]:
-#                has_exponent_e = "e" in self._value
-#                has_exponent_d = "d" in self._value
-#                has_exponent = has_exponent_e or has_exponent_d
-#                default_real_bytes = opts.fortran_type_2_bytes_map["real"][
-#                    ""].strip()
-#                kind_bytes = opts.fortran_type_2_bytes_map["real"][kind].strip()
-#                if self._kind == None: # no suffix
-#                    cond = False
-#                    cond = cond or (has_exponent_d and kind_bytes == "8")
-#                    cond = cond or (has_exponent_e and
-#                                    kind_bytes == default_real_bytes)
-#                    cond = cond or (not has_exponent and
-#                                    kind_bytes == default_real_bytes)
-#                    return cond
-#                else:
-#                    if self._kind in opts.fortran_type_2_bytes_map["real"]:
-#                        kind_bytes = opts.fortran_type_2_bytes_map["real"][
-#                            self._kind].strip()
-#                        return kind_bytes == self._kind_bytes
-#                    else:
-#                        raise util.error.LookupError(\
-#                          "no number of bytes found for kind '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(self._kind))
-#                        sys.exit(2) # todo: error code
-#            else:
-#                raise util.error.LookupError(\
-#                  "no number of bytes found for kind '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(kind))
-#                sys.exit(2) # todo: error code
-#        else:
-#            return False
-#
-#    def is_integer_of_kind(self,kind):
-#        """:return: If the number is an integer (of a certain kind)."""
-#        if not self.type ==  and kind != None:
-#            if kind in opts.fortran_type_2_bytes_map["integer"]:
-#                has_exponent_e = "e" in self._value
-#                has_exponent_d = "d" in self._value
-#                has_exponent = has_exponent_e or has_exponent_d
-#                default_integer_bytes = opts.fortran_type_2_bytes_map[
-#                    "integer"][""].strip()
-#                kind_bytes = opts.fortran_type_2_bytes_map["integer"][
-#                    kind].strip()
-#                if self._kind == None: # no suffix
-#                    return kind_bytes == default_integer_bytes
-#                else: # suffix
-#                    if suffix in opts.fortran_type_2_bytes_map["integer"]:
-#                        suffix_bytes = opts.fortran_type_2_bytes_map[
-#                            "integer"][suffix].strip()
-#                        return kind_bytes == suffix_bytes
-#                    else:
-#                        raise util.error.LookupError("no number of bytes found for suffix '{}' in 'translator.opts.fortran_type_2_bytes_map[\"integer\"]'".format(suffix))
-#            else:
-#                raise util.error.LookupError(\
-#                  "no number of bytes found for kind '{}' in 'translator.opts.fortran_type_2_bytes_map[\"integer\"]'".format(kind))
-#        else:
-#            return is_integer
-
-    def cstr(self):
-        # todo: check kind parameter in new semantics part
-        if self._type = TTLiteral.REAL:
-            if self.size == 4:
-                return self._value + "f"
-            elif self.size == 8:
-                return self._value.replace("d", "e")
-            else:
-                raise util.error.LimitationError("only single & double precision floats supported")
-        elif self._type == TTLiteral.INTEGER
-            if self.size == 16:
-                return self._value + "LL"
-            elif self.size == 8:
-                return self._value + "L"
-            else:
-                # short is typically promoted to int
-                return self._value
-    
-    def __str__(self):
-        return "TTNumber(val:"+str(self._value)+",kind:"+self._kind+")"
-    __repr__ = __str__
-
-class Typed(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._index_record = None
+        self._irecord = None
         self._bytes_per_element = None 
     
     @property
     def partially_resolved(self):
-        return self._index_record != None
+        return self._irecord != None
    
     @property
     def resolved(self):
@@ -327,18 +33,18 @@ class Typed(base.TTNode):
         )
  
     @property
-    def index_record(self):
+    def irecord(self):
         assert self.partially_resolved
-        return self._index_record 
+        return self._irecord 
     
-    @index_record.setter
-    def set_index_record(self,index_record):
-        self._index_record = index_record 
+    @irecord.setter
+    def set_irecord(self,irecord):
+        self._irecord = irecord
    
     def _get_type_defining_record(self):
         """:return: An index record that describes the type
         of an expression. Per default it is the main record."""
-        return self.index_record 
+        return self.irecord 
 
     @property 
     def type(self):
@@ -361,31 +67,31 @@ class Typed(base.TTNode):
     def ctype(self):
         assert self.fully_resolved
         return opts.bytes_2_c_type[
-          self._type][self._bytes_per_element] 
+          self.type][self.bytes_per_element] 
 
     @property 
     def rank(self):
         assert self.partially_resolved
-        return self.index_record["rank"] > 0
+        return self.irecord["rank"] > 0
 
-class TTIdentifier(Typed):
+class TTIdentifier(VarExpr):
         
     def _assign_fields(self, tokens):
         self._name = tokens[0]
-        Typed._assign_fields(self,tokens)
+        VarExpr._assign_fields(self,tokens)
 
     def fstr(self):
         return str(self._name)
 
     def cstr(self):
-        return self.fstr()
+        return self.fstr().lower()
 
     def __str__(self):    
         return "TTIdentifier(name:"+str(self._name)+")"
     __repr__ = __str__
 
 
-class TTTensorEval(Typed):
+class TTTensorEval(VarExpr):
     
     def _assign_fields(self, tokens):
         self._name = tokens[0]
@@ -393,11 +99,11 @@ class TTTensorEval(Typed):
             self._args = tokens[1]
         else:
             self._args = base.TTNone
-        Typed._assign_fields(self,tokens)
+        VarExpr._assign_fields(self,tokens)
     
     # override
     def _get_type_defining_record(self):
-        record = self.index_record
+        record = self.
         if "rank" in record
             return record
         else:
@@ -437,23 +143,23 @@ class TTTensorEval(Typed):
         return len(self._args) 
 
     def is_array_access(self):
-        return if "rank" in self.index_record
+        return if "rank" in self.
  
     def is_func_call(self):
         return not self.is_array_access()
     
     def is_intrinsic_call(self):
         assert self.is_func_call()
-        return "intrinsic" in self.index_record["attributes"])
+        return "intrinsic" in self.irecord["attributes"]
    
     def is_elemental_func_call(self):
         assert self.is_func_call()
-        return "elemental" in self.index_record["attributes"])
+        return "elemental" in self.irecord["attributes"]
 
     def is_conversion_call(self):
         """:note: Conversions are always elemental."""
         assert self.is_elemental_call()
-        return "conversion" in self.index_record["attributes"])
+        return "conversion" in self.irecord["attributes"]
   
     @property 
     def rank(self):
@@ -524,16 +230,20 @@ class TTValue(base.TTNode):
     @property
     def kind(self):
         return self.get_type_defining_node().kind
+    
+    @property
+    def bytes_per_element(self):
+        return self.get_type_defining_node().bytes_per_element
 
     @property
     def rank(self):
         return self.get_rank_defining_node().rank
 
     @property
-    def index_record(self):
+    def (self):
         ttnode = self.get_type_defininig_node()
         if isinstance(ttnode,(TTIdentifier,TTFunctionCall)):
-            return ttnode.index_record()
+            return ttnode.()
         else:
             return None
 
@@ -859,12 +569,28 @@ class TTDerivedTypeMember(base.TTNode):
         self._type, self._element = tokens
         #print(self._type)
         self._cstr = None
+
+    @property
+    def type(self):
+        return self.get_type_defining_node().type
     
     @property
-    def index_record(self):
-        return self._value.index_record
+    def kind(self):
+        return self.get_type_defining_node().kind
+    
+    @property
+    def bytes_per_element(self):
+        return self.get_type_defining_node().bytes_per_element
 
-    def get_children(self):
+    @property
+    def rank(self):
+        return self.get_rank_defining_node().rank
+    
+    @property
+    def (self):
+        return self._value.
+
+    def child_nodes(self):
         yield self._type
         yield self._element
 
@@ -910,10 +636,6 @@ class TTDerivedTypeMember(base.TTNode):
             if current._type.rank > 0:
                 return current._type
         return current._element 
-
-    @property
-    def rank(self):
-        return self.get_rank_defining_node().rank
 
     def slice_args(self):
         """Returns all range args in the order of their appeareance.
@@ -961,14 +683,6 @@ class TTDerivedTypeMember(base.TTNode):
     __repr__ = __str__
 
 
-class TTSubroutineCall(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._subroutine = tokens[0]
-
-    def cstr(self):
-        return self._subroutine.cstr() + ";"
- 
 def _need_to_add_brackets(op,other_opd):
     return isinstance(other_opd,(TTUnaryOp,TTBinaryOpChain))
 
@@ -987,16 +701,22 @@ class TTUnaryOp(base.TTNode):
     
     def child_nodes(self):
         yield self.opd
-   
-    @property
-    def rank(self):
-        assert isinstance(self.opd,TTRvalue)
-        return self.opd.rank
     
     @property
-    def index_record(self):
-        assert isinstance(self.opd,TTRvalue)
-        return self.opd.index_record
+    def type(self):
+        return self.opd.type
+    
+    @property
+    def kind(self):
+        return self.opd.kind
+    
+    @property
+    def bytes_per_element(self):
+        return self.opd.bytes_per_element
+
+    @property
+    def rank(self):
+        return self.opd.rank
  
     def _op_c_template(self):
         return TTUnaryOp.f2c.get(self.op.lower())
@@ -1128,12 +848,6 @@ class TTBinaryOpChain(base.TTNode):
     @property
     def operators(self):
         return self.exprs[1::2]
-
-  
-    @property
-    def operators(self):
-        pass
-
 
     def child_nodes(self):
         for opd in self.operands:
@@ -1433,131 +1147,6 @@ class TTArgumentList(base.TTNode):
         else:
             return ""
 
-class TTDo(base.TTContainer):
-
-    def _assign_fields(self, tokens):
-        self._begin, self._end, self._step, self.body = tokens
-        self.numeric_do_label = None
-    @property
-    def index(self):
-        return self._begin._lhs
-    @property
-    def first(self):
-        return self._begin._rhs
-    @property
-    def last(self):
-        return self._end
-    @property
-    def step(self):
-        return self._step
-    def has_step(self):
-        return self._step != None
-    def child_nodes(self):
-        yield self.body; yield self._begin; yield self._end; yield self._step
-class TTUnconditionalDo(base.TTContainer):
-    def _assign_fields(self, tokens):
-        self.body = tokens[0]
-        self.numeric_do_label = None
-    def child_nodes(self):
-        return []
-    def header_cstr(self):
-        return "while (true) {{\n"
-    def footer_cstr(self):
-        return "}\n" 
-class TTBlock(base.TTContainer):
-    def _assign_fields(self, tokens):
-        self.indent = "" # container of if/elseif/else branches, so no indent
-    def header_cstr(self):
-        return "{{\n"
-    def footer_cstr(self):
-        return "}\n" 
-
-class TTIfElseBlock(base.TTContainer):
-    def _assign_fields(self, tokens):
-        self.indent = "" # container of if/elseif/else branches, so no indent
-
-class TTIfElseIf(base.TTContainer):
-
-    def _assign_fields(self, tokens):
-        self._else, self._condition, self.body = tokens
-
-    def child_nodes(self):
-        yield self._condition; yield self.body
-    
-    def header_cstr(self):
-        prefix = self._else+" " if self._else != None else ""
-        return "{}if ({}) {{\n".format(prefix,traversals.make_cstr(self._condition))
-    def footer_cstr(self):
-        return "}\n" 
-
-class TTElse(base.TTContainer):
-    
-    def header_cstr(self):
-        return "else {\n"
-    def footer_cstr(self):
-        return "}\n" 
-
-    def cstr(self):
-        body_content = base.TTContainer.cstr(self)
-        return "{}{}\n{}".format(
-            self.header_cstr(),
-            body_content,
-            self.footer_cstr())
-
-class TTSelectCase(base.TTContainer):
-    def _assign_fields(self, tokens):
-        self.selector = tokens[0]
-        self.indent = "" # container of if/elseif/else branches, so no indent
-    def header_cstr(self):
-        return "switch ({}) {{\n".format(self.selector)
-    def footer_cstr(self):
-        return "}\n" 
-
-class TTCase(base.TTContainer):
-
-    def _assign_fields(self, tokens):
-        self.cases, self.body = tokens
-
-    def child_nodes(self):
-        yield self.cases; yield self.body
-    
-    def header_cstr(self):
-        result = ""
-        for case in self.cases:
-            result += "case ("+traversals.make_cstr(case)+"):\n"
-        return result
-    def footer_cstr(self):
-        return "  break;\n" 
-
-class TTCaseDefault(base.TTContainer):
-
-    def _assign_fields(self, tokens):
-        self.body = tokens[0]
-
-    def child_nodes(self):
-        yield self.body
-    
-    def header_cstr(self):
-        return "default:\n"
-    def footer_cstr(self):
-        return "  break;\n" 
-
-class TTDoWhile(base.TTContainer):
-
-    def _assign_fields(self, tokens):
-        self._condition, self.body = tokens
-        self.numeric_do_label = None
-
-    def child_nodes(self):
-        yield self._condition; yield self.body
-    
-    def header_cstr(self):
-        return "while ({0}) {{\n".format(
-          traversals.make_cstr(self._condition)
-        )
-    def footer_cstr(self):
-        return "  break;\n" 
-
 def set_fortran_parse_actions(grammar):
     grammar.logical.setParseAction(TTLogical)
     grammar.character.setParseAction(TTCharacter)
@@ -1568,16 +1157,6 @@ def set_fortran_parse_actions(grammar):
     grammar.lvalue.setParseAction(TTLvalue)
     grammar.derived_type_elem.setParseAction(TTDerivedTypeMember)
     grammar.tensor_eval.setParseAction(TTTensorEval)
-    #grammar.convert_to_extract_real.setParseAction(TTConvertToExtractReal)
-    #grammar.convert_to_double.setParseAction(TTConvertToDouble)
-    #grammar.convert_to_complex.setParseAction(TTConvertToComplex)
-    #grammar.convert_to_double_complex.setParseAction(TTConvertToDoubleComplex)
-    #grammar.extract_imag.setParseAction(TTExtractImag)
-    #grammar.conjugate.setParseAction(TTConjugate)
-    #grammar.conjugate_double_complex.setParseAction(TTConjugate) # same action
-    #grammar.size_inquiry.setParseAction(TTSizeInquiry)
-    #grammar.lbound_inquiry.setParseAction(TTLboundInquiry)
-    #grammar.ubound_inquiry.setParseAction(TTUboundInquiry)
     grammar.tensor_slice.setParseAction(TTSlice)
     grammar.tensor_eval_args.setParseAction(TTArgumentList)
     grammar.arith_expr.setParseAction(TTArithExpr)

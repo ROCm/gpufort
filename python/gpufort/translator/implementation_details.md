@@ -50,8 +50,9 @@ a%b1%c2_3%d
 In order to parse arithmetic and logical expressions as they appear in
 assignments and conditional expressions as they, e.g., appear in `IF`, `ELSEIF` statements,
 we rely on another `pyparsing` shortcut, `infixNotation`, 
-which take an rvalue-expression and a list of operators and their respective number of operands and their
-associativity. The position of the operator in the list of operators indicates its preference.
+which takes an rvalue-expression and a list of operators and their respective number of operands and their
+associativity. The position of the operator in the list of operators indicates its precedence.
+The operator with the highest precedence must be put at the begin of the list.
 
 **Example 2** (`infixNotation`):
 ```python3
@@ -69,6 +70,34 @@ expr = pyp.infixNotation(terminal, [
 print(expr.parseString("-5 + 3"))
 print(expr.parseString("-5"))
 print(expr.parseString("-( a + (b-1))"))
+```
+
+Be aware that pyparsing's `infixNotation` flattens
+repeated applications of binary
+operator expression that have the same precedence 
+into a single group of tokens.
+
+**Example:**
+
+As '+' and '-' have the same precendence, 
+parsing the expression
+
+```python3
+a + b + c - d
+```
+
+will have pyparsing's infixNotation group the
+tokens as follows: 
+
+```python3
+['a','+','b','+','c','-','d']
+```
+
+While it parses the expression `a + b - c*d`
+as shown below:
+
+```python3
+['a','+','b','-',['c','*','d']]
 ```
 
 #### Parse actions

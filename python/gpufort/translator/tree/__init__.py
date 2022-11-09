@@ -11,7 +11,7 @@ from gpufort import grammar as _grammar
 grammar = _grammar.Grammar(
   ignorecase=True,
   unary_op_parse_action=TTUnaryOp,   
-  binary_op_parse_action=TTBinaryOp
+  binary_op_parse_action=TTBinaryOpChain
 )
 del _grammar    
 

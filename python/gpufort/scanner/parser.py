@@ -754,7 +754,7 @@ def _parse_file(linemaps, index, **kwargs):
                 
                     # todo: check if we can move that outside and then extract only active linemaps when 
                     # translating
-                except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+                except (util.error.SyntaxError, util.error.SemanticError, util.error.LimitationError, util.error.LookupError) as e:
                     msg = "{}:{}:{}".format(
                             current_linemap["file"],current_linemap["lineno"],e.args[0])
                     e.args = (msg,)

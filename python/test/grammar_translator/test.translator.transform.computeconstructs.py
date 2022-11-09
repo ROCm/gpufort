@@ -83,9 +83,9 @@ class TestTransformAcc(unittest.TestCase):
             self.profiler = cProfile.Profile()
             self.profiler.enable()
     def tearDown(self):
+        global PROFILING_ENABLE
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
-        global PROFILING_ENABLE
         if PROFILING_ENABLE:
             self.profiler.disable() 
             s = io.StringIO()
@@ -96,7 +96,7 @@ class TestTransformAcc(unittest.TestCase):
     def test_01_transform(self):
         device_type = "radeon"
         #for i,test in enumerate(testdata[-1:]):
-        for i,test in enumerate(testdata[0:1]):
+        for i,test in enumerate(testdata[0:]):
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
               statements,result_name=None

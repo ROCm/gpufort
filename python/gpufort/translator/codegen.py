@@ -49,7 +49,7 @@ def _handle_reductions(ttcomputeconstruct,ttvalues,grid_dim):
     # 2. Identify reduced variables
     for ttvalue in ttvalues:
         if type(ttvalue._value) in [
-                tree.TTDerivedTypeMember, tree.TTIdentifier
+                tree.TTDerivedTypePart, tree.TTIdentifier
         ]:
             for op, reduced_vars in ttcomputeconstruct.gang_reductions(
             ).items():
@@ -108,9 +108,9 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
 
     c_names = {}
     if map_to_flat_arrays:
-        c_names.update(transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_vars,scope))
+        c_names.update(transformations.map_allocatable_pointer_derived_type_parts_to_flat_arrays(ttvalues,loop_vars,scope))
     if map_to_flat_scalars:
-        c_names.update(transformations.map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope))
+        c_names.update(transformations.map_scalar_derived_type_parts_to_flat_scalars(ttvalues,loop_vars,scope))
     
     num_loops_to_map = len(ttdos)
     if (loop_collapse_strategy == "grid" 

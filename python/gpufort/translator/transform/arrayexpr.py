@@ -25,9 +25,9 @@ def _collect_ranges_in_ttvalue(ttvalue,include_none_values=False):
     current = ttvalue._value
     if isinstance(current,tree.TTTensorEval):
         return _collect_ranges(current._args,include_none_values)
-    elif isinstance(current,tree.TTDerivedTypeMember):
+    elif isinstance(current,tree.TTDerivedTypePart):
         result = []
-        while isinstance(current,tree.TTDerivedTypeMember):
+        while isinstance(current,tree.TTDerivedTypePart):
             if isinstance(current._type,tree.TTTensorEval):
                 result += _collect_ranges(current._type._args,include_none_values)
             if isinstance(current._element,tree.TTTensorEval):

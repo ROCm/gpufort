@@ -1,0 +1,229 @@
+#def _inquiry_str(prefix,ref,dim,kind=""):
+#    result = prefix + "(" + ref
+#    if len(dim):
+#        result += "," + dim
+#    if len(kind):
+#        result += "," + kind
+#    return result + ")"
+#def _inquiry_cstr(prefix,ref,dim,kind,f_type="integer",c_type_expected="int"):
+#    """Tries to determine a C type before calling _inquiry_str.
+#    Wraps the result of the latter function into a typecast
+#    if the C type does not equal the expected type.
+#    """
+#    c_type = conv.convert_to_c_type(f_type,
+#                                    kind,
+#                                    default=None)
+#    result = _inquiry_str(prefix,ref,dim)
+#    if c_type_expected != c_type:
+#        return "static_cast<{}>({})".format(c_type,result)
+#    else:
+#        return result
+#
+#class TTSizeInquiry(base.TTNode):
+#    """Translator tree node for size inquiry function.
+#    """
+#
+#    def _assign_fields(self, tokens):
+#        self._ref, self._dim, self._kind = tokens
+#
+#    def cstr(self):
+#        """
+#        :return: number of elements per array dimension, if the dimension
+#                 is specified as argument.
+#                 Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
+#                 are passed as argument of the extracted kernels.
+#        :note: only the case where <dim> is specified as integer literal is handled by this function.
+#        """
+#        if opts.fortran_style_tensor_eval:
+#            return _inquiry_cstr("size",
+#                                  traversals.make_cstr(self._ref),
+#                                  traversals.make_cstr(self._dim),
+#                                  traversals.make_cstr(self._kind))
+#        else:
+#            if type(self._dim) is TTNumber:
+#                return traversals.make_cstr(self._ref) + "_n" + traversals.make_cstr(
+#                    self._dim)
+#            else:
+#                prefix = "size"
+#                return "/* " + prefix + "(" + traversals.make_fstr(self._ref) + ") */"
+#    def fstr(self):
+#        return _inquiry_str("size",
+#                            traversals.make_fstr(self._ref),
+#                            traversals.make_fstr(self._dim),
+#                            traversals.make_fstr(self._kind))
+#
+#
+#class TTLboundInquiry(base.TTNode):
+#    """
+#    Translator tree node for lbound inquiry function.
+#    """
+#
+#    def _assign_fields(self, tokens):
+#        self._ref, self._dim, self._kind = tokens
+#
+#    def cstr(self):
+#        """
+#        :return: lower bound per array dimension, if the dimension argument is specified as integer literal.
+#                 Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
+#                 are passed as argument of the extracted kernels.
+#        :note:   only the case where <dim> is specified as integer literal is handled by this function.
+#        """
+#        if opts.fortran_style_tensor_eval:
+#            return _inquiry_cstr("lbound",
+#                                  traversals.make_cstr(self._ref),
+#                                  traversals.make_cstr(self._dim),
+#                                  traversals.make_cstr(self._kind))
+#        else:
+#            if type(self._dim) is TTNumber:
+#                return traversals.make_cstr(self._ref) + "_lb" + traversals.make_cstr(
+#                    self._dim)
+#            else:
+#                prefix = "lbound"
+#                return "/* " + prefix + "(" + traversals.make_fstr(self._ref) + ") */"
+#
+#    def fstr(self):
+#        return _inquiry_str("lbound",
+#                            traversals.make_fstr(self._ref),
+#                            traversals.make_fstr(self._dim),
+#                            traversals.make_fstr(self._kind))
+#
+#
+#class TTUboundInquiry(base.TTNode):
+#    """
+#    Translator tree node for ubound inquiry function.
+#    """
+#
+#    def _assign_fields(self, tokens):
+#        self._ref, self._dim, self._kind = tokens
+#
+#    def cstr(self):
+#        """
+#        :return: upper bound per array dimension, if the dimension argument is specified as integer literal.
+#                 Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
+#                 are passed as argument of the extracted kernels.
+#        :note:   only the case where <dim> is specified as integer literal is handled by this function.
+#        """
+#        if opts.fortran_style_tensor_eval:
+#            return _inquiry_cstr("ubound",
+#                                  traversals.make_cstr(self._ref),
+#                                  traversals.make_cstr(self._dim),
+#                                  traversals.make_cstr(self._kind))
+#        else:
+#            if type(self._dim) is TTNumber:
+#                return "({0}_lb{1} + {0}_n{1} - 1)".format(
+#                    traversals.make_cstr(self._ref), traversals.make_cstr(self._dim))
+#            else:
+#                prefix = "ubound"
+#                return "/* " + prefix + "(" + traversals.make_fstr(self._ref) + ") */"
+#    def fstr(self):
+#        return _inquiry_str("ubound",
+#                            traversals.make_fstr(self._ref),
+#                            traversals.make_fstr(self._dim),
+#                            traversals.make_fstr(self._kind))
+#
+#
+#class TTConvertToExtractReal(base.TTNode):
+#
+#    def _assign_fields(self, tokens):
+#        self._ref, self._kind = tokens
+#
+#    def cstr(self):
+#        c_type = conv.convert_to_c_type("real", self._kind).replace(
+#            " ", "_") # todo: check if his anything else than double or float
+#        return "make_{1}({0})".format(
+#            traversals.make_cstr(self._ref),
+#            c_type) # rely on C++ compiler to make the correct type conversion
+#
+#    def fstr(self):
+#        result = "REAL({0}".format(traversals.make_fstr(self._ref))
+#        if not self._kind is None:
+#            result += ",kind={0}".format(traversals.make_fstr(self._kind))
+#        return result + ")"
+#
+#
+#class TTConvertToDouble(base.TTNode):
+#
+#    def _assign_fields(self, tokens):
+#        self._ref, self._kind = tokens
+#
+#    def cstr(self):
+#        return "make_double({0})".format(
+#            traversals.make_cstr(self._ref)
+#        ) # rely on C++ compiler to make the correct type conversion
+#
+#    def fstr(self):
+#        return "DBLE({0})".format(
+#            traversals.make_fstr(self._ref)
+#        ) # rely on C++ compiler to make the correct type conversion
+#
+#
+#class TTConvertToComplex(base.TTNode):
+#
+#    def _assign_fields(self, tokens):
+#        self._x, self._y, self._kind = tokens
+#
+#    def cstr(self):
+#        c_type = conv.convert_to_c_type("complex",
+#                                        self._kind,
+#                                        default=None,
+#                                        float_complex="hipFloatComplex",
+#                                        double_complex="hipDoubleComplex")
+#        return "make_{2}({0}, {1})".format(traversals.make_cstr(self._x),
+#                                           traversals.make_cstr(self._y), c_type)
+#
+#    def fstr(self):
+#        result = "CMPLX({0},{1}".format(traversals.make_fstr(self._x),
+#                                        traversals.make_fstr(self._y))
+#        if not self._kind is None:
+#            result += ",kind={0}".format(traversals.make_fstr(self._kind))
+#        return result + ")"
+#
+#
+#class TTConvertToDoubleComplex(base.TTNode):
+#
+#    def _assign_fields(self, tokens):
+#        self._x, self._y, self._kind = tokens
+#
+#    def cstr(self):
+#        c_type = "double_complex"
+#        return "make_{2}({0}, {1})".format(traversals.make_cstr(self._x),
+#                                           traversals.make_cstr(self._y), c_type)
+#
+#    def fstr(self):
+#        result = "DCMPLX({0},{1}".format(traversals.make_fstr(self._x),
+#                                         traversals.make_fstr(self._y))
+#        return result + ")"
+#
+#
+#class TTExtractImag(base.TTNode):
+#
+#    def _assign_fields(self, tokens):
+#        self._ref, self._kind = tokens
+#
+#    def cstr(self):
+#        return "{0}._y".format(traversals.make_cstr(self._ref))
+#
+#
+#class TTConjugate(base.TTNode):
+#
+#    def _assign_fields(self, tokens):
+#        self._ref, self._kind = tokens
+#
+#    def cstr(self):
+#        return "conj({0})".format(traversals.make_cstr(self._ref))
+#class TTPower(base.TTNode):
+#
+#    def _assign_fields(self, tokens):
+#        self.base, self.exp = tokens
+#
+#    def child_nodes(self):
+#        yield self.base; yield self.exp
+#    def gpufort_fstr(self, scope=None):
+#        return "__pow({base},{exp})".format(base=traversals.make_fstr(self.base),
+#            exp=traversals.make_fstr(self.exp))
+#    def __str__(self):
+#        return self.gpufort_fstr()
+#
+#    def fstr(self):
+#        return "({base})**({exp})".format(\
+#            base=traversals.make_cstr(self.base),exp=traversals.make_cstr(self.exp))

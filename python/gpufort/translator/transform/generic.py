@@ -30,9 +30,9 @@ def _collect_ranges_in_ttvalue(ttvalue,include_none_values=False):
     current = ttvalue._value
     if isinstance(current,tree.TTTensorEval):
         return _collect_ranges(current._args,include_none_values)
-    elif isinstance(current,tree.TTDerivedTypeMember):
+    elif isinstance(current,tree.TTDerivedTypePart):
         result = []
-        while isinstance(current,tree.TTDerivedTypeMember):
+        while isinstance(current,tree.TTDerivedTypePart):
             if isinstance(current._type,tree.TTTensorEval):
                 result += _collect_ranges(current._type._args,include_none_values)
             if isinstance(current._element,tree.TTTensorEval):
@@ -200,7 +200,7 @@ def _collapsed_loop_index_cstr(ttdo,counter):
     return "int {idx} = outermost_index_w_len({args});\n".format(\
            idx=idx,args=",".join(args))
 
-def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_vars,scope):
+def map_allocatable_pointer_derived_type_parts_to_flat_arrays(ttvalues,loop_vars,scope):
     r"""Converts derived type expressions whose innermost element is an array of allocatable or pointer
     type to flat arrays in expectation that these will be provided
     to kernel as flat arrays too.
@@ -210,7 +210,7 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_va
     substitutions = {}
     for ttvalue in ttvalues:
         ttnode = ttvalue.get_value()
-        if isinstance(ttnode,tree.TTDerivedTypeMember):
+        if isinstance(ttnode,tree.TTDerivedTypePart):
             ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
             if (ivar["rank"] > 0
@@ -232,7 +232,7 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_va
                 substitutions[var_expr] = c_name
     return substitutions
 
-def map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope):
+def map_scalar_derived_type_parts_to_flat_scalars(ttvalues,loop_vars,scope):
     r"""Converts derived type expressions whose innermost element is a basic
     scalar type to flat arrays in expectation that these will be provided
     to kernel as flat scalars too via first private.
@@ -242,7 +242,7 @@ def map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope):
     substitutions = {}
     for ttvalue in ttvalues:
         ttnode = ttvalue.get_value()
-        if isinstance(ttnode,tree.TTDerivedTypeMember):
+        if isinstance(ttnode,tree.TTDerivedTypePart):
             ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
             if (ivar["rank"] == 0

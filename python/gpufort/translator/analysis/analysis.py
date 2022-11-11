@@ -260,7 +260,7 @@ def vars_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTValue)
-                and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTTensorEval)))
+                and isinstance(node._value, (tree.TTDerivedTypePart,tree.TTIdentifier,tree.TTTensorEval)))
         if cond1 and isinstance(node._value, tree.TTTensorEval):
             return node._value.is_array_access()
         else:

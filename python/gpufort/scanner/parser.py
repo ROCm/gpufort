@@ -516,7 +516,7 @@ def _parse_file(linemaps, index, **kwargs):
                  and lhs_ivar["rank"] == 0 
                  and lvalue.has_args() 
                  and lhs_ivar["f_type"] in ["integer","real","logical"]):
-                    if util.parsing.is_derived_type_member_access(util.parsing.tokenize(lhs_expr)):
+                    if util.parsing.is_derived_type_part_access(util.parsing.tokenize(lhs_expr)):
                         raise util.error.SyntaxError("result of statement function must not be derived type member")
                     name, args, rhs_expr =\
                         util.parsing.parse_statement_function(current_statement["body"])

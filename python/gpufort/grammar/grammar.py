@@ -81,7 +81,7 @@ class Grammar:
         flags = self._re_flags(ignorecase)
         self.identifier = pyp.pyparsing_common.identifier.copy()
         self.number = pyp.Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
-        self.logical = pyp.Regex(r"\.(true|false)\.", flags)
+        self.logical = pyp.Regex(r"\.(true|false)\.?(_\w+)?", flags)
         self.character = pyp.QuotedString("'", escQuote="\\")
 
     def _init_arith_expr(self,

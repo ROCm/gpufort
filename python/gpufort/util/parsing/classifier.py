@@ -1777,7 +1777,7 @@ class StatementClassifier:
     
     
     @__no_parse_result
-    def is_derived_type_member_access(self,tokens):
+    def is_derived_type_part_access(self,tokens):
         return len(base.get_top_level_operands(tokens,separators=["%"])[0]) > 1
     
     @__no_parse_result

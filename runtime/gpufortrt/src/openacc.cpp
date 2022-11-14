@@ -11,18 +11,38 @@ namespace {
 
   acc_device_t current_device = acc_device_none;
 
+  gpufortrt_device_property_t check_device_property(acc_device_property_t property,bool allow_none=true){
+    switch(property){
+      case acc_property_memory:
+        return gpufortrt_property_memory;
+      case gpufortrt_property_free_memory:
+        return gpufortrt_property_free_memory;
+      case gpufortrt_property_shared_memory_support:
+        return gpufortrt_property_shared_memory_support;
+      case gpufortrt_property_name:
+        return gpufortrt_property_name;
+      case gpufortrt_property_vendor:
+        return gpufortrt_property_vendor;
+      case gpufortrt_property_driver:
+        return gpufortrt_property_driver;
+    }
+  }
+
   bool check_device_type(acc_device_t dev_type,bool allow_none=true) {
     switch (dev_type) {
-      case device_default:
+      case acc_device_default:
         return ::check_device_type(::default_device);
       case acc_device_current:
         return ::check_device_type(::current_device);
       case acc_device_host:
         return acc_device_host;
-      case acc_device_not_host:
-      case acc_device_hip:
-      case acc_device_radeon:
-      case acc_device_nvidia:
+      case acc_device_not_host: 
+      // According to the definition of enum acc_device_t 
+      // the following cases are identical. So, keep one? 
+      // case acc_device_not_host: 
+      // case acc_device_hip: 
+      // case acc_device_radeon: 
+      // case acc_device_nvidia:
         return acc_device_hip;
       case acc_device_none:
         if ( !allow_none ) {
@@ -77,7 +97,7 @@ size_t acc_get_property(int dev_num,
                         acc_device_t dev_type,
                         acc_device_property_t property) {
   if ( ::check_device_type(dev_type) == acc_device_hip ) {
-    return gpufortrt_get_property(dev_num,property);
+    return gpufortrt_get_property(dev_num,check_device_property(property));
   } else {
     throw std::invalid_argument("acc_get_property: only implemented for non-host device types");
   }
@@ -87,7 +107,7 @@ char* acc_get_property_string(int dev_num,
                               acc_device_t dev_type,
                               acc_device_property_t property) {
   if ( ::check_device_type(dev_type) == acc_device_hip ) {
-    return gpufortrt_get_property_string(dev_num,property);
+    return gpufortrt_get_property_string(dev_num,check_device_property(property));
   } else {
     throw std::invalid_argument("acc_get_property_string: only implemented for non-host device types");
   }
@@ -102,7 +122,7 @@ int acc_get_device_num_f(acc_device_t dev_type) {
 }
 
 
-void acc_init(acc_on_device_t dev_type) {
+void acc_init(acc_device_t dev_type) {
   if ( ::check_device_type(dev_type) == acc_device_hip ) {
     gpufortrt_init();
   }
@@ -112,4 +132,11 @@ void acc_shutdown(acc_device_t dev_type) {
   if ( ::check_device_type(dev_type) == acc_device_hip ) {
     gpufortrt_shutdown();
   }
+}
+
+int acc_is_present(void* hostptr,std::size_t num_bytes) {
+  if(gpufortrt_present(hostptr, num_bytes)) 
+    return 1;
+  else 
+    return 0;
 }

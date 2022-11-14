@@ -2,10 +2,11 @@
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #ifndef OPENACC_LIB_H
 #define OPENACC_LIB_H
+#include "gpufortrt_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "gpufortrt_types.h"
+
 
 extern int acc_async_noval;
 extern int acc_async_sync;
@@ -27,7 +28,7 @@ enum acc_device_t {
   acc_device_nvidia = acc_device_hip
 };
 
-enum acc_property_t {
+enum acc_device_property_t {
   acc_property_memory = 0,//>integer,  size of device memory in bytes
   acc_property_free_memory,//>integer,  free device memory in bytes
   acc_property_shared_memory_support,//>integer,  nonzero if the specified device supports sharing memory with the local thread
@@ -61,7 +62,7 @@ char* acc_get_property_string(int dev_num,
                               acc_device_t dev_type,
                               acc_device_property_t property);
 
-void acc_init(acc_on_device_t dev_type);
+void acc_init(acc_device_t dev_type);
 void acc_shutdown(acc_device_t dev_type);
 
 int acc_async_test(int wait_arg);
@@ -141,7 +142,7 @@ void acc_memcpy_from_device(h_void* data_host_dest,
                             d_void* data_dev_src, size_t bytes);
 void acc_memcpy_from_device_async(h_void* data_host_dest,
                                   d_void* data_dev_src, size_t bytes,
-                                  int async_arg)
+                                  int async_arg);
 
 void acc_attach(h_void** ptr_addr);
 void acc_attach_async(h_void** ptr_addr, int async_arg);

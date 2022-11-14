@@ -641,12 +641,6 @@ def _parse_file(linemaps, index, **kwargs):
                         numeric_label = None
                     current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
                     
-                    # We really don't need to create STNodes to implement acc runtime routines
-                    # Is it a good idea to directly modify the source code here?
-                    if util.parsing.is_acc_rtlib(original_statement_lower,modern_fortran):
-                        gpufortrt_acc_rtlib_statement = original_statement.replace("acc_", "gpufortrt_")
-                        current_statement["body"] = gpufortrt_acc_rtlib_statement
-                        current_linemap["modified"] = True
                     if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
                         if openacc and current_tokens[1] == "acc":
                             AccDirective()

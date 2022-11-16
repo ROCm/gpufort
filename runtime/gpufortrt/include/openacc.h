@@ -71,14 +71,16 @@ int acc_async_test_all(void);
 int acc_async_test_all_device(int dev_num);
 
 void acc_wait(int wait_arg);
-void acc_wait_device(int wait_arg, int dev_num);
+void acc_wait_device(int* wait_arg, int num_wait, int dev_num, bool if_arg);
 void acc_wait_async(int wait_arg, int async_arg);
-void acc_wait_device_async(int wait_arg, int async_arg,
-int dev_num);
+void acc_wait_device_async(int* wait_arg, int num_wait, 
+                           int* async_arg, int num_async, 
+                           int dev_num, bool if_arg);
 void acc_wait_all(void);
-void acc_wait_all_device(int dev_num);
+void acc_wait_all_device(int dev_num, bool if_arg);
 void acc_wait_all_async(int async_arg);
-void acc_wait_all_device_async(int async_arg, int dev_num);
+void acc_wait_all_device_async(int* async_arg, int num_async,
+                               int dev_num, bool if_arg);
 
 int acc_get_default_async(void);
 void acc_set_default_async(int async_arg);

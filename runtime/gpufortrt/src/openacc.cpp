@@ -140,3 +140,22 @@ int acc_is_present(void* hostptr,std::size_t num_bytes) {
   else 
     return 0;
 }
+
+void acc_wait_device(int* wait_arg, int num_wait, int dev_num, bool if_arg){
+  gpufortrt_wait_device(wait_arg, num_wait, dev_num, if_arg);
+}
+
+void acc_wait_device_async(int* wait_arg, int num_wait, 
+                           int* async_arg, int num_async,
+                           int dev_num, bool if_arg){
+  gpufortrt_wait_device_async(wait_arg, num_wait, async_arg, num_async, dev_num, if_arg);
+}
+
+void acc_wait_all_device(int dev_num, bool if_arg){
+  gpufortrt_wait_all_device(dev_num, if_arg);
+}
+
+void acc_wait_all_device_async(int* async_arg, int num_async,
+                           int dev_num, bool if_arg){
+  gpufortrt_wait_all_device_async(async_arg, num_async, dev_num, if_arg);
+}

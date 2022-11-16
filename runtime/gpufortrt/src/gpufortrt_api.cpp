@@ -632,7 +632,38 @@ void gpufortrt_wait_all_async(int* async_arg,int num_async,
     }
   }
 }
-  
+
+void gpufortrt_wait_device(int* wait_arg, int num_wait, int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait(wait_arg, num_wait, if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+void gpufortrt_wait_device_async(int* wait_arg, int num_wait, 
+                                 int* async_arg, int num_async, 
+                                 int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait_async(wait_arg, num_wait, async_arg, num_async, if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+void gpufortrt_wait_all_device(int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait_all(if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+void gpufortrt_wait_all_device_async(int* async_arg, int num_async, 
+                                 int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait_all_async(async_arg, num_async, if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
 int gpufortrt_async_test(int wait_arg) {
   gpufortrt::internal::queue_record_list.synchronize(wait_arg);
 }

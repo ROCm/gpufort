@@ -42,6 +42,43 @@ module openacc
   end interface
 
 contains
+
+  subroutine acc_init(dev_type) 
+    use iso_c_binding
+    implicit none
+    !
+    integer(kind=acc_device_kind),value :: dev_type
+      interface
+        subroutine acc_init_c_impl(dev_type) &
+          bind(c,name="acc_init")
+          use iso_c_binding
+          Import::acc_device_kind
+          implicit none
+          !
+          integer(kind=acc_device_kind), value, intent(in):: dev_type
+        end subroutine
+      end interface
+      call acc_init_c_impl(dev_type)
+  end subroutine
+
+  subroutine acc_shutdown(dev_type) 
+    use iso_c_binding
+    implicit none
+    !
+    integer(kind=acc_device_kind),value :: dev_type
+      interface
+        subroutine acc_shutdown_c_impl(dev_type) &
+          bind(c,name="acc_shutdown")
+          use iso_c_binding
+          Import::acc_device_kind
+          implicit none
+          !
+          integer(kind=acc_device_kind), value, intent(in):: dev_type
+        end subroutine
+      end interface
+      call acc_shutdown_c_impl(dev_type)
+  end subroutine
+
   subroutine acc_set_device_type(dev_type) 
       use iso_c_binding
       implicit none
@@ -73,6 +110,44 @@ contains
       end function
     end interface
     acc_get_device_type = int(acc_get_device_type_c_impl(),kind=acc_device_kind)
+  end function
+
+  subroutine acc_set_device_num(dev_num, dev_type) 
+    use iso_c_binding
+    implicit none
+    !
+    integer(kind=acc_device_kind),value, intent(in) :: dev_type
+    integer,value, intent(in) :: dev_num
+    interface
+      subroutine acc_set_device_num_c_impl(dev_num, dev_type) &
+        bind(c,name="acc_set_device_num_f")
+        use iso_c_binding
+        Import::acc_device_kind
+        implicit none
+        !
+        integer(kind=acc_device_kind), value, intent(in):: dev_type
+        integer(c_int),value, intent(in) :: dev_num
+      end subroutine
+    end interface
+    call acc_set_device_num_c_impl(dev_num, dev_type)
+  end subroutine
+
+  integer function acc_get_device_num(dev_type)
+    use iso_c_binding
+    implicit none
+    !
+    integer(kind=acc_device_kind),value :: dev_type
+    interface
+      integer(c_int) function acc_get_device_num_c_impl(dev_type) &
+        bind(c,name="acc_get_device_num_f")
+        use iso_c_binding  
+        Import::acc_device_kind
+        implicit none
+        !
+        integer(kind=acc_device_kind),value :: dev_type
+      end function
+    end interface
+    acc_get_device_num = int(acc_get_device_num_c_impl(dev_type))
   end function
 
   integer function acc_get_num_devices(dev_type)

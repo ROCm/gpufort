@@ -52,7 +52,9 @@ void acc_set_device_type(acc_device_t dev_type);
 acc_device_t acc_get_device_type(void);
 
 void acc_set_device_num(int dev_num, acc_device_t dev_type);
+void acc_set_device_num_f(int dev_num, acc_device_t dev_type);
 int acc_get_device_num(acc_device_t dev_type);
+int acc_get_device_num_f(acc_device_t dev_type);
 
 size_t acc_get_property(int dev_num,
                         acc_device_t dev_type,

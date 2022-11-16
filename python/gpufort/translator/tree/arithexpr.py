@@ -32,11 +32,9 @@ class Literal(base.TTNode):
         self._kind = None
         if "_" in self._raw_value:
             parts = self._raw_value.rsplit("_",maxsplit=1)
-            if not parts[1].endswith("'"):
-                # '_' was not in the middle of character string
-                self._value = parts[0]
-                self._kind = parts[1] 
-        self.bytes_per_element = None
+            self._value = parts[0]
+            self._kind = parts[1] 
+        self._bytes_per_element = None
     
     @property
     def value(self):
@@ -47,22 +45,22 @@ class Literal(base.TTNode):
         return self._kind
 
     @property
-    def resolved(self):
-        return self.bytes_per_element != None
-
-    @property
     def bytes_per_element(self):
-        assert self.bytes_per_element != None
-        return self.bytes_per_element
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
 
     @bytes_per_element.setter
-    def set_size(self,bytes_per_element):
-        self.bytes_per_element = bytes_per_element 
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element 
+
+    @property
+    def resolved(self):
+        return self._bytes_per_element != None
    
     @property
     def rank(self):
         return 0
-
+    
     def fstr(self):
         return self._raw_value
  
@@ -72,7 +70,7 @@ class TTCharacter(Literal):
         self._raw_value = tokens[0]
         self._value = self._raw_value
         self._kind = None
-        self.bytes_per_element = None
+        self._bytes_per_element = None
 
     @property
     def type(self):
@@ -100,9 +98,12 @@ class TTLogical(Literal):
 class TTNumber(Literal):
 
     def _assign_fields(self, tokens):
-        Literal._assign_fields(tokens)
+        Literal._assign_fields(self,tokens)
         if "." in self._value:
             self._type = Literal.REAL 
+            if self._kind == None:
+                if "d" in self._value:
+                    self._kind = "c_double"
         else:
             self._type = Literal.INTEGER
     
@@ -112,14 +113,14 @@ class TTNumber(Literal):
 
     def cstr(self):
         # todo: check kind parameter in new semantics part
-        if self._type = Literal.REAL:
+        if self._type == Literal.REAL:
             if self.bytes_per_element == 4:
                 return self._value + "f"
             elif self.bytes_per_element == 8:
                 return self._value.replace("d", "e")
             else:
                 raise util.error.LimitationError("only single & double precision floats supported")
-        elif self._type == Literal.INTEGER
+        elif self._type == Literal.INTEGER:
             if self.bytes_per_element == 16:
                 return self._value + "LL"
             elif self.bytes_per_element == 8:
@@ -129,7 +130,8 @@ class TTNumber(Literal):
                 return self._value
     
     def __str__(self):
-        return "TTNumber(val:"+str(self._value)+",kind:"+self._kind+")"
+        kind = self._kind if self._kind != None else "<none>"
+        return "TTNumber(val:"+str(self._value)+",kind:"+kind+")"
     __repr__ = __str__
 
 # variable expressions
@@ -157,7 +159,7 @@ class VarExpr(base.TTNode):
         return self._symbol_info 
     
     @symbol_info.setter
-    def set_symbol_info(self,symbol_info):
+    def symbol_info(self,symbol_info):
         self._symbol_info = symbol_info
    
     def _get_type_defining_record(self):
@@ -175,23 +177,23 @@ class VarExpr(base.TTNode):
 
     @property
     def bytes_per_element(self):
-        assert self.fully_resolved
+        assert self.resolved
         return self._bytes_per_element
     
     @bytes_per_element.setter
-    def set_bytes_per_element(self,bytes_per_element):
+    def bytes_per_element(self,bytes_per_element):
         self._bytes_per_element = bytes_per_element 
 
     @property
     def ctype(self):
-        assert self.fully_resolved
+        assert self.resolved
         return opts.bytes_2_c_type[
           self.type][self.bytes_per_element] 
 
     @property 
     def rank(self):
         assert self.partially_resolved
-        return self.symbol_info["rank"] > 0
+        return self.symbol_info["rank"]
 
 class TTIdentifier(VarExpr):
         
@@ -199,6 +201,22 @@ class TTIdentifier(VarExpr):
         self._name = tokens[0]
         VarExpr._assign_fields(self,tokens)
 
+    @property
+    def is_array(self):
+        return self.rank > 0
+
+    @property
+    def is_contiguous_array(self):
+        return self.is_array
+    
+    @property
+    def is_full_array(self):
+        return self.is_array
+    
+    @property
+    def is_scalar(self):
+        return not self.is_array
+  
     def fstr(self):
         return str(self._name)
 
@@ -210,8 +228,8 @@ class TTIdentifier(VarExpr):
     __repr__ = __str__
 
 
-class TTTensorEval(VarExpr):
-    
+class TTFunctionCall(VarExpr):
+ 
     def _assign_fields(self, tokens):
         self._name = tokens[0]
         if len(tokens) > 1:
@@ -235,48 +253,132 @@ class TTTensorEval(VarExpr):
             return ivar
 
     def child_nodes(self):
-        for arg in self._args:
+        for arg in self.args:
             yield arg
 
     def slice_args(self):
         """Returns all range args in the order of their appeareance.
         """
         # todo: double check that this does not descend
-        for arg in self._args:
+        for arg in self.args:
             if isinstance(arg,TTSlice):
                 yield arg
 
-    def is_array_access(self):
-        return if "rank" in self.
+    def is_array_expr(self):
+        """:return: if this expression represents
+        an array section or array element (array section of size 1)."""
+        return "rank" in self.symbol_info
+   
+    @property
+    def is_array(self):
+        """If there is a index range."""
+        assert self.is_array_expr()
+        for i,arg in enumerate(self.args):
+            if isinstance(arg,TTSlice):
+                return True
+        return False
+        
+    @property
+    def is_contiguous_array(self):
+        """Checks if this array section expression
+        is a contiguous section of an original array.
+        
+        Returns true if
+        - no index range has been found at all
+        - or if one or more index range have been found at 
+          the begin of the index argument list
+            - and all bounds and step sizes are unspecified with
+              the only allowed exception being the upper bound of the last index range
+        - or if one index range has been found at the
+          begin of the index argument list and no other index range.
+        """
+        assert self.is_array_expr()
+        last_slice = -1 # must be initialized with -1
+                        # as then: i-last==1 at i=0
+        last_slice_with_ubound = -1
+        last_slice_with_lbound = -1
+        for i,arg in enumerate(self.args):
+            if isinstance(arg,TTSlice):
+                if (
+                    arg.has_stride()
+                    or i - last_slice != 1
+                    or i > 0 and arg.has_lbound()
+                    or last_slice_with_lbound >= 0
+                    or last_slice_with_ubound >= 0
+                  ):
+                    return False
+                if arg.has_lbound():
+                    last_slice_with_lbound = i
+                if arg.has_ubound():
+                    last_slice_with_ubound = i
+                last_slice = i
+        # no strides in any slice at this point
+        return not (
+          last_slice < 0 # is scalar
+          #or last_slice_with_lbound > 1 # lower bound specified for dim other than 0
+          #or last_slice_with_lbound < last_slice # other ranges found after dim with lower bound
+          #or (last_slice_with_ubound >= 0 # upper bound specified for lower dim
+          #   and last_slice_with_ubound < last_slice)
+        )
+    
+    @property
+    def is_scalar(self):
+        """Checks if none of the array index arguments 
+        are index ranges.
+        """
+        assert self.is_array_expr()
+        for arg in self.args:
+            if isinstance(arg,TTSlice):
+                return False
+        return True
+
+    @property
+    def is_full_array(self):
+        """Checks if this array section expression
+        covers all elements of an original array.
+        """
+        assert self.is_array_expr()
+        for arg in self.args:
+            if (not isinstance(arg,TTSlice)
+               or arg.has_lbound()
+               or arg.has_ubound()
+               or arg.has_stride()):
+                return False
+        return True
  
-    def is_func_call(self):
-        return not self.is_array_access()
+    def is_function_call(self):
+        return not self.is_array_expr()
     
     def is_intrinsic_call(self):
-        assert self.is_func_call()
+        assert self.is_function_call()
         return "intrinsic" in self.symbol_info["attributes"]
    
-    def is_elemental_func_call(self):
-        assert self.is_func_call()
+    def is_elemental_function_call(self):
+        assert self.is_function_call()
         return "elemental" in self.symbol_info["attributes"]
 
-    def is_conversion_call(self):
+    def is_converter_call(self):
         """:note: Conversions are always elemental."""
         assert self.is_elemental_call()
         return "conversion" in self.symbol_info["attributes"]
-  
+ 
+    @property
+    def name(self):
+        return self._name
+ 
     @property 
     def rank(self):
-        if self.is_array_access():
+        if self.is_array_expr():
             return len([arg for arg in self.slice_args()])
         else: 
             return self._get_type_defining_record()["rank"] 
 
     def name_cstr(self):
         name = traversals.make_cstr(self._name).lower()
-        if self.is_array_access():
+        if self.is_array_expr():
             return name
         elif self.is_intrinsic_call():
+            # todo
             name = prepostprocess.modernize_fortran_function_name(name)
             if name in [
               "max",
@@ -291,17 +393,17 @@ class TTTensorEval(VarExpr):
     
     # TODO reassess
     def __max_rank_adjusted_items(self):
-        if self.max_rank > 0:
+        if self.rank > 0:
             assert self.max_rank <= len(self.items)
             result = self.items[0:self.max_rank]
         else:
             result = []
         return result
 
-    def __args_cstr(self,name,is_array=False,fortran_style_tensor_eval=True):
+    def __args_cstr(self,name,is_array=False,fortran_style_array_access=True):
         args = self.__max_rank_adjusted_items()
-        if len(args):
-            if (not fortran_style_tensor_eval and is_array):
+        if len(self.args):
+            if (not fortran_style_array_access and is_array):
                 return "[_idx_{0}({1})]".format(name, ",".join([
                     traversals.make_cstr(s) for s in args
                 ])) # Fortran identifiers cannot start with "_"
@@ -312,7 +414,7 @@ class TTTensorEval(VarExpr):
             return ""
 
     def __args_fstr(self):
-        args = self.__max_rank_adjusted_items()
+        args = self.args
         if len(args):
             return "({0})".format(",".join(
                 traversals.make_fstr(el) for el in args))
@@ -325,8 +427,8 @@ class TTTensorEval(VarExpr):
           name,
           self.__args_cstr(
             name,
-            self.is_array_access(),
-            opts.fortran_style_tensor_eval)
+            self.is_array_expr(),
+            opts.fortran_style_array_access)
         ])
     
     def fstr(self):
@@ -337,7 +439,7 @@ class TTTensorEval(VarExpr):
             ])
     
     def __str__(self):
-        return "TTTensorEval(name:"+str(self._name)+",is_array_access:"+str(self.is_array_access())+")"
+        return "TTFunctionCall(name:"+str(self._name)+",is_array_expr:"+str(self.is_array_expr())+")"
     __repr__ = __str__
 
 class TTDerivedTypePart(base.TTNode):
@@ -388,7 +490,7 @@ class TTDerivedTypePart(base.TTNode):
     def get_innermost_member(self):
         """:return: inner most derived type member.
         """
-        for current in walk_derived_type_parts_preorder():
+        for current in self.walk_derived_type_parts_preorder():
             pass
         return current
 
@@ -415,8 +517,35 @@ class TTDerivedTypePart(base.TTNode):
         return current._element 
 
     @property
+    def is_array(self):
+        """:note: Does not require array to be contiguous.
+                  Expressions like array(:)%scalar are thus 
+                  allowed too. Hence we use the rank-defining 
+                  derived type part.
+        """
+        return self.get_rank_defining_node().is_array
+        
+    @property
+    def is_contiguous_array(self):
+        """note: Only applicable to innermost element.
+                 hence we use the innermost, the type-defining, 
+                 derived type part."""
+        return self.get_type_defining_node().is_contiguous_array
+    
+    @property
+    def is_full_array(self):
+        """note: Only applicable to innermost element.
+                 hence we use the innermost, the type-defining, 
+                 derived type part."""
+        return self.get_type_defining_node().is_full_array
+    
+    @property
+    def is_scalar(self):
+        return self.get_type_defining_node().is_scalar
+
+    @property
     def args(self):
-        if isinstance(self._value,TTTensorEval):
+        if isinstance(self._value,TTFunctionCall):
             yield from self._value.args()
         else:
             yield from ()
@@ -424,7 +553,7 @@ class TTDerivedTypePart(base.TTNode):
     def slice_args(self):
         """Returns all range args in the order of their appeareance.
         """
-        if isinstance(self._value,TTTensorEval):
+        if isinstance(self._value,TTFunctionCall):
             yield from self._value.slice_args()
         else:
             yield from ()
@@ -436,7 +565,7 @@ class TTDerivedTypePart(base.TTNode):
         while isinstance(current,TTDerivedTypePart):
             current = current._element
             result += "%"+converter(self._type)
-        if isinstance(current,TTTensorEval):
+        if isinstance(current,TTFunctionCall):
             result += "%"+converter(current._name)
         else: # TTIdentifier
             result += "%"+converter(current)
@@ -467,9 +596,9 @@ class TTValue(base.TTNode):
         self._reduction_index = None
         self._fstr = None
 
-    def get_type_defininig_node(self):
+    def get_type_defining_node(self):
         if isinstance(self._value,(TTDerivedTypePart)):
-            return self._value.get_innermost_member()._element
+            return self._value.get_type_defininig_node()
         else:
             return self._value
 
@@ -509,20 +638,36 @@ class TTValue(base.TTNode):
                  In case of a derived type, excludes the argument
                  list of the innermost member.
         """
-        if type(self._value) is TTTensorEval:
+        if type(self._value) is TTFunctionCall:
             return converter(self._value._name)
         elif type(self._value) is TTDerivedTypePart:
             return self._value.identifier_part(converter)
         else:
             return converter(self._value)
     
+    @property
+    def is_array(self):
+        return self.get_rank_defining_node().is_array
+    
+    @property
+    def is_scalar(self):
+        return self.get_rank_defining_node().is_scalar
+    
+    @property
+    def is_contiguous_array(self):
+        return self.get_type_defining_node().is_contiguous_array
+    
+    @property
+    def is_full_array(self):
+        return self.get_type_defining_node().is_full_array
+    
     def is_function_call(self):
-        """:note: TTTensorEval instances must be flagged as tensor beforehand.
+        """:note: TTFunctionCall instances must be flagged as tensor beforehand.
         """
         # todo: check if detect all arrays in indexer/scope
         # so that we do not need to know function names anymore.
-        if type(self._value) is TTTensorEval:
-            return not self._value.is_array_access()
+        if type(self._value) is TTFunctionCall:
+            return self._value.is_function_call()
         elif type(self._value) is TTDerivedTypePart:
             # todo: support type bounds routines
             return False
@@ -536,7 +681,7 @@ class TTValue(base.TTNode):
         return self._value.fstr()
 
     def slice_args(self):
-        if type(self._value) is TTTensorEval:
+        if type(self._value) is TTFunctionCall:
             yield from self._value.slice_args()
         elif type(self._value) is TTDerivedTypePart:
             yield from self._value.innermost_member_slice_args()
@@ -545,7 +690,7 @@ class TTValue(base.TTNode):
    
     @property    
     def args(self):
-        if type(self._value) is TTTensorEval:
+        if type(self._value) is TTFunctionCall:
             yield from self._value._args
         elif type(self._value) is TTDerivedTypePart:
             yield from self._value.innermost_member_args()
@@ -561,7 +706,7 @@ class TTValue(base.TTNode):
     def cstr(self):
         result = traversals.make_cstr(self._value)
         if self._reduction_index != None:
-            if opts.fortran_style_tensor_eval:
+            if opts.fortran_style_array_access:
                 result += "({idx})".format(idx=self._reduction_index)
             else:
                 result += "[{idx}]".format(idx=self._reduction_index)
@@ -580,6 +725,14 @@ class TTRvalue(TTValue):
 def _need_to_add_brackets(op,other_opd):
     return isinstance(other_opd,(TTUnaryOp,TTBinaryOpChain))
 
+class OperatorType(enum.Enum):
+    UNKNOWN = 0
+    POW = 1 # only applicable to number types (integer,real,complex)
+    ADD = 2 # only applicable to number types (integer,real,complex)
+    MUL = 3 # only applicable to number types (integer,real,complex)
+    COMP = 4 # only applicable to number types (integer,real,complex)
+    LOGIC = 5 # only applicable to logical types
+
 class TTUnaryOp(base.TTNode):
     f2c = {
       ".not.": "!{r}",
@@ -589,6 +742,20 @@ class TTUnaryOp(base.TTNode):
     
     def _assign_fields(self, tokens):
         self.op, self.opd = tokens[0]
+        self._op_type = None
+    
+    def operator_type(self):
+        """:return: a characteristic operator for 
+        the binary operators aggregated in this chain
+        of binary operations.
+        """
+        if self._op_type == None:
+            op = self.operators[0].lower()
+            if op in ["+","-"]:
+                self._op_type = OperatorType.ADD
+            else:
+                self._op_type =  OperatorType.LOGIC
+        return self._op_type 
     
     def child_nodes(self):
         yield self.opd
@@ -596,10 +763,6 @@ class TTUnaryOp(base.TTNode):
     @property
     def type(self):
         return self.opd.type
-    
-    @property
-    def kind(self):
-        return self.opd.kind
     
     @property
     def bytes_per_element(self):
@@ -647,14 +810,6 @@ class TTBinaryOpChain(base.TTNode):
     as below:
     ['a','+','b','-',['c','*','d']]
     """
-
-    class OperatorType(enum.Enum):
-        UNKNOWN = 0
-        POW = 1 # only applicable to number types (integer,real,complex)
-        ADD = 2 # only applicable to number types (integer,real,complex)
-        MUL = 3 # only applicable to number types (integer,real,complex)
-        COMP = 4 # only applicable to number types (integer,real,complex)
-        LOGIC = 5 # only applicable to logical types
     
     f2c = {
       "**":"__pow({l},{r})",
@@ -746,23 +901,15 @@ class TTBinaryOpChain(base.TTNode):
         assert self._type != None
         return self._type
     @type.setter
-    def set_type(self,typ):
+    def type(self,typ):
         self._type = typ
-    
-    @property
-    def kind(self):
-        assert self._kind != None
-        return self._kind
-    @kind.setter
-    def set_kind(self,kind):
-        self._kind = kind
     
     @property
     def rank(self):
         assert self._rank != None
         return self._rank
     @rank.setter
-    def set_rank(self,rank):
+    def rank(self,rank):
         self._rank = rank
  
     @property
@@ -770,7 +917,7 @@ class TTBinaryOpChain(base.TTNode):
         assert self._bytes_per_element != None
         return self._bytes_per_element
     @bytes_per_element.setter
-    def set_bytes_per_element(self,bytes_per_element):
+    def bytes_per_element(self,bytes_per_element):
         self._bytes_per_element = bytes_per_element
 
     def child_nodes(self):
@@ -832,10 +979,6 @@ class TTArithExpr(base.TTNode):
     @property
     def type(self):
         return self._expr.type
-    
-    @property
-    def kind(self):
-        return self._expr.kind
 
     @property
     def rank(self):
@@ -844,6 +987,22 @@ class TTArithExpr(base.TTNode):
     @property
     def bytes_per_element(self):
         return self._expr.bytes_per_element
+    
+    @property
+    def is_array(self):
+        return self._expr.is_array
+
+    @property
+    def is_contiguous_array(self):
+        return self._expr.is_contiguous_array
+    
+    @property
+    def is_full_array(self):
+        return self._expr.is_full_array
+    
+    @property
+    def is_scalar(self):
+        return self._expr.is_scalar
 
     def walk_rvalues_preorder(self):
         """Yields all TTDerivedTypePart instances.
@@ -964,36 +1123,32 @@ class TTSlice(base.TTNode):
     @property
     def type(self):
         return self._ubound.type
-    
     @property
     def kind(self):
         return self._ubound.kind
-    
     @property
     def bytes_per_element(self):
         return self._ubound.bytes_per_element
-
     @property
     def rank(self):
         return self._ubound.rank
 
-    def set_loop_var(self, name):
-        self._loop_var = name
+    def has_lbound(self):
+        return self._lbound != None
+    def has_ubound(self):
+        return self._ubound != None
+    def has_stride(self):
+        return self._stride != None
 
     def l_bound(self, converter=traversals.make_cstr):
         return converter(self._lbound)
-
     def u_bound(self, converter=traversals.make_cstr):
         return converter(self._ubound)
-
-    def unspecified_l_bound(self):
-        return not len(self.l_bound())
-
-    def unspecified_u_bound(self):
-        return not len(self.u_bound())
-
     def stride(self, converter=traversals.make_cstr):
         return converter(self._stride)
+
+    def set_loop_var(self, name):
+        self._loop_var = name
 
     def size(self, converter=traversals.make_cstr):
         result = "{1} - ({0}) + 1".format(converter(self._lbound),
@@ -1041,7 +1196,7 @@ def set_arith_expr_parse_actions(grammar):
     grammar.rvalue.setParseAction(TTRvalue)
     grammar.lvalue.setParseAction(TTLvalue)
     grammar.derived_type_elem.setParseAction(TTDerivedTypePart)
-    grammar.tensor_eval.setParseAction(TTTensorEval)
+    grammar.function_call.setParseAction(TTFunctionCall)
     grammar.tensor_slice.setParseAction(TTSlice)
     grammar.arith_expr.setParseAction(TTArithExpr)
     grammar.complex_arith_expr.setParseAction(

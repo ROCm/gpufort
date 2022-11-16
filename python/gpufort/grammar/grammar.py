@@ -7,9 +7,10 @@ import re
 # underlying pyparsing implementation might be too oudated (is from "python2.4 times").
 # Substantial performance gains might make it worth it to investigate this further.
 
-import pyparsing as pyp
-
-import functools 
+try:
+    import cPyparsing as pyp
+except:
+    import pyparsing as pyp
     
 pyp.ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
 pyp.ParserElement.enablePackrat()
@@ -80,6 +81,7 @@ class Grammar:
     def _init_data_types(self,ignorecase):
         flags = self._re_flags(ignorecase)
         self.identifier = pyp.pyparsing_common.identifier.copy()
+        self.identifier_no_action = self.identifier.copy()
         self.number = pyp.Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
         self.logical = pyp.Regex(r"\.(true|false)\.?(_\w+)?", flags)
         self.character = pyp.QuotedString("'", escQuote="\\")
@@ -140,25 +142,30 @@ class Grammar:
         self.complex_arith_expr = pyp.Forward()
         self.arith_expr = pyp.Forward()
         
-        self.tensor_eval_arg = pyp.Forward()
-        self.tensor_eval_args = pyp.Optional(pyp.delimitedList(self.tensor_eval_arg))
-        self.tensor_eval = self.identifier + self.LPAR + self.tensor_eval_args + self.RPAR # emits 2 tokens
+        self.function_call_arg = pyp.Forward()
+        self.function_call_args = pyp.Optional(pyp.delimitedList(self.function_call_arg))
+        self.function_call = ( 
+          self.identifier_no_action 
+          + self.LPAR
+          + self.function_call_args
+          + self.RPAR # emits 1* tokens
+        )
         
         # derived_types
         derived_type_rvalue = pyp.Forward()
         self.derived_type_elem = (
-          ( self.tensor_eval | self.identifier ) 
+          ( self.function_call | self.identifier ) 
           + self.ELEM 
           + derived_type_rvalue 
         )
-        derived_type_rvalue <<= self.derived_type_elem | self.tensor_eval | self.identifier
+        derived_type_rvalue <<= self.derived_type_elem | self.function_call | self.identifier
        
         # self.rvalue, self.lvalue 
         #self.conversion = pyp.Forward()
         #self.inquiry_function = pyp.Forward()
         self.rvalue = (
           self.derived_type_elem 
-          | self.tensor_eval 
+          | self.function_call 
           | self.identifier 
           | self.logical 
           | self.character 
@@ -169,7 +176,7 @@ class Grammar:
         #  self.conversion 
         #  | self.inquiry_function 
         #  | self.derived_type_elem 
-        #  | self.tensor_eval 
+        #  | self.function_call 
         #  | self.identifier 
         #  | self.logical 
         #  | self.character 
@@ -177,7 +184,7 @@ class Grammar:
         #)# |: ordered OR, order is import
         self.lvalue = (
           self.derived_type_elem 
-          | self.tensor_eval 
+          | self.function_call 
           | self.identifier
         )
        
@@ -204,13 +211,13 @@ class Grammar:
         )
         COLON = pyp.Literal(":").suppress()
         opt_arith_expr = pyp.Optional(self.arith_expr,default=None)
-        self.tensor_slice = pyp.Group(
-          ( opt_arith_expr + COLON + opt_arith_expr + COLON + opt_arith_expr )
+        self.tensor_slice = ( 
+          ( opt_arith_expr + COLON + opt_arith_expr + COLON + self.arith_expr )
           | ( opt_arith_expr + COLON + opt_arith_expr )
-        ) 
+        )
         # define forward declared tokens
         self.argument = self.tensor_slice | self.arith_expr
-        self.tensor_eval_arg <<= self.argument | self.keyword_argument
+        self.function_call_arg <<= self.argument | self.keyword_argument
         
         # conversion functions
         # todo: check type of variable when translating
@@ -278,7 +285,7 @@ class Grammar:
         #)
 
     def _init_fortran_statements(self,ignorecase):
-        self.fortran_subroutine_call = self.CALL + self.tensor_eval
+        self.fortran_subroutine_call = self.CALL + self.function_call
 
     def _init_cuda_fortran_keywords(self,ignorecase):
         literal_cls = self._literal_cls(ignorecase)
@@ -475,7 +482,7 @@ class Grammar:
           ((self.identifier + self.EQ) | self.CALL).suppress()
           + cuda_api 
           + self.LPAR 
-          + pyp.Optional(self.tensor_eval_args,default=None) 
+          + pyp.Optional(self.function_call_args,default=None) 
           + self.RPAR 
         ) # emits 3 tokens -> *,
 

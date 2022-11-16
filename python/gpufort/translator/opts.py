@@ -3,7 +3,7 @@
 # general options
 log_prefix = "translator"
 comment = r"(!|^\s*[\*cCdD])[^\$].+"
-fortran_style_tensor_eval = True
+fortran_style_array_access = True
         # For a Fortran tensor access, emit `a(i,j,k,...)`
         # instead of the C style `a[_idx_a(i,j,k)]`.
         # This assumes that the generated kernel code makes use
@@ -154,70 +154,70 @@ bytes_2_c_type = {
 
 fortran_type_2_bytes_map = { # x86_64
     "character": {
-        "": "1",
-        "c_char": "1"
+        None: 1,
+        "c_char": 1,
     },
     "complex": {
-        "": "2*4",
-        "16": "2*16",
-        "8": "2*8",
-        "4": "2*4",
-        "2": "2*2",
-        "1": "2*1",
-        "c_float_complex": "2*4",
-        "c_double_complex": "2*8",
-        "c_long_double_complex": "2*16"
+        None: 2*4,
+        "16": 2*16,
+        "8": 2*8,
+        "4": 2*4,
+        "2": 2*2,
+        "1": 2*1,
+        "c_float_complex": 2*4,
+        "c_double_complex": 2*8,
+        "c_long_double_complex": 2*16,
     },
     "doubleprecision": {
-        "": "8"
+        None: 8,
     },
     "real": {
-        "": "4",
-        "16": "16",
-        "8": "8",
-        "4": "4",
-        "2": "2",
-        "1": "1",
-        "c_float": "4",
-        "c_double": "8",
-        "c_long_double": "16",
-        "c_float128": "16",
-        "c_float128_complex": "16"
+        None: 4,
+        "16": 16,
+        "8": 8,
+        "4": 4,
+        "2": 2,
+        "1": 1,
+        "c_float": 4,
+        "c_double": 8,
+        "c_long_double": 16,
+        "c_float128": 16,
+        "c_float128_complex": 16,
     },
     "integer": {
-        "": "4",
-        "8": "8",
-        "4": "4",
-        "2": "2",
-        "1": "1",
-        "c_int": "4",
-        "c_short": "2",
-        "c_long": "8",
-        "c_long_long": "16",
-        "c_signed_char": "1",
-        "c_size_t": "8",
-        "c_int8_t": "1",
-        "c_int16_t": "2",
-        "c_int32_t": "4",
-        "c_int64_t": "8",
-        "c_int128_t": "16",
-        "c_int_least8_t": "1",
-        "c_int_least16_t": "2",
-        "c_int_least32_t": "4",
-        "c_int_least64_t": "8",
-        "c_int_least128_t": "16",
-        "c_int_fast8_t": "1",
-        "c_int_fast16_t": "8",
-        "c_int_fast32_t": "8",
-        "c_int_fast64_t": "8",
-        "c_int_fast128_t": "16",
-        "c_intmax_t": "8",
-        "c_intptr_t": "8",
-        "c_ptrdiff_t": "8"
+        None: 4,
+        "8": 8,
+        "4": 4,
+        "2": 2,
+        "1": 1,
+        "c_int": 4,
+        "c_short": 2,
+        "c_long": 8,
+        "c_long_long": 16,
+        "c_signed_char": 1,
+        "c_size_t": 8,
+        "c_int8_t": 1,
+        "c_int16_t": 2,
+        "c_int32_t": 4,
+        "c_int64_t": 8,
+        "c_int128_t": 16,
+        "c_int_least8_t": 1,
+        "c_int_least16_t": 2,
+        "c_int_least32_t": 4,
+        "c_int_least64_t": 8,
+        "c_int_least128_t": 16,
+        "c_int_fast8_t": 1,
+        "c_int_fast16_t": 8,
+        "c_int_fast32_t": 8,
+        "c_int_fast64_t": 8,
+        "c_int_fast128_t": 16,
+        "c_intmax_t": 8,
+        "c_intptr_t": 8,
+        "c_ptrdiff_t": 8,
     },
     "logical": {
-        "": "4",
-        "c_bool": "1"
+        None: 4,
+        "c_bool": 1,
     }
 }
 #loop_versioning = False

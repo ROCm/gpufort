@@ -814,7 +814,7 @@ class StatementInfo():
     def body(self):
         return self._linemap["statements"][self._statement_no]["body"]
     @body.setter
-    def setbody(self,val):
+    def body(self,val):
         self._linemap["statements"][self._statement_no]["body"] = val
     @property
     def prolog(self):

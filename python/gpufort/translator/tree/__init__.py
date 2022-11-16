@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from .base import *
+from .arithexpr import *
 from .fortran import *
 from .acc import *
 from .cuf import *
@@ -16,5 +17,6 @@ grammar = _grammar.Grammar(
 del _grammar    
 
 set_fortran_parse_actions(grammar)
+set_arith_expr_parse_actions(grammar)
 set_acc_parse_actions(grammar)
 set_cuf_parse_actions(grammar)

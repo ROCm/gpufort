@@ -260,9 +260,9 @@ def vars_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTValue)
-                and isinstance(node._value, (tree.TTDerivedTypePart,tree.TTIdentifier,tree.TTTensorEval)))
-        if cond1 and isinstance(node._value, tree.TTTensorEval):
-            return node._value.is_array_access()
+                and isinstance(node._value, (tree.TTDerivedTypePart,tree.TTIdentifier,tree.TTFunctionCall)))
+        if cond1 and isinstance(node._value, tree.TTFunctionCall):
+            return node._value.is_array_expr()
         else:
             return cond1 
     result = search_value_exprs_in_subtree(ttnode, search_filter, scope)
@@ -272,9 +272,9 @@ def arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTValue) 
-                and isinstance(node._value, tree.TTTensorEval))
-        if cond1 and isinstance(node._value, tree.TTTensorEval):
-            return node._value.is_array_access()
+                and isinstance(node._value, tree.TTFunctionCall))
+        if cond1 and isinstance(node._value, tree.TTFunctionCall):
+            return node._value.is_array_expr()
         else:
             return cond1 
 
@@ -285,9 +285,9 @@ def inout_arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTLvalue) 
-                and isinstance(node._value, tree.TTTensorEval))
-        if cond1 and isinstance(node._value, tree.TTTensorEval):
-            return node._value.is_array_access()
+                and isinstance(node._value, tree.TTFunctionCall))
+        if cond1 and isinstance(node._value, tree.TTFunctionCall):
+            return node._value.is_array_expr()
         else:
             return cond1 
 

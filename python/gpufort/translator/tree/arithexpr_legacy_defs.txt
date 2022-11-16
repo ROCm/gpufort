@@ -34,7 +34,7 @@
 #                 are passed as argument of the extracted kernels.
 #        :note: only the case where <dim> is specified as integer literal is handled by this function.
 #        """
-#        if opts.fortran_style_tensor_eval:
+#        if opts.fortran_style_array_access:
 #            return _inquiry_cstr("size",
 #                                  traversals.make_cstr(self._ref),
 #                                  traversals.make_cstr(self._dim),
@@ -68,7 +68,7 @@
 #                 are passed as argument of the extracted kernels.
 #        :note:   only the case where <dim> is specified as integer literal is handled by this function.
 #        """
-#        if opts.fortran_style_tensor_eval:
+#        if opts.fortran_style_array_access:
 #            return _inquiry_cstr("lbound",
 #                                  traversals.make_cstr(self._ref),
 #                                  traversals.make_cstr(self._dim),
@@ -103,7 +103,7 @@
 #                 are passed as argument of the extracted kernels.
 #        :note:   only the case where <dim> is specified as integer literal is handled by this function.
 #        """
-#        if opts.fortran_style_tensor_eval:
+#        if opts.fortran_style_array_access:
 #            return _inquiry_cstr("ubound",
 #                                  traversals.make_cstr(self._ref),
 #                                  traversals.make_cstr(self._dim),

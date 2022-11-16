@@ -153,7 +153,7 @@ def strip_array_indexing(var_expr):
     The example 'A%b(i)%c' is translated to 'A%b%c'.
     All array indexing expressions are stripped away.
 
-    :param str var_expr: a simple identifier such as 'a' or 'A_d', an array access expression suhc as 'B(i,j)' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
+    :param str var_expr: a simple identifier such as 'a' or 'A_d', an array section expression such as 'B(i,j)' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
     :see: indexer.scope.search_index_for_var
     """
     result = var_expr.lstrip("-+") # remove trailing minus sign

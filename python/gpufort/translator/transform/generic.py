@@ -28,14 +28,14 @@ def _collect_ranges_in_ttvalue(ttvalue,include_none_values=False):
             was scalar index argument was used.
     """
     current = ttvalue._value
-    if isinstance(current,tree.TTTensorEval):
+    if isinstance(current,tree.TTFunctionCall):
         return _collect_ranges(current._args,include_none_values)
     elif isinstance(current,tree.TTDerivedTypePart):
         result = []
         while isinstance(current,tree.TTDerivedTypePart):
-            if isinstance(current._type,tree.TTTensorEval):
+            if isinstance(current._type,tree.TTFunctionCall):
                 result += _collect_ranges(current._type._args,include_none_values)
-            if isinstance(current._element,tree.TTTensorEval):
+            if isinstance(current._element,tree.TTFunctionCall):
                 result += _collect_ranges(current._element._args,include_none_values)
             current = current._element
         return result
@@ -272,15 +272,15 @@ def flag_tensors(ttvalues, scope):
     """
     for value in ttvalues:
         ident = value.identifier_part()
-        if isinstance(value._value, tree.TTTensorEval):
+        if isinstance(value._value, tree.TTFunctionCall):
             if ident.startswith("_"):
                 # function introduced by GPUFORT, Fortran identifiers never start with '_'
-                value._value._type = tree.TTTensorEval.Type.FUNCTION_CALL
+                value._value._type = tree.TTFunctionCall.Type.FUNCTION_CALL
             else:
                 value_type, _ = indexer.scope.search_scope_for_value_expr(scope, ident)
                 if value_type == indexer.indexertypes.ValueType.VARIABLE:
-                    value._value._type = tree.TTTensorEval.Type.ARRAY_ACCESS
+                    value._value._type = tree.TTFunctionCall.Type.ARRAY_ACCESS
                 elif value_type == indexer.indexertypes.ValueType.PROCEDURE:
-                    value._value._type = tree.TTTensorEval.Type.FUNCTION_CALL
+                    value._value._type = tree.TTFunctionCall.Type.FUNCTION_CALL
                 elif value_type == indexer.indexertypes.ValueType.INTRINSIC:
-                    value._value._type = tree.TTTensorEval.Type.INTRINSIC_CALL
+                    value._value._type = tree.TTFunctionCall.Type.INTRINSIC_CALL

@@ -4,82 +4,78 @@ from gpufort import util
 from gpufort import indexer
 
 from . import tree
+from . import opts
 
-#    def is_real_of_kind(self,kind):
-#        """:return: If the number is a real (of a certain kind)."""
-#        if self._kind == None:
-#            return kind == None
-#        else:
-#            if kind in opts.fortran_type_2_bytes_map["real"]:
-#                has_exponent_e = "e" in self._value
-#                has_exponent_d = "d" in self._value
-#                has_exponent = has_exponent_e or has_exponent_d
-#                default_real_bytes = opts.fortran_type_2_bytes_map["real"][
-#                    ""].strip()
-#                kind_bytes = opts.fortran_type_2_bytes_map["real"][kind].strip()
-#                if self._kind == None: # no suffix
-#                    cond = False
-#                    cond = cond or (has_exponent_d and kind_bytes == "8")
-#                    cond = cond or (has_exponent_e and
-#                                    kind_bytes == default_real_bytes)
-#                    cond = cond or (not has_exponent and
-#                                    kind_bytes == default_real_bytes)
-#                    return cond
-#                else:
-#                    if self._kind in opts.fortran_type_2_bytes_map["real"]:
-#                        kind_bytes = opts.fortran_type_2_bytes_map["real"][
-#                            self._kind].strip()
-#                        return kind_bytes == self._kind_bytes
-#                    else:
-#                        raise util.error.LookupError(\
-#                          "no number of bytes found for kind '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(self._kind))
-#                        sys.exit(2) # todo: error code
-#            else:
-#                raise util.error.LookupError(\
-#                  "no number of bytes found for kind '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(kind))
-#                sys.exit(2) # todo: error code
-#        else:
-#            return False
-#
-#    def is_integer_of_kind(self,kind):
-#        """:return: If the number is an integer (of a certain kind)."""
-#        if not self.type ==  and kind != None:
-#            if kind in opts.fortran_type_2_bytes_map["integer"]:
-#                has_exponent_e = "e" in self._value
-#                has_exponent_d = "d" in self._value
-#                has_exponent = has_exponent_e or has_exponent_d
-#                default_integer_bytes = opts.fortran_type_2_bytes_map[
-#                    "integer"][""].strip()
-#                kind_bytes = opts.fortran_type_2_bytes_map["integer"][
-#                    kind].strip()
-#                if self._kind == None: # no suffix
-#                    return kind_bytes == default_integer_bytes
-#                else: # suffix
-#                    if suffix in opts.fortran_type_2_bytes_map["integer"]:
-#                        suffix_bytes = opts.fortran_type_2_bytes_map[
-#                            "integer"][suffix].strip()
-#                        return kind_bytes == suffix_bytes
-#                    else:
-#                        raise util.error.LookupError("no number of bytes found for suffix '{}' in 'translator.opts.fortran_type_2_bytes_map[\"integer\"]'".format(suffix))
-#            else:
-#                raise util.error.LookupError(\
-#                  "no number of bytes found for kind '{}' in 'translator.opts.fortran_type_2_bytes_map[\"integer\"]'".format(kind))
-#        else:
-#            return is_integer
+def _lookup_bytes_per_element1(ftype,kind):
+    kind = kind.lower() if isinstance(kind,str) else None
+    try:
+        return opts.fortran_type_2_bytes_map[
+          ftype.lower()][kind]
+    except:
+        raise util.error.LookupError(
+          "no number of bytes found for type '{}' and kind '{}' in"
+          + "'translator.opts.fortran_type_2_bytes_map'".format(ftype,kind)
+        )
 
-def _resolve_literal(literal,scope):
-    if isinstance(literal,tree.TTLogical,
-                    literal,tree.TTNumber):
-        
+def _lookup_bytes_per_element(ttnode):
+    ttnode.bytes_per_element = _lookup_bytes_per_element1(
+      ttnode.type, ttnode.kind
+    )
+
+def _resolve_literal(ttnode,scope):
+    if isinstance(ttnode,(tree.TTLogical,
+                          tree.TTNumber)):
+        _lookup_bytes_per_element(ttnode)
+
+def _resolve_identifier(ttnode,scope):
+    ttnode.symbol_info = indexer.scope.search_scope_for_var(scope,ttnode.fstr())
+    _lookup_bytes_per_element(ttnode)
+
+def _resolve_function_call(ttnode,scope):
+    """
+    - resolve type of the expression: function call vs array section
+    - in case of function call,
+      - check that number of args is equal to number of dummy args
+      - check that keyword arguments appear only after positional argument
+        - next level: check type of arguments, compare to that of function argument list
+      - check if elemental or transformational intrinsic
+      - handle conversion functions
+    - in case of array section:
+      - check that number of args is equal to rank
+      - check that arguments are of integer type
+    """
+    ttnode.symbol_info = indexer.scope.search_scope_for_value_expr(
+      scope,ttnode.fstr()
+    )
+    if ttnode.type != "type":
+        _lookup_bytes_per_element(ttnode)
+    if ttnode.is_array_expr():
+        # rank of the array section expression != array rank
+        # Hence we cannot use ttnode.rank
+        array_rank = ttnode.symbol_info["rank"]
+        if len(ttnode.args) != array_rank:
+            raise util.error.SemanticError(
+              "{actual} instead of expected {expected} index expressions passed to array variable '{var}'.".format(
+                actual=len(ttnode.args),
+                expected=array_rank,
+                var=ttnode.name 
+              )
+            )
+        for arg in ttnode.args:
+            pass        
+    else: # is function call
+        for arg in ttnode.args:
+            pass
 
 def _check_derived_type_part(ttderivedtypemember,scope):
-    """Check that not more than one part reference has nonzero rank, e.g.
-    disallows expressions such as "a(:)%b(:)
+    """ - check that not more than one part reference has nonzero rank, e.g.
+          disallows expressions such as "a(:)%b(:)
+        - check that element is actually member of the value type
     :note: Assumes that all types have already been resolved."""
-    already_found_part_reference_with_nonzero_rank = False 
+    already_found_part_reference_with_nonzero_rank = False
     for ttnode in ttderivedtypemember.walk_derived_type_parts_postorder():
         for child in ttnode.child_nodes():
-            if child.rank() > 0:
+            if child.rank > 0:
                 if already_found_part_reference_with_nonzero_rank:
                     raise error.SemanticError(
                       "Two or more part references with nonzero rank must not be specified"
@@ -98,33 +94,73 @@ def _check_complex_arith_expr(ttcomplexarithexpr,scope):
         elif child.rank != 0:
             raise error.SemanticError("rank of complex components must be 0")
 
-def _resolve_tensor_eval(ttnode,scope):
-    """
-    - resolve type of the expression: function call vs array access
-    - in case of function call,
-      - check that keyword arguments appear only after positional argument
-        - next level: check type of arguments, compare to that of function argument list
-      - check if elemental or transformational intrinsic
-      - handle conversion functions
-    - in case of array access:
-      - check that arguments are of integer type
-    """
-    ttnode.symbol_info = indexer.scope.search_scope_for_value_expr(
-      scope,ttnode.fstr()
-    )
-    if ttnode.is_array_access():
-        for arg in ttnode.args():
-            
-    else: # is function call
-        for arg in 
-            pass
-    assert False, "not implemented"
+def _compare_op_and_opd_type(op_type,opd_type):
+    """check if operator and operand type agree."""
+    if opd_type in ["real","integer"]:
+        if op_type == tree.OperatorType.LOGIC:
+            raise util.error.SemanticError("cannot apply logical binary operator to real type")
+    elif opd_type == "logical":
+        if op_type != tree.OperatorType.LOGIC:
+            raise util.error.SemanticError("cannot apply numeric binary operator to logical type")
+    else:
+        raise util.error.SemanticError(
+          "type '{}' not allowed in arithmetic expression".format(opd_type)
+        )
 
-def _resolve_binary_op(ttbinaryop,scope):
+def _check_unary_op(ttnode,scope):
+    _compare_op_and_opd_type(
+      ttnode.operator_type,
+      opd_type
+    )
+
+def _resolve_binary_op(ttnode,scope):
     """
     :note: Assumes that all operands have already been resolved."""
-    for ttnode in ttderivedtypemember.operands():
-        pass
+    op_type = ttnode.operator_type
+    # first operand
+    first_opd = ttnode.operands[0]
+    current_type = first_opd.type
+    current_rank = first_opd.rank
+    current_bytes_per_element = first_opd.bytes_per_element
+    _compare_op_and_opd_type(op_type,first_opd.type)
+    # reamining operands
+    for opd in ttnode.operands[1:]:
+        _compare_op_and_opd_type(op_type,opd.type)
+        # rank, can apply binary op to scalar-array pair
+        # or pair of arrays with same rank
+        if current_rank > 0:
+            if opd.rank > current_rank:
+                raise util.error.SemanticError(
+                  "inconsistent rank of operands, {} vs. {}".format(
+                    current_rank, opd.rank
+                  )
+                )
+        else:
+            current_rank = opd.rank
+        # bytes per element
+        if current_type == "real":
+           if opd.type == "real":
+                current_bytes_per_element = max(
+                  current_bytes_per_element,
+                  opd.bytes_per_element
+                )
+        elif current_type == "integer":
+            if opd.type == "integer":
+                 current_bytes_per_element = max(
+                   current_bytes_per_element,
+                   opd.bytes_per_element
+                 )
+            elif opd.type == "real":
+                current_type = "real" 
+                current_bytes_per_element = opd.bytes_per_element
+        elif current_type == "logical":
+            current_bytes_per_element = max(
+              current_bytes_per_element,
+              opd.bytes_per_element
+            )
+    ttnode.rank = current_rank
+    ttnode.type = current_type
+    ttnode.bytes_per_element = current_bytes_per_element
 
 def resolve_arith_expr(ttarithexpr,scope):
     """Resolve the types in an arithmetic expression parse tree.
@@ -133,14 +169,18 @@ def resolve_arith_expr(ttarithexpr,scope):
     :raise util.error.LookupError: if a symbol's type could not be determined.
     :note: Can also be applied to subtrees contained in TTArithExpr.
     """
+    assert isinstance(ttarithexpr,tree.TTNode), type(ttarithexpr)
     for ttnode in ttarithexpr.walk_postorder():
-        if isinstance(ttnode,tree.TTIdentifier):
-            ttnode.symbol_info = indexer.scope.search_scope_for_var(scope,ttnode.fstr())
-            # todo
-        elif isinstance(ttnode,tree.TTTensorEval):
-            ttnode.symbol_info = indexer.scope.search_scope_for_value_expr(scope,ttnode.fstr())
-            # todo
+        if isinstance(ttnode,tree.Literal):
+            _resolve_literal(ttnode,scope)
+        elif isinstance(ttnode,tree.TTIdentifier):
+            _resolve_identifier(ttnode,scope)
+        elif isinstance(ttnode,tree.TTFunctionCall):
+            _resolve_function_call(ttnode,scope)
         elif isinstance(ttnode,tree.TTValue):
             if isinstance(ttnode._value,tree.TTDerivedTypePart):
                 _check_derived_type_part(ttnode._value,scope)
-            
+        elif isinstance(ttnode,tree.TTUnaryOp):
+            _check_unary_op(ttnode,scope)
+        elif isinstance(ttnode,tree.TTBinaryOpChain):
+            _resolve_binary_op(ttnode,scope)

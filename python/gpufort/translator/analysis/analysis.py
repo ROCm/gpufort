@@ -246,7 +246,7 @@ def search_value_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
             search_filter): # includes the identifiers of the function calls 
         # todo: Search tag creation strips array brackets
         # todo: provide clean interface to value
-        tag = indexer.scope.create_index_search_tag_for_var(ttvalue._value.fstr()) # todo: 
+        tag = indexer.scope.create_index_search_tag(ttvalue._value.fstr()) # todo: 
         if tag not in tree.grammar.DEVICE_PREDEFINED_VARIABLES:
             ivar = indexer.scope.search_scope_for_var(scope, tag)
             if ivar["rank"] >= min_rank and\

@@ -168,7 +168,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 options.append("if_present_arg=.true.")
         for kind, clause_args in self.stnode.get_matching_clauses(["self", "host", "device"]):
             for var_expr in clause_args:
-                tag = indexer.scope.create_index_search_tag_for_var(var_expr)
+                tag = indexer.scope.create_index_search_tag(var_expr)
                 ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
                 result.append(_ACC_UPDATE.format(
                     args=_create_args_str(_make_map_args(var_expr,ivar)+options,indent="",sep=","),

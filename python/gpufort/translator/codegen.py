@@ -34,7 +34,7 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
     _modify_array_expressions(ttprocedurebody, ttvalues, scope, **kwargs)
     ttvalues = analysis.find_all_matching_exclude_directives(
             ttprocedurebody.body,(lambda ttnode: isinstance(ttnode,tree.TTValue) 
-            and not ttnode.is_function_call()))
+            and not ttnode.is_function_call))
     
     c_body = tree.make_cstr(ttprocedurebody.body)
 
@@ -90,7 +90,7 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
     _modify_array_expressions(ttcomputeconstruct,ttvalues,scope,**kwargs)
     ttvalues = analysis.find_all_matching_exclude_directives(
             ttcomputeconstruct.body,(lambda ttnode: isinstance(ttnode,tree.TTValue) 
-            and not ttnode.is_function_call()))
+            and not ttnode.is_function_call))
     #print(ttvalues)
     c_ranks = transformations.adjust_explicitly_mapped_arrays_in_rank(ttvalues,ttcomputeconstruct.all_mapped_vars())
     # todo: Investigate what happens if such an array is mapped to flat array

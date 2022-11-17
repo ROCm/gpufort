@@ -17,7 +17,9 @@ PROFILING_ENABLE = False
 
 scope = None
 
-class TestAnalysisArithExpr(unittest.TestCase):
+semantics = translator.semantics.Semantics()
+
+class TestSemantics(unittest.TestCase):
     def setUp(self):
         global PROFILING_ENABLE
         self.started_at = time.time()
@@ -89,21 +91,21 @@ class TestAnalysisArithExpr(unittest.TestCase):
     ]
 
     def test_02_parse_arith_expr(self):
-        for i,test in enumerate(TestAnalysisArithExpr.parse_arith_expr_testdata):
+        for i,test in enumerate(TestSemantics.parse_arith_expr_testdata):
             ttarithexpr = translator.tree.grammar.arith_expr.parseString(
               test,parseAll=True
             )[0]
-            TestAnalysisArithExpr.parse_arith_expr_parse_results.append(ttarithexpr)
+            TestSemantics.parse_arith_expr_parse_results.append(ttarithexpr)
     
     def test_03_resolve_arith_expr(self):
-        for i,test in enumerate(TestAnalysisArithExpr.parse_arith_expr_testdata):
-            ttarithexpr = TestAnalysisArithExpr.parse_arith_expr_parse_results[i]
+        for i,test in enumerate(TestSemantics.parse_arith_expr_testdata):
+            ttarithexpr = TestSemantics.parse_arith_expr_parse_results[i]
             #print(ttarithexpr.fstr())
-            translator.semantics.resolve_arith_expr(ttarithexpr,scope)
+            semantics.resolve_arith_expr(ttarithexpr,scope)
             result_tuple = (ttarithexpr.type,
                       ttarithexpr.bytes_per_element,
                       ttarithexpr.rank)
-            self.assertEqual(TestAnalysisArithExpr.resolve_arith_expr_results[i],result_tuple)
+            self.assertEqual(TestSemantics.resolve_arith_expr_results[i],result_tuple)
 
     parse_rvalue_testdata = [
       # 1d
@@ -156,28 +158,52 @@ class TestAnalysisArithExpr(unittest.TestCase):
     ]
     
     def test_04_parse_rvalue(self):
-        for i,test in enumerate(TestAnalysisArithExpr.parse_rvalue_testdata):
+        for i,test in enumerate(TestSemantics.parse_rvalue_testdata):
             ttrvalue = translator.tree.grammar.rvalue.parseString(
               test,parseAll=True
             )[0]
-            TestAnalysisArithExpr.parse_rvalue_parse_results.append(ttrvalue)
+            TestSemantics.parse_rvalue_parse_results.append(ttrvalue)
 
     def test_05_resolve_rvalue(self):
-        for i,test in enumerate(TestAnalysisArithExpr.parse_rvalue_testdata):
-            ttrvalue = TestAnalysisArithExpr.parse_rvalue_parse_results[i] 
-            translator.semantics.resolve_arith_expr(ttrvalue,scope)
+        for i,test in enumerate(TestSemantics.parse_rvalue_testdata):
+            ttrvalue = TestSemantics.parse_rvalue_parse_results[i] 
+            semantics.resolve_arith_expr(ttrvalue,scope)
             result_tuple = (
               ttrvalue.is_scalar,
               ttrvalue.is_array,
               ttrvalue.is_contiguous_array,
               ttrvalue.is_full_array,
             )
-            #print(test)
-            #print(result_tuple)
+            print(test)
+            print(result_tuple)
             self.assertEqual(
-              TestAnalysisArithExpr.resolve_rvalue_results[i],
+              TestSemantics.resolve_rvalue_results[i],
               result_tuple
             )
+    
+    def test_06_resolve_function_call(self):
+        testdata = [
+          "real(1)",
+          #"real(1,8)",
+          #"real(j,kind=8)",
+        ]
+
+        for i,test in enumerate(testdata):
+            ttrvalue = translator.tree.grammar.rvalue.parseString(
+              test,parseAll=True
+            )[0]
+            semantics.resolve_arith_expr(ttrvalue,scope)
+            result_tuple = (
+              ttrvalue.is_function_call,
+              ttrvalue.is_elemental_function_call,
+              ttrvalue.is_converter_call,
+            )
+            #print(test)
+            print(result_tuple)
+            #self.assertEqual(
+            #  TestSemantics.resolve_rvalue_results[i],
+            #  result_tuple
+            #)
 
 if __name__ == '__main__':
     unittest.main() 

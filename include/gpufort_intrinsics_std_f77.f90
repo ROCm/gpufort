@@ -2,9 +2,10 @@
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 ! This file solely exists to extract information about intrinsics via GPUFORT's indexer tool.
 ! It will not compile with any compiler as non-standard Fortran expressions are used.
-attributes(intrinsic,conversion,std_f77)&
+! conversion indicates the optional kind argument
+attributes(intrinsic,conversion,std_f77)& 
 pure elemental function int(x,kind)
-  type(*),dimension(..) :: x
+  type(*) :: x
   integer,optional :: kind
   !
   integer(kind),dimension(..) :: int
@@ -12,7 +13,7 @@ end function
 
 attributes(intrinsic,conversion,std_f77)&
 pure elemental function real(x,kind)
-  type(*),dimension(..) :: x
+  type(*) :: x
   integer,optional :: kind
   !
   real(kind),dimension(..) :: real
@@ -20,7 +21,7 @@ end function
 
 attributes(intrinsic,conversion,std_f77)&
 pure elemental function logical(x,kind)
-  type(*),dimension(..) :: x
+  type(*) :: x
   integer,optional :: kind
   !
   logical(kind),dimension(..) :: logical
@@ -28,8 +29,8 @@ end function
 
 attributes(intrinsic,conversion,std_f77)&
 pure elemental function cmplx(x,y,kind)
-  type(*),dimension(..) :: x
-  type(*),dimension(..),optional :: y
+  type(*) :: x
+  type(*),optional :: y
   integer,optional :: kind
   !
   complex(kind),dimension(..) :: cmplx
@@ -539,14 +540,6 @@ elemental function idnint(a)
   double precision :: a
   !
   integer :: idnint
-end function
-
-attributes(intrinsic,std_f77)&
-elemental function real(a,kind)
-  type(*), dimension(..) :: a
-  integer, optional :: kind
-  !
-  real :: real
 end function
 
 attributes(intrinsic,std_f77)&

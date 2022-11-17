@@ -165,9 +165,9 @@ def adjust_explicitly_mapped_arrays_in_rank(ttvalues,explicitly_mapped_vars):
     """
     c_ranks = {}
     for ttvalue in ttvalues:
-        value_tag  = indexer.scope.create_index_search_tag_for_var(ttvalue.fstr())
+        value_tag  = indexer.scope.create_index_search_tag(ttvalue.fstr())
         for var_expr in explicitly_mapped_vars:
-            mapping_tag  = indexer.scope.create_index_search_tag_for_var(var_expr)
+            mapping_tag  = indexer.scope.create_index_search_tag(var_expr)
             if value_tag == mapping_tag:
                 var_ttvalue = tree.grammar.lvalue.parseString(var_expr,parseAll=True)[0] # todo: analyse usage and directly return as type?
                 if len(var_ttvalue.slice_args()) < len(var_ttvalue.args()): # implies there is a fixed dimension
@@ -225,7 +225,7 @@ def map_allocatable_pointer_derived_type_parts_to_flat_arrays(ttvalues,loop_vars
                 if (":" in ident 
                    or "(" in ident): # todo: hack
                     raise util.error.LimitationError("cannot map expression '{}'".format(ident))
-                var_expr = indexer.scope.create_index_search_tag_for_var(ident)
+                var_expr = indexer.scope.create_index_search_tag(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
                 substitute = ttnode.fstr().replace(ident,c_name)
                 ttnode.overwrite_cstr(substitute)
@@ -256,7 +256,7 @@ def map_scalar_derived_type_parts_to_flat_scalars(ttvalues,loop_vars,scope):
                 if (":" in ident 
                    or "(" in ident): # todo: hack
                     raise util.error.LimitationError("cannot map expression '{}'".format(ident))
-                var_expr = indexer.scope.create_index_search_tag_for_var(ident)
+                var_expr = indexer.scope.create_index_search_tag(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
                 substitute = ttnode.fstr().replace(ident,c_name)
                 ttnode.overwrite_cstr(substitute)

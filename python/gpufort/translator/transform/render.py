@@ -11,7 +11,7 @@ def render_private_vars_decl_list(ttvalues,scope):
     decl_list_snippet = ""
     for private_var in ttvalues:
         var_expr = tree.traversals.make_fstr(private_var)
-        var_tag = indexer.scope.create_index_search_tag_for_var(var_expr) 
+        var_tag = indexer.scope.create_index_search_tag(var_expr) 
         if "%" in var_tag:
             # todo: get rid of this limitation,  if necessary
             raise error.LimitationError("private var must not be derived type member")

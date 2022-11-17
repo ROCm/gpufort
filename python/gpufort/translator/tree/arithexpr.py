@@ -346,20 +346,25 @@ class TTFunctionCall(VarExpr):
                 return False
         return True
  
+    @property
     def is_function_call(self):
         return not self.is_array_expr()
     
+    @property
     def is_intrinsic_call(self):
-        assert self.is_function_call()
+        assert self.is_function_call
         return "intrinsic" in self.symbol_info["attributes"]
    
+    @property
     def is_elemental_function_call(self):
-        assert self.is_function_call()
+        assert self.is_function_call
         return "elemental" in self.symbol_info["attributes"]
 
+    @property
     def is_converter_call(self):
         """:note: Conversions are always elemental."""
-        assert self.is_elemental_call()
+        assert self.is_elemental_function_call
+        print(self.symbol_info["attributes"])
         return "conversion" in self.symbol_info["attributes"]
  
     @property
@@ -371,6 +376,7 @@ class TTFunctionCall(VarExpr):
         if self.is_array_expr():
             return len([arg for arg in self.slice_args()])
         else: 
+            # todo: depends if is elemental function
             return self._get_type_defining_record()["rank"] 
 
     def name_cstr(self):
@@ -445,32 +451,20 @@ class TTFunctionCall(VarExpr):
 class TTDerivedTypePart(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._type, self._element = tokens
+        self._derived_type, self._element = tokens
         #print(self._type)
         self._cstr = None
 
     @property
-    def type(self):
-        return self.get_type_defining_node().type
+    def derived_type(self):
+        return self._derived_type
     
     @property
-    def kind(self):
-        return self.get_type_defining_node().kind
-    
-    @property
-    def bytes_per_element(self):
-        return self.get_type_defining_node().bytes_per_element
-
-    @property
-    def rank(self):
-        return self.get_rank_defining_node().rank
-    
-    @property
-    def symbol_info(self):
-        return self._value.symbol_info
+    def element(self):
+        return self._element
 
     def child_nodes(self):
-        yield self._type
+        yield self._derived_type
         yield self._element
 
     def walk_derived_type_parts_preorder(self):
@@ -487,6 +481,7 @@ class TTDerivedTypePart(base.TTNode):
             yield from self._element.walk_derived_type_parts_postorder()
         yield self
 
+    # todo: should rather into ttvalue
     def get_innermost_member(self):
         """:return: inner most derived type member.
         """
@@ -494,9 +489,11 @@ class TTDerivedTypePart(base.TTNode):
             pass
         return current
 
+    # todo: should rather into ttvalue
     def get_type_defininig_node(self):
-        return self.get_innermost_member()._element
+        return self.get_innermost_member().element
 
+    # todo: should rather into ttvalue
     def get_rank_defining_node(self):
         r""":return: The subexpression part that contains the information on 
         the rank of this derived type member access expression.
@@ -512,61 +509,19 @@ class TTDerivedTypePart(base.TTNode):
         arr1%arr2(i) -> returns arr1
         """
         for current in self.walk_derived_type_parts_preorder():
-            if current._type.rank > 0:
-                return current._type
-        return current._element 
-
-    @property
-    def is_array(self):
-        """:note: Does not require array to be contiguous.
-                  Expressions like array(:)%scalar are thus 
-                  allowed too. Hence we use the rank-defining 
-                  derived type part.
-        """
-        return self.get_rank_defining_node().is_array
-        
-    @property
-    def is_contiguous_array(self):
-        """note: Only applicable to innermost element.
-                 hence we use the innermost, the type-defining, 
-                 derived type part."""
-        return self.get_type_defining_node().is_contiguous_array
-    
-    @property
-    def is_full_array(self):
-        """note: Only applicable to innermost element.
-                 hence we use the innermost, the type-defining, 
-                 derived type part."""
-        return self.get_type_defining_node().is_full_array
-    
-    @property
-    def is_scalar(self):
-        return self.get_type_defining_node().is_scalar
-
-    @property
-    def args(self):
-        if isinstance(self._value,TTFunctionCall):
-            yield from self._value.args()
-        else:
-            yield from ()
-
-    def slice_args(self):
-        """Returns all range args in the order of their appeareance.
-        """
-        if isinstance(self._value,TTFunctionCall):
-            yield from self._value.slice_args()
-        else:
-            yield from ()
+            if current.derived_type.rank > 0:
+                return current.derived_type
+        return current.element 
 
     def identifier_part(self,converter=traversals.make_fstr):
         # todo: adopt walk_members generator
-        result = converter(self._type)
+        result = converter(self._derived_type)
         current = self._element
         while isinstance(current,TTDerivedTypePart):
-            current = current._element
-            result += "%"+converter(self._type)
+            current = current.element
+            result += "%"+converter(current.derived_type)
         if isinstance(current,TTFunctionCall):
-            result += "%"+converter(current._name)
+            result += "%"+converter(current.name)
         else: # TTIdentifier
             result += "%"+converter(current)
         return result             
@@ -576,17 +531,17 @@ class TTDerivedTypePart(base.TTNode):
 
     def cstr(self):
         if self._cstr == None:
-            return traversals.make_cstr(self._type) + "." + traversals.make_cstr(
+            return traversals.make_cstr(self._derived_type) + "." + traversals.make_cstr(
                 self._element)
         else:
             return self._cstr
 
     def fstr(self):
-        return traversals.make_fstr(self._type) + "%" + traversals.make_fstr(
+        return traversals.make_fstr(self._derived_type) + "%" + traversals.make_fstr(
             self._element)
     
     def __str__(self):
-        return "TTDerivedTypePart(name:"+str(self._type)+"member:"+str(self._element)+")"
+        return "TTDerivedTypePart(name:"+str(self._derived_type)+"member:"+str(self._element)+")"
     __repr__ = __str__
 
 class TTValue(base.TTNode):
@@ -647,30 +602,60 @@ class TTValue(base.TTNode):
     
     @property
     def is_array(self):
+        """:note: Does not require array to be contiguous.
+                  Expressions like array(:)%scalar are thus 
+                  allowed too. Hence we use the rank-defining 
+                  derived type part.
+        """
         return self.get_rank_defining_node().is_array
     
     @property
     def is_scalar(self):
-        return self.get_rank_defining_node().is_scalar
-    
+        return not self.is_array
+        
     @property
     def is_contiguous_array(self):
+        """note: Only applicable to innermost element.
+                 hence we use the innermost, the type-defining, 
+                 derived type part."""
         return self.get_type_defining_node().is_contiguous_array
     
     @property
     def is_full_array(self):
+        """note: Only applicable to innermost element.
+                 hence we use the innermost, the type-defining, 
+                 derived type part."""
         return self.get_type_defining_node().is_full_array
     
+    @property
     def is_function_call(self):
-        """:note: TTFunctionCall instances must be flagged as tensor beforehand.
-        """
-        # todo: check if detect all arrays in indexer/scope
-        # so that we do not need to know function names anymore.
-        if type(self._value) is TTFunctionCall:
-            return self._value.is_function_call()
-        elif type(self._value) is TTDerivedTypePart:
-            # todo: support type bounds routines
+        type_defining_node = self.get_type_defining_node()
+        if isinstance(type_defining_node,TTFunctionCall):
+            return type_defining_node.is_function_call
+        else:
             return False
+
+    @property
+    def is_intrinsic_call(self):
+        type_defining_node = self.get_type_defining_node()
+        if isinstance(type_defining_node,TTFunctionCall):
+            return type_defining_node.is_intrinsic_call
+        else:
+            return False
+   
+    @property
+    def is_elemental_function_call(self):
+        type_defining_node = self.get_type_defining_node()
+        if isinstance(type_defining_node,TTFunctionCall):
+            return type_defining_node.is_elemental_function_call
+        else:
+            return False
+
+    @property
+    def is_converter_call(self):
+        type_defining_node = self.get_type_defining_node()
+        if isinstance(type_defining_node,TTFunctionCall):
+            return type_defining_node.is_converter_call
         else:
             return False
 

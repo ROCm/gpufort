@@ -354,7 +354,7 @@ class STNode:
                   self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
                 if transformed:
                     self._modify_linemaps(transformed_code)
-        except (util.error.SyntaxError, util.errorSematicError
+        except (util.error.SyntaxError, util.errorSematicError,
                 util.error.LimitationError,
                 util.error.LookupError) as err:
             filepath = self._linemaps[0]["file"]

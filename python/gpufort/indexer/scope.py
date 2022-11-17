@@ -268,7 +268,7 @@ def _search_index_for_type_or_procedure(index, parent_tag, entry_name,
 
 # API
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def create_index_search_tag_for_var(var_expr):
+def create_index_search_tag(var_expr):
     return util.parsing.strip_array_indexing(var_expr).lower()
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -431,7 +431,7 @@ def search_scope_for_var(scope,
                          var_expr,
                          consider_implicit=True):
     """
-    %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
+    :param str variable_expr: a simple identifier such as 'a' or 'A_d' or a more complicated one representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
     util.logging.log_enter_function(opts.log_prefix,"search_scope_for_var",\
       {"var_expr": var_expr})
@@ -444,7 +444,7 @@ def search_scope_for_var(scope,
     #scope_types = list(reversed(scope["types"]))
     scope_types = reversed(scope["types"])
 
-    variable_tag = create_index_search_tag_for_var(var_expr)
+    variable_tag = create_index_search_tag(var_expr)
     list_of_var_names = variable_tag.split("%")
     
     def lookup_from_left_to_right_(scope_vars, pos=0):
@@ -598,7 +598,8 @@ def search_scope_for_value_expr(scope,expr):
             irecord = search_scope_for_procedure(scope, expr) # just check if the procedure exists
         except util.error.LookupError:
             try:
-                irecord = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
+                #print([proc["name"] for proc in scope["procedures"]])
+                irecord = _lookup_implicitly_declared_var(expr,scope["implicit"])
             except:
                 raise util.error.LookupError(
                   "expression '"+expr+"' could not be associated with any variable (explicitly or implicitly declared), procedure, or intrinsic"

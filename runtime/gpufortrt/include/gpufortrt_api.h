@@ -18,6 +18,8 @@ extern "C" {
   const 
   char* gpufortrt_get_property_string(int dev_num,
                                       gpufortrt_device_property_t property);
+  size_t gpufortrt_get_property_f(int dev_num, gpufortrt_device_property_t property);
+  const char* gpufortrt_get_property_string_f(int dev_num, gpufortrt_device_property_t property);
 
   void gpufortrt_init();
   void gpufortrt_shutdown();

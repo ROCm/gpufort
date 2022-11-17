@@ -16,9 +16,9 @@ module openacc
     enumerator :: acc_device_host
     enumerator :: acc_device_not_host
     enumerator :: acc_device_current
-    enumerator :: acc_device_hip = acc_device_not_host
-    enumerator :: acc_device_radeon = acc_device_hip
-    enumerator :: acc_device_nvidia = acc_device_hip
+    enumerator :: acc_device_hip 
+    enumerator :: acc_device_radeon 
+    enumerator :: acc_device_nvidia 
   end enum
   
   integer, parameter :: acc_device_kind = kind(acc_device_none)
@@ -148,6 +148,28 @@ contains
       end function
     end interface
     acc_get_device_num = int(acc_get_device_num_c_impl(dev_type))
+  end function
+
+  integer(c_size_t) function acc_get_property(dev_num, dev_type, property) 
+    use iso_c_binding
+    implicit none
+    !
+    integer(kind=acc_device_kind),value, intent(in) :: dev_type
+    integer,value, intent(in) :: dev_num
+    integer(kind=acc_property_kind),value, intent(in) :: property
+    interface
+      integer(c_size_t) function acc_get_property_c_impl(dev_num, dev_type, property) &
+        bind(c,name="acc_get_property_f")
+        use iso_c_binding
+        Import::acc_device_kind, acc_property_kind
+        implicit none
+        !
+        integer(kind=acc_device_kind), value, intent(in):: dev_type
+        integer(c_int),value, intent(in) :: dev_num
+        integer(kind=acc_property_kind), value, intent(in):: property
+      end function
+    end interface
+    acc_get_property = acc_get_property_c_impl(dev_num, dev_type, property)
   end function
 
   integer function acc_get_num_devices(dev_type)

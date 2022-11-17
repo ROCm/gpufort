@@ -28,21 +28,18 @@ namespace {
     }
   }
 
-  bool check_device_type(acc_device_t dev_type,bool allow_none=true) {
+  acc_device_t check_device_type(acc_device_t dev_type,bool allow_none=true) {
     switch (dev_type) {
       case acc_device_default:
-        return ::check_device_type(::default_device);
+        return ::default_device;
       case acc_device_current:
-        return ::check_device_type(::current_device);
+        return ::current_device;
       case acc_device_host:
         return acc_device_host;
       case acc_device_not_host: 
-      // According to the definition of enum acc_device_t 
-      // the following cases are identical. So, keep one? 
-      // case acc_device_not_host: 
-      // case acc_device_hip: 
-      // case acc_device_radeon: 
-      // case acc_device_nvidia:
+      case acc_device_hip: 
+      case acc_device_radeon: 
+      case acc_device_nvidia:
         return acc_device_hip;
       case acc_device_none:
         if ( !allow_none ) {
@@ -114,6 +111,27 @@ char* acc_get_property_string(int dev_num,
 }
 
 // Explicit Fortran interfaces that assume device number starts from 1
+size_t acc_get_property_f(int dev_num,
+                        acc_device_t dev_type,
+                        acc_device_property_t property) {
+  if ( ::check_device_type(dev_type) == acc_device_hip ) {
+    return gpufortrt_get_property_f(dev_num,check_device_property(property));
+  } else {
+    throw std::invalid_argument("acc_get_property: only implemented for non-host device types");
+  }
+}
+
+const 
+char* acc_get_property_string_f(int dev_num,
+                              acc_device_t dev_type,
+                              acc_device_property_t property) {
+  if ( ::check_device_type(dev_type) == acc_device_hip ) {
+    return gpufortrt_get_property_string_f(dev_num,check_device_property(property));
+  } else {
+    throw std::invalid_argument("acc_get_property_string: only implemented for non-host device types");
+  }
+}
+
 void acc_set_device_num_f(int dev_num, acc_device_t dev_type) {
   acc_set_device_num(dev_num-1,dev_type);
 }

@@ -17,15 +17,14 @@ extern int acc_async_default;
 
 /** \note Enum values assigned according to `acc_set_device_num` description.*/
 enum acc_device_t {
-  acc_device_default = -1,
-  acc_device_all = 0,     
-  acc_device_none = 1,
+  acc_device_none = 0,
+  acc_device_default,
   acc_device_host,
-  acc_device_current,
   acc_device_not_host,
-  acc_device_hip = acc_device_not_host,
-  acc_device_radeon = acc_device_hip,
-  acc_device_nvidia = acc_device_hip
+  acc_device_current,
+  acc_device_hip,
+  acc_device_radeon,
+  acc_device_nvidia
 };
 
 enum acc_device_property_t {
@@ -64,6 +63,13 @@ char* acc_get_property_string(int dev_num,
                               acc_device_t dev_type,
                               acc_device_property_t property);
 
+size_t acc_get_property_f(int dev_num,
+                        acc_device_t dev_type,
+                        acc_device_property_t property);
+const 
+char* acc_get_property_string_f(int dev_num,
+                              acc_device_t dev_type,
+                              acc_device_property_t property);
 void acc_init(acc_device_t dev_type);
 void acc_shutdown(acc_device_t dev_type);
 

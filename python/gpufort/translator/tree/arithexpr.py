@@ -364,7 +364,7 @@ class TTFunctionCall(VarExpr):
     def is_converter_call(self):
         """:note: Conversions are always elemental."""
         assert self.is_elemental_function_call
-        print(self.symbol_info["attributes"])
+        #print(self.symbol_info["attributes"])
         return "conversion" in self.symbol_info["attributes"]
  
     @property
@@ -1084,11 +1084,13 @@ class TTKeywordArgument(base.TTNode):
         return self.value.rank
 
     def child_nodes(self):
-        yield self.key; yield self.value
+        yield self.value
+
     def cstr(self):
-        return self._lhs.cstr() + "=" + self._rhs.cstr() + ";\n"
+        return self.key + "=" + self.value.cstr() + ";\n"
+
     def fstr(self):
-        return self._lhs.fstr() + "=" + self._rhs.fstr() + ";\n"
+        return self.key + "=" + self.value.fstr() + ";\n"
 
 class TTSlice(base.TTNode):
 

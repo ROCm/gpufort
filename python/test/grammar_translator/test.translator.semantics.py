@@ -41,6 +41,7 @@ class TestSemantics(unittest.TestCase):
     def test_01_create_scope(self):
         global scope
         scope = indexer.scope.create_scope_from_declaration_list("""\
+        use iso_c_binding
         implicit none
         integer, parameter :: m = 2, n = 3, k = 4
         integer :: i,j,k
@@ -184,11 +185,19 @@ class TestSemantics(unittest.TestCase):
     def test_06_resolve_function_call(self):
         testdata = [
           "real(1)",
-          #"real(1,8)",
-          #"real(j,kind=8)",
+          "real(1,8)",
+          "real(j,kind=8)",
+          "real(1,c_double)",
+          "real(j,kind=c_double)",
+          "int(1)",
+          "int(1,8)",
+          "int(j,kind=8)",
+          "int(1,c_long)",
+          "int(j,kind=c_long)",
         ]
 
         for i,test in enumerate(testdata):
+            print(test)
             ttrvalue = translator.tree.grammar.rvalue.parseString(
               test,parseAll=True
             )[0]
@@ -198,7 +207,6 @@ class TestSemantics(unittest.TestCase):
               ttrvalue.is_elemental_function_call,
               ttrvalue.is_converter_call,
             )
-            #print(test)
             print(result_tuple)
             #self.assertEqual(
             #  TestSemantics.resolve_rvalue_results[i],

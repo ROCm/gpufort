@@ -19,7 +19,6 @@ default_type_accessibility = "public"
         # in module, this default value is assumed.
 
 module_ignore_list = [ # these modules are ignored when checking dependencies
-    "iso_c_binding",
     "iso_fortran_env", 
     "ieee_arithmetic",
     "openacc",

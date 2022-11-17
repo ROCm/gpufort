@@ -196,7 +196,7 @@ class Grammar:
         
         self.assignment_begin = self.lvalue + self.EQ
         self.assignment = self.lvalue + self.EQ + self.arith_expr # ! emits 2 tokens: *,*
-        self.keyword_argument = self.identifier + self.EQ + self.arith_expr
+        self.keyword_argument = self.identifier_no_action + self.EQ + self.arith_expr
         
         self.matrix_arith_expr = self.MATLPAR + pyp.Group(pyp.delimitedList(self.arith_expr)) + self.MATRPAR
         self.matrix_assignment = self.lvalue + self.EQ + self.matrix_arith_expr
@@ -216,8 +216,7 @@ class Grammar:
           | ( opt_arith_expr + COLON + opt_arith_expr )
         )
         # define forward declared tokens
-        self.argument = self.tensor_slice | self.arith_expr
-        self.function_call_arg <<= self.argument | self.keyword_argument
+        self.function_call_arg <<= self.tensor_slice | self.keyword_argument | self.arith_expr
         
         # conversion functions
         # todo: check type of variable when translating

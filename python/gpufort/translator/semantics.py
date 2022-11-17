@@ -95,8 +95,12 @@ class Semantics:
           # instead of fstr
           indexer.scope.create_index_search_tag(ttnode.fstr())
         )
-        print(ttnode.symbol_info)
-        if ttnode.type != "type":
+        #print(ttnode.symbol_info)
+        if not ( 
+             ttnode.type == "type" or
+             (ttnode.is_function_call 
+             and ttnode.is_converter_call)
+           ):
             self._lookup_bytes_per_element(ttnode)
         if ttnode.is_array_expr():
             self._check_array_indices(ttnode,scope)

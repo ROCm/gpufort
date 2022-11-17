@@ -15,15 +15,15 @@ namespace {
     switch(property){
       case acc_property_memory:
         return gpufortrt_property_memory;
-      case gpufortrt_property_free_memory:
+      case acc_property_free_memory:
         return gpufortrt_property_free_memory;
-      case gpufortrt_property_shared_memory_support:
+      case acc_property_shared_memory_support:
         return gpufortrt_property_shared_memory_support;
-      case gpufortrt_property_name:
+      case acc_property_name:
         return gpufortrt_property_name;
-      case gpufortrt_property_vendor:
+      case acc_property_vendor:
         return gpufortrt_property_vendor;
-      case gpufortrt_property_driver:
+      case acc_property_driver:
         return gpufortrt_property_driver;
     }
   }
@@ -159,6 +159,24 @@ int acc_is_present(void* hostptr,std::size_t num_bytes) {
     return 0;
 }
 
+void acc_wait(int* wait_arg, int num_wait, bool if_arg){
+  gpufortrt_wait(wait_arg, num_wait, if_arg);
+}
+
+void acc_wait_async(int* wait_arg, int num_wait, 
+                    int* async_arg, int num_async, 
+                    bool if_arg){
+  gpufortrt_wait_async(wait_arg, num_wait, async_arg, num_async, if_arg);
+}
+
+void acc_wait_all(bool if_arg){
+  gpufortrt_wait_all(if_arg);
+}
+
+void acc_wait_all_async(int* async_arg, int num_async, bool if_arg){
+  gpufortrt_wait_all_async(async_arg, num_async, if_arg);
+}
+
 void acc_wait_device(int* wait_arg, int num_wait, int dev_num, bool if_arg){
   gpufortrt_wait_device(wait_arg, num_wait, dev_num, if_arg);
 }
@@ -176,4 +194,20 @@ void acc_wait_all_device(int dev_num, bool if_arg){
 void acc_wait_all_device_async(int* async_arg, int num_async,
                            int dev_num, bool if_arg){
   gpufortrt_wait_all_device_async(async_arg, num_async, dev_num, if_arg);
+}
+
+int acc_async_test(int wait_arg){
+  return gpufortrt_async_test(wait_arg);
+}
+
+int acc_async_test_device(int wait_arg, int dev_num){
+  return gpufortrt_async_test_device( wait_arg, dev_num);
+}
+
+int acc_async_test_all(void){
+  return gpufortrt_async_test_all();
+}
+
+int acc_async_test_all_device(int dev_num){
+  return gpufortrt_async_test_all_device(dev_num);
 }

@@ -665,21 +665,24 @@ void gpufortrt_wait_all_device_async(int* async_arg, int num_async,
 }
 
 int gpufortrt_async_test(int wait_arg) {
-  gpufortrt::internal::queue_record_list.synchronize(wait_arg);
+  return gpufortrt::internal::queue_record_list.test(wait_arg);
 }
 
 int gpufortrt_async_test_device(int wait_arg, int dev_num) {
   const int current_device_num = gpufortrt_get_device_num();
   gpufortrt_set_device_num(dev_num);
-  gpufortrt_async_test(wait_arg);
+  int result = gpufortrt_async_test(wait_arg);
   gpufortrt_set_device_num(current_device_num);
+  return result;
 }
 
 int gpufortrt_async_test_all() {
   for (size_t i = 0; i < gpufortrt::internal::queue_record_list.size(); i++) {
     auto& queue = gpufortrt::internal::queue_record_list[i].queue;
-    HIP_CHECK(hipStreamQuery(queue))// TODO backend specific, externalize
+    if(hipStreamQuery(queue) != hipSuccess) return 0;
+    // HIP_CHECK(hipStreamQuery(queue))// TODO backend specific, externalize
   } 
+  return 1;
 }
 
 int gpufortrt_async_test_all_device(int dev_num) {

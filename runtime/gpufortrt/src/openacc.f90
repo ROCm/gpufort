@@ -216,6 +216,128 @@ contains
     acc_is_present_nb = acc_is_present_b(c_loc(data_arg),size(data_arg))
   end function
 
+  subroutine acc_wait(wait_arg, condition)
+    use iso_c_binding
+    implicit none
+    !
+    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg
+    logical(c_bool),intent(in), optional :: condition
+    !
+    interface
+      subroutine acc_wait_c_impl(wait_arg, num_wait_args, condition) &
+        bind(c,name="acc_wait")
+        use iso_c_binding
+        implicit none
+        !
+        type(c_ptr),value,intent(in) :: wait_arg
+        integer(c_int),value,intent(in) :: num_wait_args
+        logical(c_bool),value,intent(in) :: condition
+        !
+      end subroutine
+    end interface
+    !
+    logical(c_bool) :: opt_if_arg
+    !
+    opt_if_arg = .true._c_bool
+    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
+    if ( present(wait_arg) ) then
+        call acc_wait_c_impl(&
+        c_loc(wait_arg), size(wait_arg,kind=c_int), opt_if_arg)
+      endif
+  end subroutine
+
+  subroutine acc_wait_async(wait_arg, async_arg, condition)
+    use iso_c_binding
+    implicit none
+    !
+    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg, async_arg
+    logical(c_bool),value,intent(in), optional :: condition
+    !
+    interface
+      subroutine acc_wait_async_c_impl(&
+        wait_arg, num_wait_args, &
+        async_arg, num_async_args, &
+        condition) &
+        bind(c,name="acc_wait_async")
+        use iso_c_binding
+        implicit none
+        !
+        type(c_ptr),value,intent(in) :: wait_arg, async_arg
+        integer(c_int),value,intent(in) :: num_wait_args, num_async_args
+        logical(c_bool),value,intent(in) :: condition
+        !
+      end subroutine
+    end interface
+    !
+    logical(c_bool) :: opt_if_arg
+    !
+    opt_if_arg = .true._c_bool
+    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
+    if ( present(wait_arg) ) then
+      if ( present(async_arg) ) then
+        call acc_wait_async_c_impl(&
+        c_loc(wait_arg), size(wait_arg,kind=c_int),&
+        c_loc(async_arg), size(async_arg,kind=c_int), opt_if_arg)
+      endif
+    endif
+  end subroutine
+
+  subroutine acc_wait_all(condition)
+    use iso_c_binding
+    implicit none
+    !
+    logical(c_bool),intent(in), optional :: condition
+    !
+    interface
+      subroutine acc_wait_all_c_impl(condition) &
+        bind(c,name="acc_wait_all")
+        use iso_c_binding
+        implicit none
+        !
+        logical(c_bool),value,intent(in) :: condition
+        !
+      end subroutine
+    end interface
+    !
+    logical(c_bool) :: opt_if_arg
+    !
+    opt_if_arg = .true._c_bool
+    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
+    call acc_wait_all_c_impl(opt_if_arg)
+  end subroutine
+
+  subroutine acc_wait_all_async(async_arg, condition)
+    use iso_c_binding
+    implicit none
+    !
+    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: async_arg
+    logical(c_bool),value,intent(in), optional :: condition
+    !
+    interface
+      subroutine acc_wait_all_async_c_impl(&
+        async_arg, num_async_args, &
+        condition) &
+        bind(c,name="acc_wait_all_async")
+        use iso_c_binding
+        implicit none
+        !
+        type(c_ptr),value,intent(in) :: async_arg
+        integer(c_int),value,intent(in) :: num_async_args
+        logical(c_bool),value,intent(in) :: condition
+        !
+      end subroutine
+    end interface
+    !
+    logical(c_bool) :: opt_if_arg
+    !
+    opt_if_arg = .true._c_bool
+    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
+      if ( present(async_arg) ) then
+        call acc_wait_all_async_c_impl(&
+        c_loc(async_arg), size(async_arg,kind=c_int), opt_if_arg)
+      endif
+  end subroutine
+
   subroutine acc_wait_device(wait_arg, dev_num, condition)
     use iso_c_binding
     implicit none
@@ -353,4 +475,83 @@ contains
       endif
     endif
   end subroutine
+
+  logical function acc_async_test(wait_arg)
+    use iso_c_binding
+    implicit none
+    !
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: wait_arg
+    !
+    interface
+      integer(c_int) function acc_async_test_c_impl(wait_arg) &
+        bind(c,name="acc_async_test")
+        use iso_c_binding
+        implicit none
+        !
+        type(c_ptr),value,intent(in) :: wait_arg
+        !
+      end function
+    end interface
+    !
+    acc_async_test = acc_async_test_c_impl(c_loc(wait_arg)) > 0
+  end function
+
+  logical function acc_async_test_device(wait_arg, dev_num)
+    use iso_c_binding
+    implicit none
+    !
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: wait_arg
+    integer(c_int), optional :: dev_num
+    !
+    interface
+      integer(c_int) function acc_async_test_device_c_impl(wait_arg, dev_num) &
+        bind(c,name="acc_async_test_device")
+        use iso_c_binding
+        implicit none
+        !
+        type(c_ptr),value,intent(in) :: wait_arg
+        integer(c_int), optional :: dev_num
+        !
+      end function
+    end interface
+    !
+    acc_async_test_device = acc_async_test_device_c_impl(c_loc(wait_arg), dev_num) > 0
+  end function
+
+  logical function acc_async_test_all()
+    use iso_c_binding
+    implicit none
+    !
+    interface
+      integer(c_int) function acc_async_test_all_c_impl() &
+        bind(c,name="acc_async_test_all")
+        use iso_c_binding
+        implicit none
+        !
+      end function
+    end interface
+    !
+    acc_async_test_all = acc_async_test_all_c_impl() > 0
+  end function
+
+  logical function acc_async_test_all_device(dev_num)
+    use iso_c_binding
+    implicit none
+    !
+    integer(c_int), value, intent(in) :: dev_num
+    !
+    interface
+      integer(c_int) function acc_async_test_all_device_c_impl(dev_num) &
+        bind(c,name="acc_async_test_all_device")
+        use iso_c_binding
+        implicit none
+        !
+        integer(c_int), value, intent(in) :: dev_num
+        !
+      end function
+    end interface
+    !
+    acc_async_test_all_device = acc_async_test_all_device_c_impl(dev_num) > 0
+  end function
+
 end module

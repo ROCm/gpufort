@@ -10,6 +10,7 @@ LDFLAGS = $(shell gpufort --print-acc-ldflags) -lgfortran
 
 # sources
 TEST_SRC      = \
+				./test_acc_async_test_00.f90 \
 				./test_acc_get_property_00.f90 \
 				./test_acc_is_present.f90 \
 				./test_acc_get_device_num_00.f90 \

@@ -216,262 +216,188 @@ contains
     acc_is_present_nb = acc_is_present_b(c_loc(data_arg),size(data_arg))
   end function
 
-  subroutine acc_wait(wait_arg, condition)
+  subroutine acc_wait(wait_arg)
     use iso_c_binding
     implicit none
     !
     integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg
-    logical(c_bool),intent(in), optional :: condition
     !
     interface
-      subroutine acc_wait_c_impl(wait_arg, num_wait_args, condition) &
+      subroutine acc_wait_c_impl(wait_arg) &
         bind(c,name="acc_wait")
         use iso_c_binding
         implicit none
         !
         type(c_ptr),value,intent(in) :: wait_arg
-        integer(c_int),value,intent(in) :: num_wait_args
-        logical(c_bool),value,intent(in) :: condition
         !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
     if ( present(wait_arg) ) then
-        call acc_wait_c_impl(&
-        c_loc(wait_arg), size(wait_arg,kind=c_int), opt_if_arg)
+        call acc_wait_c_impl(c_loc(wait_arg))
       endif
   end subroutine
 
-  subroutine acc_wait_async(wait_arg, async_arg, condition)
+  subroutine acc_wait_async(wait_arg, async_arg)
     use iso_c_binding
     implicit none
     !
     integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg, async_arg
-    logical(c_bool),value,intent(in), optional :: condition
     !
     interface
-      subroutine acc_wait_async_c_impl(&
-        wait_arg, num_wait_args, &
-        async_arg, num_async_args, &
-        condition) &
+      subroutine acc_wait_async_c_impl(wait_arg, async_arg) &
         bind(c,name="acc_wait_async")
         use iso_c_binding
         implicit none
         !
         type(c_ptr),value,intent(in) :: wait_arg, async_arg
-        integer(c_int),value,intent(in) :: num_wait_args, num_async_args
-        logical(c_bool),value,intent(in) :: condition
         !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
     if ( present(wait_arg) ) then
       if ( present(async_arg) ) then
-        call acc_wait_async_c_impl(&
-        c_loc(wait_arg), size(wait_arg,kind=c_int),&
-        c_loc(async_arg), size(async_arg,kind=c_int), opt_if_arg)
+        call acc_wait_async_c_impl(c_loc(wait_arg), c_loc(async_arg))
       endif
     endif
   end subroutine
 
-  subroutine acc_wait_all(condition)
+  subroutine acc_wait_all()
     use iso_c_binding
     implicit none
     !
-    logical(c_bool),intent(in), optional :: condition
-    !
     interface
-      subroutine acc_wait_all_c_impl(condition) &
+      subroutine acc_wait_all_c_impl() &
         bind(c,name="acc_wait_all")
         use iso_c_binding
         implicit none
         !
-        logical(c_bool),value,intent(in) :: condition
-        !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
-    call acc_wait_all_c_impl(opt_if_arg)
+    call acc_wait_all_c_impl()
   end subroutine
 
-  subroutine acc_wait_all_async(async_arg, condition)
+  subroutine acc_wait_all_async(async_arg)
     use iso_c_binding
     implicit none
     !
     integer(acc_handle_kind),dimension(..),target,intent(in),optional :: async_arg
-    logical(c_bool),value,intent(in), optional :: condition
     !
     interface
-      subroutine acc_wait_all_async_c_impl(&
-        async_arg, num_async_args, &
-        condition) &
+      subroutine acc_wait_all_async_c_impl(async_arg) &
         bind(c,name="acc_wait_all_async")
         use iso_c_binding
         implicit none
         !
         type(c_ptr),value,intent(in) :: async_arg
-        integer(c_int),value,intent(in) :: num_async_args
-        logical(c_bool),value,intent(in) :: condition
         !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
-      if ( present(async_arg) ) then
-        call acc_wait_all_async_c_impl(&
-        c_loc(async_arg), size(async_arg,kind=c_int), opt_if_arg)
-      endif
+    if ( present(async_arg) ) then
+      call acc_wait_all_async_c_impl(c_loc(async_arg))
+    endif
   end subroutine
 
-  subroutine acc_wait_device(wait_arg, dev_num, condition)
+  subroutine acc_wait_device(wait_arg, dev_num)
     use iso_c_binding
     implicit none
     !
     integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg
     integer(c_int), optional :: dev_num
-    logical(c_bool),intent(in), optional :: condition
     !
     interface
-      subroutine acc_wait_device_c_impl(wait_arg, num_wait_args, dev_num, condition) &
+      subroutine acc_wait_device_c_impl(wait_arg, dev_num) &
         bind(c,name="acc_wait_device")
         use iso_c_binding
         implicit none
         !
         type(c_ptr),value,intent(in) :: wait_arg
-        integer(c_int),value,intent(in) :: num_wait_args
         integer(c_int),value,intent(in) :: dev_num
-        logical(c_bool),value,intent(in) :: condition
         !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
     if ( present(wait_arg) ) then
         if( present(dev_num) ) then
-          call acc_wait_device_c_impl(&
-          c_loc(wait_arg), size(wait_arg,kind=c_int), dev_num, opt_if_arg)
+          call acc_wait_device_c_impl(c_loc(wait_arg), dev_num)
         endif
     endif
   end subroutine
 
-  subroutine acc_wait_device_async(wait_arg, async_arg, dev_num, condition)
+  subroutine acc_wait_device_async(wait_arg, async_arg, dev_num)
     use iso_c_binding
     implicit none
     !
     integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg, async_arg
     integer(c_int), optional :: dev_num
-    logical(c_bool),value,intent(in), optional :: condition
     !
     interface
-      subroutine acc_wait_device_async_c_impl(&
-        wait_arg, num_wait_args, &
-        async_arg, num_async_args, &
-        dev_num, condition) &
+      subroutine acc_wait_device_async_c_impl(wait_arg, async_arg, dev_num) &
         bind(c,name="acc_wait_device_async")
         use iso_c_binding
         implicit none
         !
         type(c_ptr),value,intent(in) :: wait_arg, async_arg
-        integer(c_int),value,intent(in) :: num_wait_args, num_async_args
         integer(c_int),value,intent(in) :: dev_num
-        logical(c_bool),value,intent(in) :: condition
         !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
     if ( present(wait_arg) ) then
       if ( present(async_arg) ) then
         if( present(dev_num) ) then
-          call acc_wait_device_async_c_impl(&
-          c_loc(wait_arg), size(wait_arg,kind=c_int),&
-          c_loc(async_arg), size(async_arg,kind=c_int), dev_num, opt_if_arg)
+          call acc_wait_device_async_c_impl(c_loc(wait_arg), c_loc(async_arg), dev_num)
         endif
       endif
     endif
   end subroutine
 
-  subroutine acc_wait_all_device(dev_num, condition)
+  subroutine acc_wait_all_device(dev_num)
     use iso_c_binding
     implicit none
     !
     integer(c_int), optional :: dev_num
-    logical(c_bool),intent(in), optional :: condition
     !
     interface
-      subroutine acc_wait_all_device_c_impl(dev_num, condition) &
+      subroutine acc_wait_all_device_c_impl(dev_num) &
         bind(c,name="acc_wait_all_device")
         use iso_c_binding
         implicit none
         !
         integer(c_int),value,intent(in) :: dev_num
-        logical(c_bool),value,intent(in) :: condition
         !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
-      if( present(dev_num) ) then
-        call acc_wait_all_device_c_impl(dev_num, opt_if_arg)
-      endif
+    if( present(dev_num) ) then
+      call acc_wait_all_device_c_impl(dev_num)
+    endif
   end subroutine
 
-  subroutine acc_wait_all_device_async(async_arg, dev_num, condition)
+  subroutine acc_wait_all_device_async(async_arg, dev_num)
     use iso_c_binding
     implicit none
     !
     integer(acc_handle_kind),dimension(..),target,intent(in),optional :: async_arg
     integer(c_int), optional :: dev_num
-    logical(c_bool),value,intent(in), optional :: condition
     !
     interface
-      subroutine acc_wait_all_device_async_c_impl(&
-        async_arg, num_async_args, &
-        dev_num, condition) &
+      subroutine acc_wait_all_device_async_c_impl(async_arg, dev_num) &
         bind(c,name="acc_wait_all_device_async")
         use iso_c_binding
         implicit none
         !
         type(c_ptr),value,intent(in) :: async_arg
-        integer(c_int),value,intent(in) :: num_async_args
         integer(c_int),value,intent(in) :: dev_num
-        logical(c_bool),value,intent(in) :: condition
         !
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_if_arg
-    !
-    opt_if_arg = .true._c_bool
-    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
     if ( present(async_arg) ) then
       if( present(dev_num) ) then
-        call acc_wait_all_device_async_c_impl(&
-        c_loc(async_arg), size(async_arg,kind=c_int), dev_num, opt_if_arg)
+        call acc_wait_all_device_async_c_impl(c_loc(async_arg), dev_num)
       endif
     endif
   end subroutine

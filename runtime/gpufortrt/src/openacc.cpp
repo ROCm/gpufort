@@ -159,41 +159,36 @@ int acc_is_present(void* hostptr,std::size_t num_bytes) {
     return 0;
 }
 
-void acc_wait(int* wait_arg, int num_wait, bool if_arg){
-  gpufortrt_wait(wait_arg, num_wait, if_arg);
+void acc_wait(int wait_arg){
+  gpufortrt_wait(&wait_arg, 1, true);
 }
 
-void acc_wait_async(int* wait_arg, int num_wait, 
-                    int* async_arg, int num_async, 
-                    bool if_arg){
-  gpufortrt_wait_async(wait_arg, num_wait, async_arg, num_async, if_arg);
+void acc_wait_async(int wait_arg, int async_arg){
+  gpufortrt_wait_async(&wait_arg, 1, &async_arg, 1, true);
 }
 
-void acc_wait_all(bool if_arg){
-  gpufortrt_wait_all(if_arg);
+void acc_wait_all(){
+  gpufortrt_wait_all(true);
 }
 
-void acc_wait_all_async(int* async_arg, int num_async, bool if_arg){
-  gpufortrt_wait_all_async(async_arg, num_async, if_arg);
+void acc_wait_all_async(int async_arg){
+  gpufortrt_wait_all_async(&async_arg, 1, true);
 }
 
-void acc_wait_device(int* wait_arg, int num_wait, int dev_num, bool if_arg){
-  gpufortrt_wait_device(wait_arg, num_wait, dev_num, if_arg);
+void acc_wait_device(int wait_arg, int dev_num){
+  gpufortrt_wait_device(&wait_arg, 1, dev_num, true);
 }
 
-void acc_wait_device_async(int* wait_arg, int num_wait, 
-                           int* async_arg, int num_async,
-                           int dev_num, bool if_arg){
-  gpufortrt_wait_device_async(wait_arg, num_wait, async_arg, num_async, dev_num, if_arg);
+void acc_wait_device_async(int wait_arg, int async_arg, int dev_num){
+  gpufortrt_wait_device_async(&wait_arg, 1, &async_arg, 1, dev_num, true);
 }
 
-void acc_wait_all_device(int dev_num, bool if_arg){
-  gpufortrt_wait_all_device(dev_num, if_arg);
+void acc_wait_all_device(int dev_num){
+  gpufortrt_wait_all_device(dev_num, true);
 }
 
-void acc_wait_all_device_async(int* async_arg, int num_async,
-                           int dev_num, bool if_arg){
-  gpufortrt_wait_all_device_async(async_arg, num_async, dev_num, if_arg);
+void acc_wait_all_device_async(int async_arg, int dev_num){
+  gpufortrt_wait_all_device_async(&async_arg, 1, dev_num, true);
 }
 
 int acc_async_test(int wait_arg){

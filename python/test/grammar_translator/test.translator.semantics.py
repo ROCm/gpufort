@@ -175,8 +175,8 @@ class TestSemantics(unittest.TestCase):
               ttrvalue.is_contiguous_array,
               ttrvalue.is_full_array,
             )
-            print(test)
-            print(result_tuple)
+            #print(test)
+            #print(result_tuple)
             self.assertEqual(
               TestSemantics.resolve_rvalue_results[i],
               result_tuple
@@ -195,9 +195,20 @@ class TestSemantics(unittest.TestCase):
           "int(1,c_long)",
           "int(j,kind=c_long)",
         ]
+        results = [
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+          (True, True, True),
+        ]
 
         for i,test in enumerate(testdata):
-            print(test)
             ttrvalue = translator.tree.grammar.rvalue.parseString(
               test,parseAll=True
             )[0]
@@ -207,11 +218,12 @@ class TestSemantics(unittest.TestCase):
               ttrvalue.is_elemental_function_call,
               ttrvalue.is_converter_call,
             )
-            print(result_tuple)
-            #self.assertEqual(
-            #  TestSemantics.resolve_rvalue_results[i],
-            #  result_tuple
-            #)
+            #print(test)
+            #print(result_tuple)
+            self.assertEqual(
+              results[i],
+              result_tuple
+            )
 
 if __name__ == '__main__':
     unittest.main() 

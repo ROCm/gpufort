@@ -149,7 +149,32 @@ class TTSubroutineCall(base.TTNode):
 class TTAssignment(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._lhs, self._rhs = tokens
+        self.lhs, self.rhs = tokens
+        self._type = None
+        self._rank = None
+        self._bytes_per_element = None   
+ 
+    @property
+    def type(self):
+        assert self._type != None
+        return self._type
+    @type.setter
+    def type(self,typ):
+        self._type = typ
+    @property
+    def rank(self):
+        assert self._rank != None
+        return self._rank
+    @rank.setter
+    def rank(self,rank):
+        self._rank = rank
+    @property
+    def bytes_per_element(self):
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element
 
     def child_nodes(self):
         yield self._lhs; yield self._rhs
@@ -161,37 +186,86 @@ class TTAssignment(base.TTNode):
 class TTComplexAssignment(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._lhs, self._rhs = tokens
+        self.lhs, self.rhs = tokens
+        self._type = None
+        self._rank = None
+        self._bytes_per_element = None   
+ 
+    @property
+    def type(self):
+        assert self._type != None
+        return self._type
+    @type.setter
+    def type(self,typ):
+        self._type = typ
+    @property
+    def rank(self):
+        assert self._rank != None
+        return self._rank
+    @rank.setter
+    def rank(self,rank):
+        self._rank = rank
+    @property
+    def bytes_per_element(self):
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element
 
     def child_nodes(self):
-        yield self._lhs; yield self._rhs
+        yield self.lhs; yield self.rhs
     def cstr(self):
-        """
-        Expand the complex assignment.
+        """Expand the complex assignment.
         """
         result = ""
-        result += "{}.x = {};\n".format(traversals.make_cstr(self._lhs),
-                                        traversals.make_cstr(self._rhs._real))
-        result += "{}.y = {};\n".format(traversals.make_cstr(self._lhs),
-                                        traversals.make_cstr(self._rhs._imag))
+        result += "{}.x = {};\n".format(traversals.make_cstr(self.lhs),
+                                        traversals.make_cstr(self.rhs._real))
+        result += "{}.y = {};\n".format(traversals.make_cstr(self.lhs),
+                                        traversals.make_cstr(self.rhs._imag))
         return result
 
 class TTMatrixAssignment(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._lhs, self._rhs = tokens
+        self.lhs, self.rhs = tokens
+        self._type = None
+        self._rank = None
+        self._bytes_per_element = None   
+ 
+    @property
+    def type(self):
+        assert self._type != None
+        return self._type
+    @type.setter
+    def type(self,typ):
+        self._type = typ
+    @property
+    def rank(self):
+        assert self._rank != None
+        return self._rank
+    @rank.setter
+    def rank(self,rank):
+        self._rank = rank
+    @property
+    def bytes_per_element(self):
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element
 
     def child_nodes(self):
-        yield self._lhs; yield self._rhs
+        yield self.lhs; yield self.rhs
     def cstr(self):
         """
         Expand the matrix assignment.
         User still has to fix the ranges manually. 
         """
         result = "// TODO: fix ranges"
-        for expression in self._rhs:
+        for expression in self.rhs:
             result += traversals.make_cstr(
-                self._lhs) + argument + "=" + flatten_arith_expr(
+                self.lhs) + argument + "=" + flatten_arith_expr(
                     expression) + ";\n"
         return result
 

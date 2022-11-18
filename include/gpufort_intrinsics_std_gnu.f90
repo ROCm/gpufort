@@ -611,7 +611,7 @@ function ierrno()
   integer :: ierrno
 end function
 
-attributes(intrinsic,std_gnu)&
+attributes(intrinsic,kind_arg,std_gnu)&
 elemental function int2(a)
   real :: a
   !
@@ -625,7 +625,7 @@ elemental function short(a)
   integer :: short
 end function
 
-attributes(intrinsic,std_gnu)&
+attributes(intrinsic,kind_arg,std_gnu)&
 elemental function int8(a)
   real :: a
   !
@@ -792,7 +792,7 @@ function kill(pid,sig)
   integer :: kill
 end function
 
-attributes(intrinsic,std_gnu)&
+attributes(intrinsic,kind_arg,std_gnu)&
 elemental function lnblnk(string,kind)
   character :: string
   integer, optional :: kind
@@ -1552,4 +1552,3 @@ subroutine unlink(path,status)
   character, intent(in) :: path
   integer, intent(out), optional :: status
 end subroutine
-

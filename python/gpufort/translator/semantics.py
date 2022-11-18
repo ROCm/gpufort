@@ -68,13 +68,43 @@ class Semantics:
                     )
   
     def _check_function_call_arguments(self,ttnode,scope):
+        """
+        - check that keyword arguments do not before positional arguments
+        - check that no argument is specified as positional argument
+          and keyword argument
+        - check if all required arguments have been specified 
+        """
         found_named_arg = False
-        for arg in ttnode.args:
+        dummy_arg_names = ttnode.dummy_args # expected arguments
+        used_arg_names = []
+        # check that keyword arguments do not before positional arguments
+        # check that no argument is specified as positional argument
+        # and keyword argument
+        for i,arg in enumerate(ttnode.args):
             if isinstance(arg,tree.TTKeywordArgument):
                 found_named_arg = True
+                key = arg.key.lower()
+                if key in used_arg_names:
+                    raise util.error.SemanticError(
+                      "named argument '{}' already present as positional or keyword argument".format(
+                        key
+                      )
+                    )
+                used_arg_names.append(key)
             else:
                 if found_named_arg:
                     raise util.error.SemanticError("positional argument after named argument")
+                used_arg_names.append(dummy_arg_names[i])
+        # check if all required arguments have been specified 
+        for dummy_arg_name in dummy_arg_names:
+            if dummy_arg_name not in used_arg_names:
+                if not ttnode.get_expected_argument_is_optional(dummy_arg_name):
+                    raise util.error.SemanticError(
+                      "required argument '{}' not specified".format(
+                        dummy_arg_name
+                      )
+                    )
+              
  
     def _resolve_function_call(self,ttnode,scope):
         """
@@ -245,3 +275,18 @@ class Semantics:
                 self._check_unary_op(ttnode,scope)
             elif isinstance(ttnode,tree.TTBinaryOpChain):
                 self._resolve_binary_op(ttnode,scope)
+    
+    def resolve_assignment(self,ttassignment,scope):
+        """Resolve the types in an arithmetic expression parse tree.
+        Post-order traversal is mandatory as this traverses descedants
+        before their parents.
+        :raise util.error.LookupError: if a symbol's type could not be determined.
+        :note: Can also be applied to subtrees contained in TTArithExpr.
+        """
+        self.resolve_arith_expr(ttassignment.lhs)
+        self.resolve_arith_expr(ttassignment.rhs)
+        if ttassignment.lhs.rank != ttassignment.rhs.rank:
+            raise util.error.SemanticError("rank mismatch between LHS and RHS")
+        if ( ttassignment.lhs.type != ttassignment.rhs.type
+             or ttassignment.lhs.bytes_per_element != ttassignment.rhs.bytes_per_element ):
+            raise util.error.SemanticError("type mismatch between LHS and RHS")

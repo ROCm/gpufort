@@ -257,10 +257,9 @@ class __HIPKernelBodyGenerator:
           self._result.rvalues
         )
         #todo: expand array assignment expressions
-        if isinstance(ttnode,tree.TTAssignment):
-            if arrayexpr.is_array_assignment(ttnode._lhs,self._scope):
-                
-                pass
+        #if isinstance(ttnode,tree.TTAssignment):
+        #    if arrayexpr.is_array_assignment(ttnode._lhs,self._scope):
+        #        pass
         #todo: modify expressions
         self._result.generated_code += textwrap.indent(
           ttnode.cstr().rstrip("\n")+"\n",

@@ -16,8 +16,10 @@ from . import tree
 from . import opts
 from . import conv
 from . import prepostprocess
+from . import semantics
 
 statement_classifier = util.parsing.StatementClassifier()
+semantics_checker = semantics.Semantics()
 
 def _is_ignored_statement(tokens):
     """All statements beginning with the tokens below are ignored.
@@ -32,8 +34,20 @@ def _is_ignored_fortran_directive(tokens):
            or util.parsing.compare_ignore_case(tokens[1:4],["acc","end","loop"])
            or util.parsing.compare_ignore_case(tokens[1:3],["acc","routine"]))
 
+def _parse_arith_expr(expr_as_str,scope):
+    parse_result = tree.grammar.parse_arith_expr(expr_as_str)
+    if scope != None:
+        semantics_checker.resolve_arith_expr(parse_result,scope)
+    return parse_result
+
+def _parse_assignment_expr(expr_as_str,scope):
+    parse_result = tree.grammar.parse_assignment(expr_as_str)
+    if scope != None:
+        semantics_checker.resolve_arith_expr(parse_result,scope)
+    return parse_result
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def parse_fortran_code(code,result_name=None):
+def parse_fortran_code(code,result_name=None,scope=None):
     """
     :param code: text, list of lines, or list of linemaps, see gpufort.linemapper component.
     :param result_name: Return value to use for any return statements found
@@ -56,7 +70,6 @@ def parse_fortran_code(code,result_name=None):
     - consider comments
     - every call returns a subtree
     """
-
     linemaps = None
     if type(code) == str:
         if len(code):
@@ -269,7 +282,7 @@ def parse_fortran_code(code,result_name=None):
               = result
             if cond != None:
                 do_loop = tree.TTDoWhile([
-                  tree.grammar.parse_arith_expr(cond),
+                  _parse_arith_expr(cond,scope),
                   []
                 ])
             elif var != None: 
@@ -278,9 +291,9 @@ def parse_fortran_code(code,result_name=None):
                     if var != None and lbound_str != None:
                         begin = tree.grammar.parse_assignment(var + "=" + lbound_str)
                     if ubound_str != None:
-                        end = tree.grammar.parse_arith_expr(ubound_str)
+                        end = _parse_arith_expr(ubound_str,scope)
                     if stride_str != None and len(stride_str):
-                        stride = tree.grammar.parse_arith_expr(stride_str)
+                        stride = _parse_arith_expr(stride_str,scope)
                     do_loop = tree.TTDo([begin, end, stride, []])
                 except pyparsing.ParseException as e:
                     error_("do loop", e)
@@ -307,7 +320,7 @@ def parse_fortran_code(code,result_name=None):
             try:
                 if_branch = tree.TTIfElseIf([
                   None,
-                  tree.grammar.parse_arith_expr(cond),
+                  _parse_arith_expr(cond,scope),
                   []
                 ])
             except pyparsing.ParseException as e:
@@ -323,7 +336,7 @@ def parse_fortran_code(code,result_name=None):
             try:
                 else_if_branch = tree.TTIfElseIf([
                   "else",
-                  tree.grammar.parse_arith_expr(cond),
+                  _parse_arith_expr(cond,scope),
                   []
                 ])
                 descend_(
@@ -346,7 +359,7 @@ def parse_fortran_code(code,result_name=None):
             try:
                 descend_(
                   tree.TTSelectCase([
-                    tree.grammar.parse_arith_expr(named_label),
+                    _parse_arith_expr(named_label,scope),
                     []
                   ]),
                   "select-case",
@@ -362,7 +375,7 @@ def parse_fortran_code(code,result_name=None):
                 descend_(
                   tree.TTCase([
                     ttvalues, 
-                    [tree.grammar.parse_arith_expr(v) for v in values]
+                    [_parse_arith_expr(v,scope) for v in values]
                   ]), "case"
                 )
             except pyparsing.ParseException as e:

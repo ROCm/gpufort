@@ -2,6 +2,14 @@
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 ! This file solely exists to extract information about intrinsics via GPUFORT's indexer tool.
 ! It will not compile with any compiler as non-standard Fortran expressions are used.
+attributes(intrinsic,conversion,kind_arg,std_f95)&
+pure elemental function logical(x,kind)
+  type(*) :: x
+  integer,optional :: kind
+  !
+  logical :: logical
+end function
+
 attributes(intrinsic,std_f95)&
 elemental function achar(i,kind)
   integer :: i
@@ -70,7 +78,7 @@ elemental function btest(i,pos)
   logical :: btest
 end function
 
-attributes(intrinsic,std_f95)&
+attributes(intrinsic,kind_arg,std_f95)&
 elemental function ceiling(a,kind)
   real :: a
   integer, optional :: kind
@@ -135,7 +143,7 @@ elemental function exponent(x)
   integer :: exponent
 end function
 
-attributes(intrinsic,std_f95)&
+attributes(intrinsic,kind_arg,std_f95)&
 elemental function floor(a,kind)
   real :: a
   integer, optional :: kind
@@ -157,7 +165,7 @@ function huge(x)
   real :: huge
 end function
 
-attributes(intrinsic,std_f95)&
+attributes(intrinsic,kind_arg,std_f95)&
 elemental function iachar(c,kind)
   character :: c
   integer, optional :: kind
@@ -247,20 +255,12 @@ function lbound(array,dim,kind)
   integer :: lbound
 end function
 
-attributes(intrinsic,std_f95)&
+attributes(intrinsic,kind_arg,std_f95)&
 elemental function len_trim(string,kind)
   character :: string
   integer, optional :: kind
   !
   integer :: len_trim
-end function
-
-attributes(intrinsic,std_f95)&
-elemental function logical(l,kind)
-  logical :: l
-  integer, optional :: kind
-  !
-  logical :: logical
 end function
 
 attributes(intrinsic,transformational,std_f95)&
@@ -443,7 +443,7 @@ elemental function scale(x,i)
   real :: scale
 end function
 
-attributes(intrinsic,std_f95)&
+attributes(intrinsic,kind_arg,std_f95)&
 elemental function scan(string,set,back,kind)
   character :: string
   character :: set
@@ -567,7 +567,7 @@ function unpack(vector,mask,field)
   real :: unpack
 end function
 
-attributes(intrinsic,std_f95)&
+attributes(intrinsic,kind_arg,std_f95)&
 elemental function verify(string,set,back,kind)
   character :: string
   character :: set
@@ -617,4 +617,3 @@ subroutine system_clock(count,count_rate,count_max)
   integer, intent(out), optional :: count_rate
   integer, intent(out), optional :: count_max
 end subroutine
-

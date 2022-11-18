@@ -3,37 +3,29 @@
 ! This file solely exists to extract information about intrinsics via GPUFORT's indexer tool.
 ! It will not compile with any compiler as non-standard Fortran expressions are used.
 ! conversion indicates the optional kind argument
-attributes(intrinsic,conversion,std_f77)& 
+attributes(intrinsic,conversion,kind_arg,std_f77)& 
 pure elemental function int(x,kind)
   type(*) :: x
   integer,optional :: kind
   !
-  integer(kind),dimension(..) :: int
+  integer :: int
 end function
 
-attributes(intrinsic,conversion,std_f77)&
+attributes(intrinsic,conversion,kind_arg,std_f77)&
 pure elemental function real(x,kind)
   type(*) :: x
   integer,optional :: kind
   !
-  real(kind),dimension(..) :: real
+  real :: real
 end function
 
-attributes(intrinsic,conversion,std_f77)&
-pure elemental function logical(x,kind)
-  type(*) :: x
-  integer,optional :: kind
-  !
-  logical(kind),dimension(..) :: logical
-end function
-
-attributes(intrinsic,conversion,std_f77)&
+attributes(intrinsic,conversion,kind_arg,std_f77)&
 pure elemental function cmplx(x,y,kind)
   type(*) :: x
   type(*),optional :: y
   integer,optional :: kind
   !
-  complex(kind),dimension(..) :: cmplx
+  complex :: cmplx
 end function
 
 attributes(intrinsic,std_f77,actual)&
@@ -85,7 +77,7 @@ elemental function aimag(z)
   real :: aimag
 end function
 
-attributes(intrinsic,std_f77,actual)&
+attributes(intrinsic,kind_arg,std_f77,actual)&
 elemental function aint(a,kind)
   real :: a
   integer, optional :: kind
@@ -100,7 +92,7 @@ elemental function dint(a)
   double precision :: dint
 end function
 
-attributes(intrinsic,std_f77,actual)&
+attributes(intrinsic,kind_arg,std_f77,actual)&
 elemental function anint(a,kind)
   real :: a
   integer, optional :: kind
@@ -165,15 +157,6 @@ elemental function char(i,kind)
   integer, optional :: kind
   !
   character :: char
-end function
-
-attributes(intrinsic,std_f77)&
-elemental function cmplx(x,y,kind)
-  type(*), dimension(..) :: x
-  type(*), dimension(..), optional :: y
-  integer, optional :: kind
-  !
-  complex :: cmplx
 end function
 
 attributes(intrinsic,std_f77,actual)&
@@ -278,7 +261,7 @@ elemental function cexp(x)
   complex :: cexp
 end function
 
-attributes(intrinsic,std_f77)&
+attributes(intrinsic,kind_arg,std_f77)&
 elemental function ichar(c,kind)
   character :: c
   integer, optional :: kind
@@ -286,7 +269,7 @@ elemental function ichar(c,kind)
   integer :: ichar
 end function
 
-attributes(intrinsic,std_f77,actual)&
+attributes(intrinsic,kind_arg,std_f77,actual)&
 elemental function index(string,substring,back,kind)
   character :: string
   character :: substring
@@ -294,14 +277,6 @@ elemental function index(string,substring,back,kind)
   integer, optional :: kind
   !
   integer :: index
-end function
-
-attributes(intrinsic,std_f77)&
-elemental function int(a,kind)
-  real :: a
-  integer, optional :: kind
-  !
-  integer :: int
 end function
 
 attributes(intrinsic,std_f77)&
@@ -527,7 +502,7 @@ elemental function dmod(a,p)
   double precision :: dmod
 end function
 
-attributes(intrinsic,std_f77,actual)&
+attributes(intrinsic,kind_arg,std_f77,actual)&
 elemental function nint(a,kind)
   real :: a
   integer, optional :: kind
@@ -663,4 +638,3 @@ elemental function dtanh(x)
   !
   double precision :: dtanh
 end function
-

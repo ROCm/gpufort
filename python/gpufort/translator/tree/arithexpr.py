@@ -366,6 +366,44 @@ class TTFunctionCall(VarExpr):
         assert self.is_elemental_function_call
         #print(self.symbol_info["attributes"])
         return "conversion" in self.symbol_info["attributes"]
+    
+    @property
+    def result_depends_on_kind(self):
+        """:note: Conversions are always elemental."""
+        assert self.is_elemental_function_call
+        #print(self.symbol_info["attributes"])
+        return "kind_arg" in self.symbol_info["attributes"]
+
+    @property
+    def dummy_args(self):
+        """Names of arguments in their expected order
+        when all arguments are supplied as positional arguments.
+        """
+        assert self.is_function_call
+        return self.symbol_info["dummy_args"] 
+
+    # todo: this should better go into a symbol_info
+    # that indexer.scope creates when you look up a variable
+    def get_expected_argument_symbol_info(self,arg_name):
+        assert self.is_function_call
+        for ivar in self.symbol_info["variables"]:
+            if ivar["name"] == arg_name:
+                return ivar
+        raise util.error.LookupError(
+          "no index record found for argument "
+          + "'{}' of procedure '{}'".format(
+            arg_name,
+            self.symbol_info["name"]
+          )
+        )
+    def get_expected_argument_type(self,arg_name):
+        return self.get_expected_argument_symbol_info(arg_name)["type"]
+    def get_expected_argument_kind(self,arg_name):
+        return self.get_expected_argument_symbol_info(arg_name)["kind"]
+    def get_expected_argument_rank(self,arg_name):
+        return self.get_expected_argument_symbol_info(arg_name)["rank"]
+    def get_expected_argument_is_optional(self,arg_name):
+        return "optional" in self.get_expected_argument_symbol_info(arg_name)["attributes"]
  
     @property
     def name(self):
@@ -658,8 +696,17 @@ class TTValue(base.TTNode):
             return type_defining_node.is_converter_call
         else:
             return False
+ 
+    @property
+    def result_depends_on_kind(self):
+        type_defining_node = self.get_type_defining_node()
+        if isinstance(type_defining_node,TTFunctionCall):
+            return type_defining_node.result_depends_on_kind
+        else:
+            return False
 
-    def get_value(self):
+    @property
+    def value(self):
         return self._value 
 
     def name(self):
@@ -826,7 +873,6 @@ class TTBinaryOpChain(base.TTNode):
         self.exprs = tokens[0]
         self._op_type = None
         self._type = None
-        self._kind = None
         self._rank = None
         self._bytes_per_element = None
 

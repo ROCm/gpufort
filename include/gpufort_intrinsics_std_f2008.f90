@@ -244,7 +244,7 @@ elemental function log_gamma(x)
   real :: log_gamma
 end function
 
-attributes(intrinsic,std_f2008)&
+attributes(intrinsic,kind_arg,std_f2008)&
 elemental function maskl(i,kind)
   integer :: i
   integer, optional :: kind
@@ -252,7 +252,7 @@ elemental function maskl(i,kind)
   integer :: maskl
 end function
 
-attributes(intrinsic,std_f2008)&
+attributes(intrinsic,kind_arg,std_f2008)&
 elemental function maskr(i,kind)
   integer :: i
   integer, optional :: kind
@@ -417,4 +417,3 @@ subroutine execute_command_line(command,wait,exitstat,cmdstat,cmdmsg)
   integer, intent(out), optional :: cmdstat
   character, intent(inout), optional :: cmdmsg
 end subroutine
-

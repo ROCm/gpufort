@@ -209,7 +209,7 @@ def map_allocatable_pointer_derived_type_parts_to_flat_arrays(ttvalues,loop_vars
     """
     substitutions = {}
     for ttvalue in ttvalues:
-        ttnode = ttvalue.get_value()
+        ttnode = ttvalue.value
         if isinstance(ttnode,tree.TTDerivedTypePart):
             ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
@@ -241,7 +241,7 @@ def map_scalar_derived_type_parts_to_flat_scalars(ttvalues,loop_vars,scope):
     """
     substitutions = {}
     for ttvalue in ttvalues:
-        ttnode = ttvalue.get_value()
+        ttnode = ttvalue.value
         if isinstance(ttnode,tree.TTDerivedTypePart):
             ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)

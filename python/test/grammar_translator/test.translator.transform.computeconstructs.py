@@ -99,7 +99,7 @@ class TestTransformAcc(unittest.TestCase):
         for i,test in enumerate(testdata[0:]):
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
-              statements,result_name=None
+              statements,result_name=None,scope=scope
             )
             trafo_result = translator.transform.computeconstructs.map_to_hip_cpp(
               parse_result,

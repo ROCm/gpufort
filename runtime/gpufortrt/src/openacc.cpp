@@ -206,3 +206,27 @@ int acc_async_test_all(void){
 int acc_async_test_all_device(int dev_num){
   return gpufortrt_async_test_all_device(dev_num);
 }
+
+d_void* acc_copyin(h_void* data_arg, size_t bytes){
+  return gpufortrt_copyin(data_arg, bytes, true);
+}
+
+void acc_copyin_async(h_void* data_arg, size_t bytes,
+                      int async_arg){
+  gpufortrt_copyin_async(data_arg, bytes, async_arg, false);
+}
+
+void acc_copyout(h_void* data_arg, size_t bytes){
+  gpufortrt_copyout(data_arg, bytes);
+}
+void acc_copyout_async(h_void* data_arg, size_t bytes, 
+                        int async_arg){
+  gpufortrt_copyout_async(data_arg, bytes, async_arg);
+}
+void acc_copyout_finalize(h_void* data_arg, size_t bytes){
+  gpufortrt_copyout_finalize(data_arg, bytes);
+}
+void acc_copyout_finalize_async(h_void* data_arg, size_t bytes, 
+                                int async_arg){
+  gpufortrt_copyout_finalize_async( data_arg, bytes, async_arg);
+}

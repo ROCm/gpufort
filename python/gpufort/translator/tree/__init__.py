@@ -16,7 +16,6 @@ grammar = _grammar.Grammar(
 )
 del _grammar    
 
-set_fortran_parse_actions(grammar)
 set_arith_expr_parse_actions(grammar)
 set_acc_parse_actions(grammar)
 set_cuf_parse_actions(grammar)

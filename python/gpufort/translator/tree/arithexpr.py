@@ -436,17 +436,9 @@ class TTFunctionCall(VarExpr):
             return name
     
     # TODO reassess
-    def __max_rank_adjusted_items(self):
-        if self.rank > 0:
-            assert self.max_rank <= len(self.items)
-            result = self.items[0:self.max_rank]
-        else:
-            result = []
-        return result
-
     def __args_cstr(self,name,is_array=False,fortran_style_array_access=True):
-        args = self.__max_rank_adjusted_items()
-        if len(self.args):
+        args = self.args
+        if len(args):
             if (not fortran_style_array_access and is_array):
                 return "[_idx_{0}({1})]".format(name, ",".join([
                     traversals.make_cstr(s) for s in args
@@ -807,7 +799,7 @@ class TTUnaryOp(base.TTNode):
     def _op_c_template(self):
         return TTUnaryOp.f2c.get(self.op.lower())
     def cstr(self):
-        if _need_to_add_brackets(self,opd):
+        if _need_to_add_brackets(self,self.opd):
             return self._op_c_template().format(
               r="(" + self.opd.cstr() + ")"
             )
@@ -817,7 +809,7 @@ class TTUnaryOp(base.TTNode):
             )
     
     def fstr(self):
-        if _need_to_add_brackets(self,opd):
+        if _need_to_add_brackets(self,self.opd):
             return self.op + "(" + self.opd.fstr() + ")"
         else:
             return self.op + self.opd.fstr()
@@ -1221,6 +1213,138 @@ class TTSlice(base.TTNode):
                 result += ":" + traversals.make_fstr(self._stride)
             return result
 
+class TTAssignment(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self.lhs, self.rhs = tokens
+        self._type = None
+        self._rank = None
+        self._bytes_per_element = None   
+ 
+    @property
+    def type(self):
+        assert self._type != None
+        return self._type
+    @type.setter
+    def type(self,typ):
+        self._type = typ
+    @property
+    def rank(self):
+        assert self._rank != None
+        return self._rank
+    @rank.setter
+    def rank(self,rank):
+        self._rank = rank
+    @property
+    def bytes_per_element(self):
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element
+
+    def child_nodes(self):
+        yield self.rhs; yield self.rhs
+    def cstr(self):
+        return self.lhs.cstr() + "=" + self.rhs.cstr() + ";\n"
+    def fstr(self):
+        return self.lhs.fstr() + "=" + self.rhs.fstr() + ";\n"
+
+# statements
+class TTComplexAssignment(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self.lhs, self.rhs = tokens
+        self._type = None
+        self._rank = None
+        self._bytes_per_element = None   
+ 
+    @property
+    def type(self):
+        assert self._type != None
+        return self._type
+    @type.setter
+    def type(self,typ):
+        self._type = typ
+    @property
+    def rank(self):
+        assert self._rank != None
+        return self._rank
+    @rank.setter
+    def rank(self,rank):
+        self._rank = rank
+    @property
+    def bytes_per_element(self):
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element
+
+    def child_nodes(self):
+        yield self.lhs; yield self.rhs
+    def cstr(self):
+        """Expand the complex assignment.
+        """
+        result = ""
+        result += "{}.x = {};\n".format(traversals.make_cstr(self.lhs),
+                                        traversals.make_cstr(self.rhs._real))
+        result += "{}.y = {};\n".format(traversals.make_cstr(self.lhs),
+                                        traversals.make_cstr(self.rhs._imag))
+        return result
+
+class TTMatrixAssignment(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self.lhs, self.rhs = tokens
+        self._type = None
+        self._rank = None
+        self._bytes_per_element = None   
+ 
+    @property
+    def type(self):
+        assert self._type != None
+        return self._type
+    @type.setter
+    def type(self,typ):
+        self._type = typ
+    @property
+    def rank(self):
+        assert self._rank != None
+        return self._rank
+    @rank.setter
+    def rank(self,rank):
+        self._rank = rank
+    @property
+    def bytes_per_element(self):
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element
+
+    def child_nodes(self):
+        yield self.lhs; yield self.rhs
+    def cstr(self):
+        """
+        Expand the matrix assignment.
+        User still has to fix the ranges manually. 
+        """
+        result = "// TODO: fix ranges"
+        for expression in self.rhs:
+            result += traversals.make_cstr(
+                self.lhs) + argument + "=" + flatten_arith_expr(
+                    expression) + ";\n"
+        return result
+
+class TTSubroutineCall(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self._subroutine = tokens[0]
+
+    def cstr(self):
+        return self._subroutine.cstr() + ";"
+
 def set_arith_expr_parse_actions(grammar):
     grammar.logical.setParseAction(TTLogical)
     grammar.character.setParseAction(TTCharacter)
@@ -1235,3 +1359,8 @@ def set_arith_expr_parse_actions(grammar):
     grammar.complex_arith_expr.setParseAction(
         TTComplexArithExpr)
     grammar.keyword_argument.setParseAction(TTKeywordArgument)
+    # statements
+    grammar.assignment.setParseAction(TTAssignment)
+    grammar.matrix_assignment.setParseAction(TTMatrixAssignment)
+    grammar.complex_assignment.setParseAction(TTComplexAssignment)
+    grammar.fortran_subroutine_call.setParseAction(TTSubroutineCall)

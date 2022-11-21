@@ -198,7 +198,7 @@ class Semantics:
     def _check_unary_op(self,ttnode,scope):
         self._compare_op_and_opd_type(
           ttnode.operator_type,
-          opd_type
+          ttnode.opd.type 
         )
     
     def _resolve_binary_op(self,ttnode,scope):
@@ -283,8 +283,8 @@ class Semantics:
         :raise util.error.LookupError: if a symbol's type could not be determined.
         :note: Can also be applied to subtrees contained in TTArithExpr.
         """
-        self.resolve_arith_expr(ttassignment.lhs)
-        self.resolve_arith_expr(ttassignment.rhs)
+        self.resolve_arith_expr(ttassignment.lhs,scope)
+        self.resolve_arith_expr(ttassignment.rhs,scope)
         if ttassignment.lhs.rank != ttassignment.rhs.rank:
             raise util.error.SemanticError("rank mismatch between LHS and RHS")
         if ( ttassignment.lhs.type != ttassignment.rhs.type

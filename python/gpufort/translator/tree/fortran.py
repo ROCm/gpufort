@@ -137,138 +137,7 @@ class TTIgnore(base.TTNode):
 
     def cstr(self):
         return ""
-
-class TTSubroutineCall(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._subroutine = tokens[0]
-
-    def cstr(self):
-        return self._subroutine.cstr() + ";"
  
-class TTAssignment(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self.lhs, self.rhs = tokens
-        self._type = None
-        self._rank = None
-        self._bytes_per_element = None   
- 
-    @property
-    def type(self):
-        assert self._type != None
-        return self._type
-    @type.setter
-    def type(self,typ):
-        self._type = typ
-    @property
-    def rank(self):
-        assert self._rank != None
-        return self._rank
-    @rank.setter
-    def rank(self,rank):
-        self._rank = rank
-    @property
-    def bytes_per_element(self):
-        assert self._bytes_per_element != None
-        return self._bytes_per_element
-    @bytes_per_element.setter
-    def bytes_per_element(self,bytes_per_element):
-        self._bytes_per_element = bytes_per_element
-
-    def child_nodes(self):
-        yield self._lhs; yield self._rhs
-    def cstr(self):
-        return self._lhs.cstr() + "=" + self._rhs.cstr() + ";\n"
-    def fstr(self):
-        return self._lhs.fstr() + "=" + self._rhs.fstr() + ";\n"
-
-class TTComplexAssignment(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self.lhs, self.rhs = tokens
-        self._type = None
-        self._rank = None
-        self._bytes_per_element = None   
- 
-    @property
-    def type(self):
-        assert self._type != None
-        return self._type
-    @type.setter
-    def type(self,typ):
-        self._type = typ
-    @property
-    def rank(self):
-        assert self._rank != None
-        return self._rank
-    @rank.setter
-    def rank(self,rank):
-        self._rank = rank
-    @property
-    def bytes_per_element(self):
-        assert self._bytes_per_element != None
-        return self._bytes_per_element
-    @bytes_per_element.setter
-    def bytes_per_element(self,bytes_per_element):
-        self._bytes_per_element = bytes_per_element
-
-    def child_nodes(self):
-        yield self.lhs; yield self.rhs
-    def cstr(self):
-        """Expand the complex assignment.
-        """
-        result = ""
-        result += "{}.x = {};\n".format(traversals.make_cstr(self.lhs),
-                                        traversals.make_cstr(self.rhs._real))
-        result += "{}.y = {};\n".format(traversals.make_cstr(self.lhs),
-                                        traversals.make_cstr(self.rhs._imag))
-        return result
-
-class TTMatrixAssignment(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self.lhs, self.rhs = tokens
-        self._type = None
-        self._rank = None
-        self._bytes_per_element = None   
- 
-    @property
-    def type(self):
-        assert self._type != None
-        return self._type
-    @type.setter
-    def type(self,typ):
-        self._type = typ
-    @property
-    def rank(self):
-        assert self._rank != None
-        return self._rank
-    @rank.setter
-    def rank(self,rank):
-        self._rank = rank
-    @property
-    def bytes_per_element(self):
-        assert self._bytes_per_element != None
-        return self._bytes_per_element
-    @bytes_per_element.setter
-    def bytes_per_element(self,bytes_per_element):
-        self._bytes_per_element = bytes_per_element
-
-    def child_nodes(self):
-        yield self.lhs; yield self.rhs
-    def cstr(self):
-        """
-        Expand the matrix assignment.
-        User still has to fix the ranges manually. 
-        """
-        result = "// TODO: fix ranges"
-        for expression in self.rhs:
-            result += traversals.make_cstr(
-                self.lhs) + argument + "=" + flatten_arith_expr(
-                    expression) + ";\n"
-        return result
-
 class TTDo(base.TTContainer):
 
     def _assign_fields(self, tokens):
@@ -276,10 +145,10 @@ class TTDo(base.TTContainer):
         self.numeric_do_label = None
     @property
     def index(self):
-        return self._begin._lhs
+        return self._begin.lhs
     @property
     def first(self):
-        return self._begin._rhs
+        return self._begin.rhs
     @property
     def last(self):
         return self._end
@@ -289,14 +158,16 @@ class TTDo(base.TTContainer):
     def has_step(self):
         return self._step != None
     def child_nodes(self):
-        yield self.body; yield self._begin; yield self._end; yield self._step
+        yield self._begin
+        yield self._end 
+        if self._step != None:
+            yield self._step
+        yield from self.body 
 
 class TTUnconditionalDo(base.TTContainer):
     def _assign_fields(self, tokens):
         self.body = tokens[0]
         self.numeric_do_label = None
-    def child_nodes(self):
-        return []
     def header_cstr(self):
         return "while (true) {{\n"
     def footer_cstr(self):
@@ -320,7 +191,8 @@ class TTIfElseIf(base.TTContainer):
         self._else, self._condition, self.body = tokens
 
     def child_nodes(self):
-        yield self._condition; yield self.body
+        yield self._condition
+        yield from self.body
     
     def header_cstr(self):
         prefix = self._else+" " if self._else != None else ""
@@ -346,6 +218,9 @@ class TTSelectCase(base.TTContainer):
     def _assign_fields(self, tokens):
         self.selector = tokens[0]
         self.indent = "" # container of if/elseif/else branches, so no indent
+    def child_nodes(self):
+        yield self.selector
+        yield from self.body
     def header_cstr(self):
         return "switch ({}) {{\n".format(self.selector)
     def footer_cstr(self):
@@ -357,7 +232,8 @@ class TTCase(base.TTContainer):
         self.cases, self.body = tokens
 
     def child_nodes(self):
-        yield self.cases; yield self.body
+        yield from self.cases
+        yield from self.body
     
     def header_cstr(self):
         result = ""
@@ -373,7 +249,7 @@ class TTCaseDefault(base.TTContainer):
         self.body = tokens[0]
 
     def child_nodes(self):
-        yield self.body
+        yield from self.body
     
     def header_cstr(self):
         return "default:\n"
@@ -387,7 +263,8 @@ class TTDoWhile(base.TTContainer):
         self.numeric_do_label = None
 
     def child_nodes(self):
-        yield self._condition; yield self.body
+        yield self._condition
+        yield from self.body
     
     def header_cstr(self):
         return "while ({0}) {{\n".format(
@@ -395,9 +272,3 @@ class TTDoWhile(base.TTContainer):
         )
     def footer_cstr(self):
         return "  break;\n" 
-
-def set_fortran_parse_actions(grammar):
-    grammar.assignment.setParseAction(TTAssignment)
-    grammar.matrix_assignment.setParseAction(TTMatrixAssignment)
-    grammar.complex_assignment.setParseAction(TTComplexAssignment)
-    grammar.fortran_subroutine_call.setParseAction(TTSubroutineCall)

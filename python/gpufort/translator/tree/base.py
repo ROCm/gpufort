@@ -43,9 +43,9 @@ class TTNode(object):
     def walk_preorder(self):
         yield self
         for child in self.child_nodes():
+            print(str(type(child))+" of "+str(type(self)))
             yield from child.walk_preorder()
     
-
     def walk_postorder(self):
         for child in self.child_nodes():
             yield from child.walk_postorder()
@@ -106,8 +106,7 @@ class TTContainer(TTNode,FlowStatementMarker):
         self.body.append(node)
 
     def child_nodes(self):
-        for child in self.body:
-            yield child
+        yield from self.body
 
     def header_cstr(self):
         return ""

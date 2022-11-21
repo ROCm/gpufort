@@ -40,10 +40,11 @@ def _parse_arith_expr(expr_as_str,scope):
         semantics_checker.resolve_arith_expr(parse_result,scope)
     return parse_result
 
-def _parse_assignment_expr(expr_as_str,scope):
-    parse_result = tree.grammar.parse_assignment(expr_as_str)
+def _parse_assignment(expr_as_str,scope):
+    parse_result = tree.grammar.fortran_assignment.parseString(
+        expr_as_str, parseAll=True)[0]
     if scope != None:
-        semantics_checker.resolve_arith_expr(parse_result,scope)
+        semantics_checker.resolve_assignment(parse_result,scope)
     return parse_result
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -289,7 +290,8 @@ def parse_fortran_code(code,result_name=None,scope=None):
                 try:
                     begin, end, stride = None, None, None
                     if var != None and lbound_str != None:
-                        begin = tree.grammar.parse_assignment(var + "=" + lbound_str)
+                        begin = _parse_assignment(
+                          var + "=" + lbound_str,scope)
                     if ubound_str != None:
                         end = _parse_arith_expr(ubound_str,scope)
                     if stride_str != None and len(stride_str):
@@ -437,8 +439,8 @@ def parse_fortran_code(code,result_name=None,scope=None):
             error_("pointer assignment")
         elif statement_classifier.is_assignment(tokens):
             try:
-                assignment_variant = tree.grammar.fortran_assignment.parseString(
-                    stmt, parseAll=True)[0]
+                assignment_variant = _parse_assignment(
+                    stmt, scope) 
                 append_(assignment_variant, "assignment")
             except pyparsing.ParseException as e:
                 error_("assignment", e)

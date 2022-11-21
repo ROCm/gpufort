@@ -230,3 +230,11 @@ void acc_copyout_finalize_async(h_void* data_arg, size_t bytes,
                                 int async_arg){
   gpufortrt_copyout_finalize_async( data_arg, bytes, async_arg);
 }
+
+int acc_get_default_async(void){
+  return gpufortrt_get_default_async();
+}
+
+void acc_set_default_async(int async_arg){
+  gpufortrt_set_default_async(async_arg);
+}

@@ -676,4 +676,37 @@ contains
     call acc_copyout_finalize_async_b(data_arg,int(sizeof(data_arg)), async_arg)
   end subroutine
 
+  integer(kind=acc_handle_kind) function acc_get_default_async() 
+    use iso_c_binding
+    implicit none
+    !
+    interface
+    integer(c_int) function acc_get_default_async_c_impl() &
+        bind(c,name="acc_get_default_async")
+        use iso_c_binding
+        implicit none
+        !
+      end function
+    end interface
+    acc_get_default_async = int(acc_get_default_async_c_impl(),kind=acc_handle_kind)
+  end function
+
+  subroutine acc_set_default_async(async_arg) 
+    use iso_c_binding
+    implicit none
+    !
+    integer(kind=acc_handle_kind),value :: async_arg
+    interface
+      subroutine acc_set_default_async_c_impl(async_arg) &
+        bind(c,name="acc_set_default_async")
+        use iso_c_binding
+        Import::acc_handle_kind
+        implicit none
+        !
+        integer(kind=acc_handle_kind), value, intent(in):: async_arg
+      end subroutine
+    end interface
+    call acc_set_default_async_c_impl(async_arg)
+end subroutine
+
 end module

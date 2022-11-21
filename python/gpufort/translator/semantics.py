@@ -67,7 +67,7 @@ class Semantics:
                       + "or real type (legacy extension)"
                     )
   
-    def _check_function_call_arguments(self,ttnode,scope):
+    def _check_function_call_arg_positions(self,ttnode,scope):
         """
         - check that keyword arguments do not before positional arguments
         - check that no argument is specified as positional argument
@@ -104,7 +104,86 @@ class Semantics:
                         dummy_arg_name
                       )
                     )
-              
+        return used_arg_names # assumed to be all in lower case
+  
+    def _check_function_call_ttarg_type(self,ttfunc,ttarg,scope):
+        """Check that ttargument type and kind agree.
+        """
+        actual_type = ttarg.type
+        expected_type = ttfunc.get_expected_ttargument_type(ttarg_name)
+        if actual_type != expected_type:
+            raise util.error.SemanticError(
+               "function {} '{}': ttargument type mismatch; expected type '{}' instead of '{}'".format(
+                 func_type, func_name, expected_type, actual_type
+              )                         
+            )                           
+        actual_kind = ttarg.kind
+        actual_bytes_per_element = ttarg.bytes_per_element
+        expected_kind = ttfunc.get_expected_ttargument_kind(ttarg_name)
+        expected_bytes_per_element = _lookup_bytes_per_element1(
+          expected_kind
+        )
+        if actual_bytes_per_element != expected_bytes_per_element:
+            raise util.error.SemanticError(
+               "function {} '{}': ttargument kind mismatch; expected kind '{}' instead of '{}'".format(
+                 func_bytes_per_element, func_name,
+                 expected_kind, actual_kind
+              )                         
+            )                           
+
+    def _check_elemental_function_call_args(self,ttfunc,used_arg_names,scope):
+        """Rank of the elemental function result. All arguments must
+        have the same rank
+        - and same number of elements if this information can be deduced (not implemented)
+        :param arg_names: Lower-case argument names.
+        """
+        max_rank = 0
+        func_name = ttfunc.name
+        func_name_lower = func_name.lower()
+        func_type = "intrinsic" if ttfunc.is_intrinsic_call else "function"
+        for arg_name in used_arg_names:
+            ttarg = ttfunc.get_actual_argument(arg_name)
+            # check rank
+            if ttarg.rank > 0:
+                if (ttfunc.result_depends_on_kind
+                   and arg_name == "kind"):
+                     raise util.error.SemanticError(
+                       "elemental {} '{}': 'kind' argument must be scalar integer".format(
+                         func_type, func_name
+                       )
+                     )
+                elif max_rank > 0 and ttarg.rank != max_rank:
+                    raise util.error.SemanticError(
+                      "elemental {} '{}': incompatible argument ranks: '{}' vs '{}'".format(
+                        func_type, func_name, ttarg.rank, max_rank
+                      )
+                    )
+            max_rank = max(ttarg.rank,max_rank)
+            # check type
+            if ttfunc.is_converter_call:
+                if arg_name != "kind":
+                    if (func_name.lower() in ["real","int","cmplex"]
+                       and ttarg.type not in ["integer","real","complex"]):
+                        raise util.error.SemanticError(
+                           "conversion {} '{}': expected numeric type argument".format(
+                             func_type, func_name, ttarg.rank, max_rank
+                          )
+                        )
+                    elif (func_name.lower() == "logical"
+                         and ttarg.type != "logical"):
+                        raise util.error.SemanticError(
+                           "conversion {} '{}': expected numeric type argument".format(
+                             func_type, func_name, ttarg.rank, max_rank
+                          )
+                        )
+            else:
+                self._check_function_call_arg_type(ttfunc,ttarg,scope)
+                                                
+    def _check_other_function_call_args(self,ttfunc,used_arg_names,scope):
+        """Check that the arguments of non-elemental functions match."""
+        for arg_name in used_arg_names:
+            ttarg = ttfunc.get_actual_argument(arg_name)
+            self._check_function_call_arg_type(ttfunc,ttarg,scope)
  
     def _resolve_function_call(self,ttnode,scope):
         """
@@ -126,16 +205,18 @@ class Semantics:
           indexer.scope.create_index_search_tag(ttnode.fstr())
         )
         #print(ttnode.symbol_info)
-        if not ( 
-             ttnode.type == "type" or
-             (ttnode.is_function_call 
-             and ttnode.is_converter_call)
-           ):
-            self._lookup_bytes_per_element(ttnode)
-        if ttnode.is_array_expr():
+        if ttnode.is_array_expr:
+            if ttnode.type != "type":
+                self._lookup_bytes_per_element(ttnode)
             self._check_array_indices(ttnode,scope)
         else: # is function call
-            self._check_function_call_arguments(ttnode,scope)
+            used_arg_names = self._check_function_call_arg_positions(ttnode,scope)
+            if ttnode.is_elemental_function_call:
+                self._check_elemental_function_call_args(ttnode,used_arg_names,scope)
+            else:
+                self._check_other_function_call_args(node,used_arg_names,scope)
+            if ttnode.type != "type":
+                self._lookup_bytes_per_element(ttnode)
     
     def _resolve_derived_type(self,ttnode,scope):
         """ - check that not more than one part reference has nonzero rank, e.g.

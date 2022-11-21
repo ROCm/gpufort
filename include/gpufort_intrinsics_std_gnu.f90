@@ -230,9 +230,9 @@ function chmod(name,mode)
 end function
 
 attributes(intrinsic,std_gnu)&
-elemental function complex(x,y)
-  type(*), dimension(..) :: x
-  type(*), dimension(..) :: y
+elemental function complex(a,b)
+  type(*), dimension(..) :: a
+  type(*), dimension(..) :: b
   !
   complex :: complex
 end function

@@ -4,16 +4,16 @@
 ! It will not compile with any compiler as non-standard Fortran expressions are used.
 ! conversion indicates the optional kind argument
 attributes(intrinsic,conversion,kind_arg,std_f77)& 
-pure elemental function int(x,kind)
-  type(*) :: x
+pure elemental function int(a,kind)
+  type(*) :: a
   integer,optional :: kind
   !
   integer :: int
 end function
 
 attributes(intrinsic,conversion,kind_arg,std_f77)&
-pure elemental function real(x,kind)
-  type(*) :: x
+pure elemental function real(a,kind)
+  type(*) :: a
   integer,optional :: kind
   !
   real :: real

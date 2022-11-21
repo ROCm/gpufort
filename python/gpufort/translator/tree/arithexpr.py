@@ -172,8 +172,8 @@ class VarExpr(base.TTNode):
         return self._get_type_defining_record()["f_type"]
     
     @property 
-    def kind(self):
-        return self._get_type_defining_record()["kind"]
+    def is_parameter(self):
+        return "parameter" in self._get_type_defining_record()["attributes"]
 
     @property
     def bytes_per_element(self):
@@ -190,16 +190,24 @@ class VarExpr(base.TTNode):
         return opts.bytes_2_c_type[
           self.type][self.bytes_per_element] 
 
-    @property 
-    def rank(self):
-        assert self.partially_resolved
-        return self.symbol_info["rank"]
-
 class TTIdentifier(VarExpr):
         
     def _assign_fields(self, tokens):
         self._name = tokens[0]
         VarExpr._assign_fields(self,tokens)
+    
+    @property
+    def name(self):
+        return self._name
+
+    @property 
+    def rank(self):
+        assert self.partially_resolved
+        return self.symbol_info["rank"]
+    
+    @property 
+    def kind(self):
+        return self._get_type_defining_record()["kind"]
 
     @property
     def is_array(self):
@@ -231,7 +239,7 @@ class TTIdentifier(VarExpr):
 class TTFunctionCall(VarExpr):
  
     def _assign_fields(self, tokens):
-        self._name = tokens[0]
+        self.name = tokens[0]
         if len(tokens) > 1:
             self.args = tokens[1:]
         else:
@@ -251,6 +259,41 @@ class TTFunctionCall(VarExpr):
               if ivar["name"] == result_name),None)
             assert ivar != None
             return ivar
+    
+    @property 
+    def kind(self):
+        """
+        Checks for `kind` argument and returns expression.
+        If `kind` argument not found, returns `None` (default kind).
+        :note: Assumes semantics have been analyzed before.
+        """
+        if ( self.is_function_call 
+             and self.result_depends_on_kind ):
+            try:
+                arg = self.get_actual_argument("kind")
+                if isinstance(arg,TTKeywordArgument):
+                    return arg.value.fstr()
+                else:
+                    return arg.fstr()
+            except util.error.LookupError:
+                return None # default
+        else:
+            return self._get_type_defining_record()["kind"]
+
+    @property
+    def rank(self):
+        """:note: Assumes semantics have been checked before.
+        """
+        if ( self.is_function_call 
+             and self.is_elemental_function_call ):
+              max_rank = 0
+              for arg in self.args:
+                  max_rank = max(max_rank,arg.rank) 
+              return max_rank
+        elif self.is_array_expr:
+            return len([arg for arg in self.slice_args()])
+        else: 
+            return self._get_type_defining_record()["rank"] 
 
     def child_nodes(self):
         for arg in self.args:
@@ -264,6 +307,7 @@ class TTFunctionCall(VarExpr):
             if isinstance(arg,TTSlice):
                 yield arg
 
+    @property
     def is_array_expr(self):
         """:return: if this expression represents
         an array section or array element (array section of size 1)."""
@@ -271,11 +315,19 @@ class TTFunctionCall(VarExpr):
    
     @property
     def is_array(self):
-        """If there is a index range."""
-        assert self.is_array_expr()
-        for i,arg in enumerate(self.args):
-            if isinstance(arg,TTSlice):
-                return True
+        """If this an array expression, check if there is an index range.
+        If this is an elemental function, check if one argument
+        is an array.
+        """
+        if ( self.is_function_call
+             and self.is_elemental_function_call ):
+            for arg in self.args:
+                if arg.is_array:
+                    return True
+        elif self.is_array_expr:
+            for arg in self.args:
+                if isinstance(arg,TTSlice):
+                    return True
         return False
         
     @property
@@ -292,63 +344,74 @@ class TTFunctionCall(VarExpr):
         - or if one index range has been found at the
           begin of the index argument list and no other index range.
         """
-        assert self.is_array_expr()
-        last_slice = -1 # must be initialized with -1
-                        # as then: i-last==1 at i=0
-        last_slice_with_ubound = -1
-        last_slice_with_lbound = -1
-        for i,arg in enumerate(self.args):
-            if isinstance(arg,TTSlice):
-                if (
-                    arg.has_stride()
-                    or i - last_slice != 1
-                    or i > 0 and arg.has_lbound()
-                    or last_slice_with_lbound >= 0
-                    or last_slice_with_ubound >= 0
-                  ):
+        if ( self.is_function_call
+             and self.is_elemental_function_call ):
+            for arg in self.args:
+                if not arg.is_contiguous_array:
                     return False
-                if arg.has_lbound():
-                    last_slice_with_lbound = i
-                if arg.has_ubound():
-                    last_slice_with_ubound = i
-                last_slice = i
-        # no strides in any slice at this point
-        return not (
-          last_slice < 0 # is scalar
-          #or last_slice_with_lbound > 1 # lower bound specified for dim other than 0
-          #or last_slice_with_lbound < last_slice # other ranges found after dim with lower bound
-          #or (last_slice_with_ubound >= 0 # upper bound specified for lower dim
-          #   and last_slice_with_ubound < last_slice)
-        )
+            return True
+        elif self.is_array_expr:
+            last_slice = -1 # must be initialized with -1
+                            # as then: i-last==1 at i=0
+            last_slice_with_ubound = -1
+            last_slice_with_lbound = -1
+            for i,arg in enumerate(self.args):
+                if isinstance(arg,TTSlice):
+                    if (
+                        arg.has_stride()
+                        or i - last_slice != 1
+                        or i > 0 and arg.has_lbound()
+                        or last_slice_with_lbound >= 0
+                        or last_slice_with_ubound >= 0
+                      ):
+                        return False
+                    if arg.has_lbound():
+                        last_slice_with_lbound = i
+                    if arg.has_ubound():
+                        last_slice_with_ubound = i
+                    last_slice = i
+            # no strides in any slice at this point
+            return not (
+              last_slice < 0 # is scalar
+              #or last_slice_with_lbound > 1 # lower bound specified for dim other than 0
+              #or last_slice_with_lbound < last_slice # other ranges found after dim with lower bound
+              #or (last_slice_with_ubound >= 0 # upper bound specified for lower dim
+              #   and last_slice_with_ubound < last_slice)
+            )
+        else:
+            return False
     
     @property
     def is_scalar(self):
         """Checks if none of the array index arguments 
         are index ranges.
         """
-        assert self.is_array_expr()
-        for arg in self.args:
-            if isinstance(arg,TTSlice):
-                return False
-        return True
+        return not self.is_array
 
     @property
     def is_full_array(self):
         """Checks if this array section expression
         covers all elements of an original array.
         """
-        assert self.is_array_expr()
-        for arg in self.args:
-            if (not isinstance(arg,TTSlice)
-               or arg.has_lbound()
-               or arg.has_ubound()
-               or arg.has_stride()):
-                return False
-        return True
+        if ( self.is_function_call
+             and self.is_elemental_function_call ):
+            if len(self.args) == 1:
+                return self.args[0].is_full_array
+            return False
+        elif self.is_array_expr:
+            for arg in self.args:
+                if (not isinstance(arg,TTSlice)
+                   or arg.has_lbound()
+                   or arg.has_ubound()
+                   or arg.has_stride()):
+                    return False
+            return True
+        else:
+            return False
  
     @property
     def is_function_call(self):
-        return not self.is_array_expr()
+        return not self.is_array_expr
     
     @property
     def is_intrinsic_call(self):
@@ -404,22 +467,36 @@ class TTFunctionCall(VarExpr):
         return self.get_expected_argument_symbol_info(arg_name)["rank"]
     def get_expected_argument_is_optional(self,arg_name):
         return "optional" in self.get_expected_argument_symbol_info(arg_name)["attributes"]
- 
-    @property
-    def name(self):
-        return self._name
- 
-    @property 
-    def rank(self):
-        if self.is_array_expr():
-            return len([arg for arg in self.slice_args()])
-        else: 
-            # todo: depends if is elemental function
-            return self._get_type_defining_record()["rank"] 
+    
+    # todo: this should better go into a symbol_info
+    # that indexer.scope creates when you look up a variable
+    def get_actual_argument(self,arg_name):
+        """:note: Assumes semantics have been analyzed before.
+        :throws: util.error.LookupError
+        """
+        assert self.is_function_call
+        arg_name = arg_name.lower()
+        for i,arg in enumerate(self.args):
+            if isinstance(arg,TTKeywordArgument):
+                if arg.key.lower() == arg_name:
+                    return arg
+            elif self.dummy_args[i] == arg_name:
+                  return arg
+        raise util.error.LookupError(
+          "no argument found for name '{}'".format(
+            arg_name
+          )
+        )
+    def get_actual_argument_type(self,arg_name):
+        return self.get_actual_argument(arg_name).type
+    def get_actual_argument_kind(self,arg_name):
+        return self.get_actual_argument(arg_name).kind
+    def get_actual_argument_rank(self,arg_name):
+        return self.get_actual_argument(arg_name).rank
 
     def name_cstr(self):
-        name = traversals.make_cstr(self._name).lower()
-        if self.is_array_expr():
+        name = traversals.make_cstr(self.name).lower()
+        if self.is_array_expr:
             return name
         elif self.is_intrinsic_call():
             # todo
@@ -463,19 +540,19 @@ class TTFunctionCall(VarExpr):
           name,
           self.__args_cstr(
             name,
-            self.is_array_expr(),
+            self.is_array_expr,
             opts.fortran_style_array_access)
         ])
     
     def fstr(self):
-        name = traversals.make_fstr(self._name)
+        name = traversals.make_fstr(self.name)
         return "".join([
             name,
             self.__args_fstr()
             ])
     
     def __str__(self):
-        return "TTFunctionCall(name:"+str(self._name)+",is_array_expr:"+str(self.is_array_expr())+")"
+        return "TTFunctionCall(name:"+str(self.name)+",is_array_expr:"+str(self.is_array_expr)+")"
     __repr__ = __str__
 
 class TTDerivedTypePart(base.TTNode):
@@ -1128,7 +1205,7 @@ class TTKeywordArgument(base.TTNode):
         return self.key + "=" + self.value.cstr() + ";\n"
 
     def fstr(self):
-        return self.key + "=" + self.value.fstr() + ";\n"
+        return self.key + "=" + self.value.fstr()
 
 class TTSlice(base.TTNode):
 

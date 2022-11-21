@@ -3,8 +3,8 @@
 ! This file solely exists to extract information about intrinsics via GPUFORT's indexer tool.
 ! It will not compile with any compiler as non-standard Fortran expressions are used.
 attributes(intrinsic,conversion,kind_arg,std_f95)&
-pure elemental function logical(x,kind)
-  type(*) :: x
+pure elemental function logical(a,kind)
+  type(*) :: a
   integer,optional :: kind
   !
   logical :: logical

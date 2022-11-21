@@ -250,6 +250,7 @@ class __HIPKernelBodyGenerator:
             # TODO fix statement filter
             self._unpack_render_result_and_descend(ttdo,render_result)
 
+
     def _traverse_statement(self,ttnode):
         analysis.fortran.find_lvalues_and_rvalues(
           ttnode,
@@ -260,7 +261,7 @@ class __HIPKernelBodyGenerator:
         #if isinstance(ttnode,tree.TTAssignment):
         #    if arrayexpr.is_array_assignment(ttnode._lhs,self._scope):
         #        pass
-        #todo: modify expressions
+        # todo: modify expressions
         self._result.generated_code += textwrap.indent(
           ttnode.cstr().rstrip("\n")+"\n",
           self._indent

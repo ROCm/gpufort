@@ -10,6 +10,8 @@ LDFLAGS = $(shell gpufort --print-acc-ldflags) -lgfortran
 
 # sources
 TEST_SRC      = \
+				./test_acc_create_00.f90 \
+				./test_acc_create_01.f90 \
 				./test_acc_set_default_async_00.f90 \
 				./test_acc_copyinout_00.f90 \
 				./test_acc_copyinout_01.f90 \

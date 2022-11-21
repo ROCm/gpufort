@@ -407,7 +407,17 @@ void* gpufortrt_create(void* hostptr,std::size_t num_bytes,bool never_deallocate
 }
 
 void gpufortrt_create_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
-  gpufortrt_create(hostptr,num_bytes,never_deallocate);
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
+  // gpufortrt_create(hostptr,num_bytes,never_deallocate);
+  ::create_increment_action(
+    gpufortrt_counter_dynamic,
+    hostptr,
+    num_bytes,
+    gpufortrt_map_kind_create,
+    never_deallocate,/*never_deallocate*/
+    blocking,/*blocking*/
+    async_val);
 }
 
 void gpufortrt_delete(void* hostptr,std::size_t num_bytes) {

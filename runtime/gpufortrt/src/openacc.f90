@@ -50,6 +50,15 @@ module openacc
     module procedure :: acc_copyin_async_b
   end interface
 
+  interface acc_create
+    module procedure :: acc_create_nb
+    module procedure :: acc_create_b
+  end interface
+  interface acc_create_async
+    module procedure :: acc_create_async_nb
+    module procedure :: acc_create_async_b
+  end interface
+
   interface acc_copyout
     module procedure :: acc_copyout_nb
     module procedure :: acc_copyout_b
@@ -707,6 +716,62 @@ contains
       end subroutine
     end interface
     call acc_set_default_async_c_impl(async_arg)
-end subroutine
+  end subroutine
 
+  subroutine acc_create_b(data_arg, bytes)
+    use iso_c_binding
+    implicit none
+    !
+    type(*), target, dimension(..)::data_arg
+    integer,value,intent(in) :: bytes
+    interface 
+      subroutine acc_create_b_c_impl(data_arg,bytes) &
+      bind(c,name="acc_create")
+        use iso_c_binding
+        implicit none
+        !
+        type(c_ptr), value::data_arg
+        integer(c_size_t), value :: bytes
+      end subroutine
+    end interface
+    call acc_create_b_c_impl(c_loc(data_arg),int(bytes,kind=c_size_t))
+  end subroutine
+
+  subroutine acc_create_nb(data_arg)
+    use iso_c_binding
+    implicit none
+    !
+    type(*), target, dimension(..)::data_arg
+    call acc_create_b(data_arg, int(sizeof(data_arg)))
+  end subroutine
+
+  subroutine acc_create_async_b(data_arg, bytes, async_arg)
+    use iso_c_binding
+    implicit none
+    !
+    type(*), target, dimension(..)::data_arg
+    integer,value,intent(in) :: bytes
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
+    interface 
+      subroutine acc_create_async_b_c_impl(data_arg,bytes, async_arg) &
+      bind(c,name="acc_create_async")
+        use iso_c_binding
+        implicit none
+        !
+        type(c_ptr), value::data_arg
+        integer(c_size_t), value :: bytes
+        type(c_ptr),value,intent(in) :: async_arg
+      end subroutine
+    end interface
+    call acc_create_async_b_c_impl(c_loc(data_arg),int(bytes,kind=c_size_t), c_loc(async_arg))
+  end subroutine
+
+  subroutine acc_create_async_nb(data_arg, async_arg)
+    use iso_c_binding
+    implicit none
+    !
+    type(*), target, dimension(..)::data_arg
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
+    call acc_create_async_b(data_arg,int(sizeof(data_arg)), async_arg)
+  end subroutine
 end module

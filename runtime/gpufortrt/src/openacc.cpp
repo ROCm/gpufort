@@ -216,6 +216,15 @@ void acc_copyin_async(h_void* data_arg, size_t bytes,
   gpufortrt_copyin_async(data_arg, bytes, async_arg, false);
 }
 
+d_void* acc_create(h_void* data_arg, size_t bytes){
+  return gpufortrt_create(data_arg, bytes, false);
+}
+
+void acc_create_async(h_void* data_arg, size_t bytes,
+                      int async_arg){
+  gpufortrt_create_async(data_arg, bytes, async_arg, false);
+}
+
 void acc_copyout(h_void* data_arg, size_t bytes){
   gpufortrt_copyout(data_arg, bytes);
 }

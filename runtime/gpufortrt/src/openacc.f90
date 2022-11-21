@@ -219,7 +219,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..)::data_arg
-    integer(c_int),value,intent(in) :: bytes
+    integer,value,intent(in) :: bytes
     interface 
       integer(c_int) function acc_is_present_c_impl(data_arg,bytes) &
         bind(c,name="acc_is_present")
@@ -238,7 +238,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..), contiguous :: data_arg
-    acc_is_present_nb = acc_is_present_b(c_loc(data_arg),size(data_arg))
+    acc_is_present_nb = acc_is_present_b(c_loc(data_arg),int(sizeof(data_arg)))
   end function
 
   subroutine acc_wait(wait_arg)
@@ -529,7 +529,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..)::data_arg
-    call acc_copyin_b(data_arg, size(data_arg))
+    call acc_copyin_b(data_arg, int(sizeof(data_arg)))
   end subroutine
 
   subroutine acc_copyin_async_b(data_arg, bytes, async_arg)
@@ -537,7 +537,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..)::data_arg
-    integer(c_int),value,intent(in) :: bytes
+    integer,value,intent(in) :: bytes
     integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
     interface 
       subroutine acc_copyin_async_b_c_impl(data_arg,bytes, async_arg) &
@@ -559,7 +559,7 @@ contains
     !
     type(*), target, dimension(..)::data_arg
     integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
-    call acc_copyin_async_b(data_arg,size(data_arg), async_arg)
+    call acc_copyin_async_b(data_arg,int(sizeof(data_arg)), async_arg)
   end subroutine
 
   subroutine acc_copyout_b(data_arg, bytes)
@@ -586,7 +586,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..)::data_arg
-    call acc_copyout_b(data_arg, size(data_arg))
+    call acc_copyout_b(data_arg, int(sizeof(data_arg)))
   end subroutine
 
   subroutine acc_copyout_async_b(data_arg, bytes, async_arg)
@@ -594,7 +594,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..)::data_arg
-    integer(c_int),value,intent(in) :: bytes
+    integer,value,intent(in) :: bytes
     integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
     interface 
       subroutine acc_copyout_async_b_c_impl(data_arg,bytes, async_arg) &
@@ -616,7 +616,7 @@ contains
     !
     type(*), target, dimension(..)::data_arg
     integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
-    call acc_copyout_async_b(data_arg,size(data_arg), async_arg)
+    call acc_copyout_async_b(data_arg,int(sizeof(data_arg)), async_arg)
   end subroutine
 
   subroutine acc_copyout_finalize_b(data_arg, bytes)
@@ -643,7 +643,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..)::data_arg
-    call acc_copyout_finalize_b(data_arg, size(data_arg))
+    call acc_copyout_finalize_b(data_arg, int(sizeof(data_arg)))
   end subroutine
 
   subroutine acc_copyout_finalize_async_b(data_arg, bytes, async_arg)
@@ -651,7 +651,7 @@ contains
     implicit none
     !
     type(*), target, dimension(..)::data_arg
-    integer(c_int),value,intent(in) :: bytes
+    integer,value,intent(in) :: bytes
     integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
     interface 
       subroutine acc_copyout_finalize_async_b_c_impl(data_arg,bytes, async_arg) &
@@ -673,7 +673,7 @@ contains
     !
     type(*), target, dimension(..)::data_arg
     integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
-    call acc_copyout_finalize_async_b(data_arg,size(data_arg), async_arg)
+    call acc_copyout_finalize_async_b(data_arg,int(sizeof(data_arg)), async_arg)
   end subroutine
 
 end module

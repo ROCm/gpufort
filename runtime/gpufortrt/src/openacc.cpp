@@ -265,3 +265,21 @@ void acc_delete_finalize_async(h_void* data_arg,
                                size_t bytes, int async_arg){
   gpufortrt_delete_finalize_async(data_arg, bytes, async_arg);
 }
+
+void acc_update_device(h_void* data_arg, size_t bytes){
+  gpufortrt_update_device(data_arg, bytes, true, false);
+}
+
+void acc_update_device_async(h_void* data_arg, size_t bytes,
+                             int async_arg){
+  gpufortrt_update_device_async(data_arg, bytes, true, false, async_arg);
+}
+
+void acc_update_self(h_void* data_arg, size_t bytes){
+  gpufortrt_update_self(data_arg, bytes, true, false);
+}
+
+void acc_update_self_async(h_void* data_arg, size_t bytes,
+                           int async_arg){
+  gpufortrt_update_self_async(data_arg, bytes, true, false, async_arg);
+}

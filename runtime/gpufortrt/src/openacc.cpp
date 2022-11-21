@@ -247,3 +247,21 @@ int acc_get_default_async(void){
 void acc_set_default_async(int async_arg){
   gpufortrt_set_default_async(async_arg);
 }
+
+void acc_delete(h_void* data_arg, size_t bytes){
+  gpufortrt_delete( data_arg, bytes);
+}
+
+void acc_delete_async(h_void* data_arg, size_t bytes,
+                      int async_arg){
+  gpufortrt_delete_async(data_arg, bytes, async_arg);
+}
+
+void acc_delete_finalize(h_void* data_arg, size_t bytes){
+  gpufortrt_delete_finalize( data_arg, bytes);
+}
+
+void acc_delete_finalize_async(h_void* data_arg,
+                               size_t bytes, int async_arg){
+  gpufortrt_delete_finalize_async(data_arg, bytes, async_arg);
+}

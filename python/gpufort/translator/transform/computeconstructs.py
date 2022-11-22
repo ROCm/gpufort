@@ -319,9 +319,6 @@ def map_to_hip_cpp(
     """Transform an OpenACC compute construct or routine body to HIP C++.
     :param scope: A scope object, see GPUFORT's indexer component.
     :param str device_type: The device type (`nvidia`, `radeon` or None).
-    :param bool initially_gang_partitioned: Start in gang-partitioned mode.
-    :param bool initially_worker_partitioned: Start in worker-partitioned mode.
-    :param bool initially_vector_partitioned: Start in vector-partitioned mode.
      """
     loops.single_level_indent = opts.single_level_indent
     __instance.single_level_indent = opts.single_level_indent

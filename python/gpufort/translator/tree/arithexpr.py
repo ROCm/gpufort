@@ -39,27 +39,31 @@ class Literal(base.TTNode):
     @property
     def value(self):
         return self._value
-    
     @property
     def kind(self):
         return self._kind
-
     @property
     def bytes_per_element(self):
         assert self._bytes_per_element != None
         return self._bytes_per_element
-
     @bytes_per_element.setter
     def bytes_per_element(self,bytes_per_element):
         self._bytes_per_element = bytes_per_element 
+    
+    @property
+    def rank(self): return 0
+    @property
+    def is_scalar(self): return True
+    @property
+    def is_array(self): return False
+    @property
+    def is_contiguous_array(self): return False
+    @property
+    def is_full_array(self): return False
 
     @property
     def resolved(self):
         return self._bytes_per_element != None
-   
-    @property
-    def rank(self):
-        return 0
     
     def fstr(self):
         return self._raw_value
@@ -319,6 +323,7 @@ class TTFunctionCall(VarExpr):
         If this is an elemental function, check if one argument
         is an array.
         """
+        # todo incomplete
         if ( self.is_function_call
              and self.is_elemental_function_call ):
             for arg in self.args:
@@ -329,7 +334,20 @@ class TTFunctionCall(VarExpr):
                 if isinstance(arg,TTSlice):
                     return True
         return False
-        
+       
+    def iter_actual_arguments(self):
+        """Yields a tuple of argument name
+        and value expression.
+        :note: Can only be used safely after semantics analysis.""" 
+        for pos,arg in enumerate(self.args):
+            if isinstance(arg,TTKeywordArgument):
+                name = arg.key.lower()
+                value = arg.value
+            else:
+                name = self.dummy_args[pos]
+                value = arg
+            yield (name, value)
+ 
     @property
     def is_contiguous_array(self):
         """Checks if this array section expression
@@ -346,9 +364,14 @@ class TTFunctionCall(VarExpr):
         """
         if ( self.is_function_call
              and self.is_elemental_function_call ):
-            for arg in self.args:
-                if not arg.is_contiguous_array:
-                    return False
+            for name, value in self.iter_actual_arguments():
+                if self.result_depends_on_kind:
+                    if (name != "kind"
+                       and not value.is_contiguous_array):
+                            return False
+                else:
+                    if not value.is_contiguous_array:
+                        return False
             return True
         elif self.is_array_expr:
             last_slice = -1 # must be initialized with -1
@@ -395,9 +418,15 @@ class TTFunctionCall(VarExpr):
         """
         if ( self.is_function_call
              and self.is_elemental_function_call ):
-            if len(self.args) == 1:
-                return self.args[0].is_full_array
-            return False
+            for name, value in self.iter_actual_arguments():
+                if self.result_depends_on_kind:
+                    if (name != "kind"
+                       and not value.is_full_array):
+                            return False
+                else:
+                    if not value.is_full_array:
+                        return False
+            return True
         elif self.is_array_expr:
             for arg in self.args:
                 if (not isinstance(arg,TTSlice)
@@ -408,7 +437,7 @@ class TTFunctionCall(VarExpr):
             return True
         else:
             return False
- 
+
     @property
     def is_function_call(self):
         return not self.is_array_expr
@@ -495,20 +524,22 @@ class TTFunctionCall(VarExpr):
         return self.get_actual_argument(arg_name).rank
 
     def name_cstr(self):
-        name = traversals.make_cstr(self.name).lower()
-        if self.is_array_expr:
-            return name
-        elif self.is_intrinsic_call():
-            # todo
-            name = prepostprocess.modernize_fortran_function_name(name)
-            if name in [
-              "max",
-              "min",
-              ]:
-                num_args = len(self._args)
-                return "max" + str(num_args)
-            else:
-                return name
+        """:return: C name of the function. 
+        Converts to lower case. Prefixes intrinsics with "_".
+        """
+        name = self.name.lower()
+        if self.is_intrinsic_call():
+            ## todo
+            #name = prepostprocess.modernize_fortran_function_name(name)
+            #if name in [
+            #  "max",
+            #  "min",
+            #  ]:
+            #    num_args = len(self._args)
+            #    return "max" + str(num_args)
+            #else:
+            #    return name
+            return "_" + name  # Fortran identifiers, keywords cannot start with "_"
         else:
             return name
     
@@ -554,6 +585,89 @@ class TTFunctionCall(VarExpr):
     def __str__(self):
         return "TTFunctionCall(name:"+str(self.name)+",is_array_expr:"+str(self.is_array_expr)+")"
     __repr__ = __str__
+
+class TTSlice(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self._lbound, self._ubound, self._stride =\
+          None, None, None 
+        if len(tokens) == 1:
+            self._ubound = tokens[0]
+        elif len(tokens) == 2:
+            self._lbound = tokens[0]
+            self._ubound = tokens[1]
+        elif len(tokens) == 3:
+            self._lbound = tokens[0]
+            self._ubound = tokens[1]
+            self._stride = tokens[2]
+
+    @property
+    def type(self):
+        return self._ubound.type
+    @property
+    def kind(self):
+        return self._ubound.kind
+    @property
+    def bytes_per_element(self):
+        return self._ubound.bytes_per_element
+    @property
+    def rank(self):
+        return self._ubound.rank
+
+    def has_lbound(self):
+        return self._lbound != None
+    def has_ubound(self):
+        return self._ubound != None
+    def has_stride(self):
+        return self._stride != None
+
+    def l_bound(self, converter=traversals.make_cstr):
+        return converter(self._lbound)
+    def u_bound(self, converter=traversals.make_cstr):
+        return converter(self._ubound)
+    def stride(self, converter=traversals.make_cstr):
+        return converter(self._stride)
+
+    def set_loop_var(self, name):
+        self._loop_var = name
+
+    def size(self, converter=traversals.make_cstr):
+        result = "{1} - ({0}) + 1".format(converter(self._lbound),
+                                          converter(self._ubound))
+        try:
+            result = str(ast.literal_eval(result))
+        except:
+            try:
+                result = " - ({0}) + 1".format(converter(self._lbound))
+                result = str(ast.literal_eval(result))
+                if result == "0":
+                    result = converter(self._ubound)
+                else:
+                    result = "{1}{0}".format(result, converter(self._ubound))
+            except:
+                pass
+        return result
+
+    def cstr(self):
+        #return self.size(traversals.make_cstr)
+        return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
+
+    def overwrite_fstr(self,fstr):
+        self._fstr = fstr
+    
+    def fstr(self):
+        if self._fstr != None:
+            return self._fstr
+        else:
+            result = ""
+            if not self._lbound is None:
+                result += traversals.make_fstr(self._lbound)
+            result += ":"
+            if not self._ubound is None:
+                result += traversals.make_fstr(self._ubound)
+            if not self._stride is None:
+                result += ":" + traversals.make_fstr(self._stride)
+            return result
 
 class TTDerivedTypePart(base.TTNode):
 
@@ -872,6 +986,22 @@ class TTUnaryOp(base.TTNode):
     @property
     def rank(self):
         return self.opd.rank
+
+    @property
+    def is_array(self):
+        return self.opd.is_array
+    
+    @property
+    def is_scalar(self):
+        return not self.is_array
+        
+    @property
+    def is_contiguous_array(self):
+        return self.opd.is_contiguous_array
+    
+    @property
+    def is_full_array(self):
+        return self.opd.is_full_array
  
     def _op_c_template(self):
         return TTUnaryOp.f2c.get(self.op.lower())
@@ -1024,6 +1154,58 @@ class TTBinaryOpChain(base.TTNode):
         for opd in self.operands:
             yield opd
     
+    @property
+    def is_array(self):
+        """:note: Assumes that semantics check has already performed.
+        """
+        for opd in self.operands:
+            if opd.is_array:
+                return True
+        return False
+    
+    @property
+    def is_scalar(self):
+        """:note: Assumes that semantics check has already performed.
+        """
+        return not self.is_array
+
+    @property
+    def is_contiguous_array(self):
+        """:return: If the operands are a mix of at least one contiguous array and scalars.
+        :note: Assumes that semantics check has already performed, i.e.
+               that all array ranks are consistent.
+        :note: Full array expression is always contiguous too.
+        """
+        one_contiguous_array_found = False
+        for opd in self.operands:
+            is_contiguous_array = opd.is_contiguous_array
+            if not (
+              is_contiguous_array
+              or opd.is_scalar 
+            ):
+               return False
+            if is_contiguous_array:
+                one_contiguous_array_found = True
+        return one_contiguous_array_found
+    
+    @property
+    def is_full_array(self):
+        """:return: If the operands are a mix of at least one full array and scalars.
+        :note: Assumes that semantics check has already performed, i.e.
+               that all array ranks are consistent.
+        """
+        one_full_array_found = False
+        for opd in self.operands:
+            is_full_array = opd.is_full_array
+            if not (
+              is_full_array
+              or opd.is_scalar 
+            ):
+               return False
+            if is_full_array:
+                one_full_array_found = True
+        return one_full_array_found
+    
     def _op_c_template(self,op):
         return TTBinaryOpChain.f2c.get(op.lower())
     
@@ -1064,7 +1246,7 @@ class TTBinaryOpChain(base.TTNode):
             result = op_template.format(
               l = l,
               r = r,
-              op = self.op
+              op = op
             )
         return result
 
@@ -1185,18 +1367,27 @@ class TTKeywordArgument(base.TTNode):
     @property
     def type(self):
         return self.value.type
-    
     @property
     def kind(self):
         return self.value.kind
-    
     @property
     def bytes_per_element(self):
         return self.value.bytes_per_element
-
     @property
     def rank(self):
         return self.value.rank
+    @property
+    def is_array(self):
+        return self.value.is_array
+    @property
+    def is_scalar(self):
+        return self.value.is_scalar
+    @property
+    def is_contiguous_array(self):
+        return self.value.is_contiguous_array
+    @property
+    def is_full_array(self):
+        return self.value.is_full_array
 
     def child_nodes(self):
         yield self.value
@@ -1207,118 +1398,21 @@ class TTKeywordArgument(base.TTNode):
     def fstr(self):
         return self.key + "=" + self.value.fstr()
 
-class TTSlice(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._lbound, self._ubound, self._stride =\
-          None, None, None 
-        if len(tokens) == 1:
-            self._ubound = tokens[0]
-        elif len(tokens) == 2:
-            self._lbound = tokens[0]
-            self._ubound = tokens[1]
-        elif len(tokens) == 3:
-            self._lbound = tokens[0]
-            self._ubound = tokens[1]
-            self._stride = tokens[2]
-
-    @property
-    def type(self):
-        return self._ubound.type
-    @property
-    def kind(self):
-        return self._ubound.kind
-    @property
-    def bytes_per_element(self):
-        return self._ubound.bytes_per_element
-    @property
-    def rank(self):
-        return self._ubound.rank
-
-    def has_lbound(self):
-        return self._lbound != None
-    def has_ubound(self):
-        return self._ubound != None
-    def has_stride(self):
-        return self._stride != None
-
-    def l_bound(self, converter=traversals.make_cstr):
-        return converter(self._lbound)
-    def u_bound(self, converter=traversals.make_cstr):
-        return converter(self._ubound)
-    def stride(self, converter=traversals.make_cstr):
-        return converter(self._stride)
-
-    def set_loop_var(self, name):
-        self._loop_var = name
-
-    def size(self, converter=traversals.make_cstr):
-        result = "{1} - ({0}) + 1".format(converter(self._lbound),
-                                          converter(self._ubound))
-        try:
-            result = str(ast.literal_eval(result))
-        except:
-            try:
-                result = " - ({0}) + 1".format(converter(self._lbound))
-                result = str(ast.literal_eval(result))
-                if result == "0":
-                    result = converter(self._ubound)
-                else:
-                    result = "{1}{0}".format(result, converter(self._ubound))
-            except:
-                pass
-        return result
-
-    def cstr(self):
-        #return self.size(traversals.make_cstr)
-        return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
-
-    def overwrite_fstr(self,fstr):
-        self._fstr = fstr
-    
-    def fstr(self):
-        if self._fstr != None:
-            return self._fstr
-        else:
-            result = ""
-            if not self._lbound is None:
-                result += traversals.make_fstr(self._lbound)
-            result += ":"
-            if not self._ubound is None:
-                result += traversals.make_fstr(self._ubound)
-            if not self._stride is None:
-                result += ":" + traversals.make_fstr(self._stride)
-            return result
 
 class TTAssignment(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.lhs, self.rhs = tokens
-        self._type = None
-        self._rank = None
-        self._bytes_per_element = None   
  
     @property
     def type(self):
-        assert self._type != None
-        return self._type
-    @type.setter
-    def type(self,typ):
-        self._type = typ
+        return self.lhs.type
     @property
     def rank(self):
-        assert self._rank != None
-        return self._rank
-    @rank.setter
-    def rank(self,rank):
-        self._rank = rank
+        return self.lhs.rank
     @property
     def bytes_per_element(self):
-        assert self._bytes_per_element != None
-        return self._bytes_per_element
-    @bytes_per_element.setter
-    def bytes_per_element(self,bytes_per_element):
-        self._bytes_per_element = bytes_per_element
+        return self.lhs.bytes_per_element
 
     def child_nodes(self):
         yield self.rhs; yield self.rhs
@@ -1338,25 +1432,13 @@ class TTComplexAssignment(base.TTNode):
  
     @property
     def type(self):
-        assert self._type != None
-        return self._type
-    @type.setter
-    def type(self,typ):
-        self._type = typ
+        return self.lhs.type
     @property
     def rank(self):
-        assert self._rank != None
-        return self._rank
-    @rank.setter
-    def rank(self,rank):
-        self._rank = rank
+        return self.lhs.rank
     @property
     def bytes_per_element(self):
-        assert self._bytes_per_element != None
-        return self._bytes_per_element
-    @bytes_per_element.setter
-    def bytes_per_element(self,bytes_per_element):
-        self._bytes_per_element = bytes_per_element
+        return self.lhs.bytes_per_element
 
     def child_nodes(self):
         yield self.lhs; yield self.rhs
@@ -1371,6 +1453,8 @@ class TTComplexAssignment(base.TTNode):
         return result
 
 class TTMatrixAssignment(base.TTNode):
+    # a = [1,2,3...]
+    # todo: currently expected to not be used in kernels 
 
     def _assign_fields(self, tokens):
         self.lhs, self.rhs = tokens
@@ -1380,25 +1464,13 @@ class TTMatrixAssignment(base.TTNode):
  
     @property
     def type(self):
-        assert self._type != None
-        return self._type
-    @type.setter
-    def type(self,typ):
-        self._type = typ
+        return self.lhs.type
     @property
     def rank(self):
-        assert self._rank != None
-        return self._rank
-    @rank.setter
-    def rank(self,rank):
-        self._rank = rank
+        return self.lhs.rank
     @property
     def bytes_per_element(self):
-        assert self._bytes_per_element != None
-        return self._bytes_per_element
-    @bytes_per_element.setter
-    def bytes_per_element(self,bytes_per_element):
-        self._bytes_per_element = bytes_per_element
+        return self.lhs.bytes_per_element
 
     def child_nodes(self):
         yield self.lhs; yield self.rhs

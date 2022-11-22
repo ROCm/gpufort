@@ -362,12 +362,14 @@ class Semantics:
         Post-order traversal is mandatory as this traverses descedants
         before their parents.
         :raise util.error.LookupError: if a symbol's type could not be determined.
+        :raise util.error.SemanticError: if LHS, RHS rank or type are inconsistent.
         :note: Can also be applied to subtrees contained in TTArithExpr.
         """
         self.resolve_arith_expr(ttassignment.lhs,scope)
         self.resolve_arith_expr(ttassignment.rhs,scope)
-        if ttassignment.lhs.rank != ttassignment.rhs.rank:
-            raise util.error.SemanticError("rank mismatch between LHS and RHS")
+        if (ttassignment.lhs.rank != ttassignment.rhs.rank
+           and ttassignment.rhs.rank != 0 ):
+            raise util.error.SemanticError("inconsistent rank between LHS and RHS")
         if ( ttassignment.lhs.type != ttassignment.rhs.type
              or ttassignment.lhs.bytes_per_element != ttassignment.rhs.bytes_per_element ):
             raise util.error.SemanticError("type mismatch between LHS and RHS")

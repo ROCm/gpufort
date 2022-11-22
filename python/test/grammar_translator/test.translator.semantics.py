@@ -190,24 +190,38 @@ class TestSemantics(unittest.TestCase):
           "real(1,c_double)",
           "real(j,kind=c_double)",
           "real(X,kind=c_double)",
+          "real(Y(:,1),kind=c_double)",
+          "real(X+Y(:,1),kind=c_double)",
+          "real(Y(1,:),kind=c_double)",
           "int(1)",
           "int(1,8)",
           "int(j,kind=8)",
           "int(1,c_long)",
           "int(j,kind=c_long)",
           "int(X,kind=c_long)",
+          "int(X+Y(:,1),kind=c_long)",
+          "int(Y(:,1),kind=c_long)",
+          "int(Y(1,:),kind=c_long)",
         ]
         results = [
-          (True, True, True, None),
-          (True, True, True, '8'),
-          (True, True, True, '8'),
-          (True, True, True, 'c_double'),
-          (True, True, True, 'c_double'),
-          (True, True, True, None),
-          (True, True, True, '8'),
-          (True, True, True, '8'),
-          (True, True, True, 'c_long'),
-          (True, True, True, 'c_long'),
+          (True, True, True, 'real', None, 4, 0, False, False),
+          (True, True, True, 'real', '8', 8, 0, False, False),
+          (True, True, True, 'real', '8', 8, 0, False, False),
+          (True, True, True, 'real', 'c_double', 8, 0, False, False),
+          (True, True, True, 'real', 'c_double', 8, 0, False, False),
+          (True, True, True, 'real', 'c_double', 8, 1, True, True),
+          (True, True, True, 'real', 'c_double', 8, 1, True, False),
+          (True, True, True, 'real', 'c_double', 8, 1, True, False),
+          (True, True, True, 'real', 'c_double', 8, 1, False, False),
+          (True, True, True, 'integer', None, 4, 0, False, False),
+          (True, True, True, 'integer', '8', 8, 0, False, False),
+          (True, True, True, 'integer', '8', 8, 0, False, False),
+          (True, True, True, 'integer', 'c_long', 8, 0, False, False),
+          (True, True, True, 'integer', 'c_long', 8, 0, False, False),
+          (True, True, True, 'integer', 'c_long', 8, 1, True, True),
+          (True, True, True, 'integer', 'c_long', 8, 1, True, False),
+          (True, True, True, 'integer', 'c_long', 8, 1, True, False),
+          (True, True, True, 'integer', 'c_long', 8, 1, False, False),
         ]
 
         for i,test in enumerate(testdata):
@@ -219,11 +233,15 @@ class TestSemantics(unittest.TestCase):
               ttrvalue.is_function_call,
               ttrvalue.is_elemental_function_call,
               ttrvalue.is_converter_call,
+              ttrvalue.type,
               ttrvalue.kind,
-              ttrvalue.rank,  
+              ttrvalue.bytes_per_element,
+              ttrvalue.rank,
+              ttrvalue.is_contiguous_array,
+              ttrvalue.is_full_array, 
             )
             #print(test)
-            print(result_tuple)
+            #print(result_tuple)
             #self.assertEqual(
             #  results[i],
             #  result_tuple

@@ -283,3 +283,7 @@ void acc_update_self_async(h_void* data_arg, size_t bytes,
                            int async_arg){
   gpufortrt_update_self_async(data_arg, bytes, true, false, async_arg);
 }
+
+d_void* acc_deviceptr(h_void* data_arg){
+  return gpufortrt_deviceptr(data_arg);
+}

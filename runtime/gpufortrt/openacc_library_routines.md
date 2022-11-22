@@ -1,213 +1,57 @@
-# acc_get_num_devices
-
-## Status
-
-# acc_set_device_type
-
-## Status
-
-# acc_get_device_type
-
-## Status
-
-# acc_set_device_num
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_get_device_num
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_get_property
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_init
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_shutdown
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_async_test
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_async_test_device
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_async_test_all
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_async_test_all_device
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_wait
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_wait_device
-
-## Status
-
-# acc_wait_async
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_wait_device_async
-
-## Status
-
-# acc_wait_all
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_wait_all_device
-
-## Status
-
-# acc_wait_all_async
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_wait_all_device_async
-
-## Status
-
-# acc_get_default_async
-
-## Status
-
-Exists in gpufortrt_api.cpp, not tested
-
-# acc_set_default_async
-
-## Status
-
-Exists in gpufortrt_api.cpp, not tested
-
-# acc_on_device
-
-## Status
-
-# acc_malloc
-
-## Status
-
-# acc_free
-
-## Status
-
-# acc_copyin
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_create
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_copyout
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_delete
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_update_device
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_update_self
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_map_data
-
-## Status
-
-# acc_unmap_data
-
-## Status
-
-# acc_deviceptr
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_hostptr
-
-## Status
-
-# acc_is_present
-
-## Status
-
-Exists in gpufortrt_api.cpp
-
-# acc_memcpy_to_device
-
-## Status
-
-# acc_memcpy_from_device
-
-## Status
-
-# acc_memcpy_device
-
-## Status
-
-# acc_attach
-
-## Status
-
-# acc_detach
-
-## Status
-
-# acc_memcpy_d2d
-
-## Status
+---
+geometry: margin=2cm
+---
+
+# Implemented API
+
+| API | Lang\* | OpenACC | GPUFORTRT\*\* | Priority\*\*\* | 
+|-----|--------|---------|-------------|----------|
+|acc\_get\_num\_devices|C/C++, Fortran|implemented|implemented|high|
+|acc\_set\_device\_type|C/C++, Fortran|implemented|implemented|high|
+|acc\_get\_device\_type|C/C++, Fortran|implemented|implemented|high|
+|acc\_set\_device\_num|C/C++, Fortran|implemented|implemented||
+|acc\_get\_device\_num|C/C++, Fortran|implemented|implemented||
+|acc\_get\_property|C/C++, Fortran|implemented|implemented||
+|acc\_init|C/C++, Fortran|implemented|implemented||
+|acc\_shutdown|C/C++, Fortran|implemented|implemented||
+|acc\_async\_test|C/C++, Fortran|implemented|implemented||
+|acc\_async\_test\_device|C/C++, Fortran|implemented|implemented||
+|acc\_async\_test\_all|C/C++, Fortran|implemented|implemented||
+|acc\_async\_test\_all\_device|C/C++, Fortran|implemented|implemented||
+|acc\_wait|C/C++, Fortran|implemented|implemented||
+|acc\_wait\_device|C/C++, Fortran|implemented|implemented|high|
+|acc\_wait\_async|C/C++, Fortran|implemented|implemented||
+|acc\_wait\_device\_async|C/C++, Fortran|implemented|implemented|high|
+|acc\_wait\_all|C/C++, Fortran|implemented|implemented||
+|acc\_wait\_all\_device|C/C++, Fortran|implemented|implemented|high|
+|acc\_wait\_all\_async|C/C++, Fortran|implemented|implemented||
+|acc\_wait\_all\_device\_async|C/C++, Fortran|implemented|implemented|high|
+|acc\_get\_default\_async|C/C++, Fortran|implemented|implemented||
+|acc\_set\_default\_async|C/C++, Fortran|implemented|implemented||
+|acc\_on\_device||||low|
+|acc\_malloc||||low|
+|acc\_free||||low|
+|acc\_copyin|C/C++, Fortran|implemented|implemented||
+|acc\_create|C/C++, Fortran|implemented|implemented||
+|acc\_copyout|C/C++, Fortran|implemented|implemented||
+|acc\_delete|C/C++, Fortran|implemented|implemented||
+|acc\_update\_device|C/C++, Fortran|implemented|implemented||
+|acc\_update\_self|C/C++, Fortran|implemented|implemented||
+|acc\_map\_data||||low|
+|acc\_unmap\_data||||low|
+|acc\_deviceptr|C/C++||implemented||
+|acc\_hostptr|C/C++|||low|
+|acc\_is\_present|||implemented||
+|acc\_memcpy\_to\_device||||low|
+|acc\_memcpy\_from\_device||||low|
+|acc\_memcpy\_device||||low|
+|acc\_attach||||low|
+|acc\_detach||||low|
+|acc\_memcpy\_d2d||||low|
+
+Remarks:
+
+* \* While some APIs are exposed only to C according to the OpenACC standard, `GPUFORTRT` may expose some C interfaces also to Fortran. An \* indicates that this feature was exposed by the GPUFORTRT to Fortran despite the OpenACC standard not requiring this.
+* \*\* `GPUFORTRT` signatures are prefixd by `gpufortrt_` instead of `acc_` and the number and meaning of 
+arguments may differ compared to the OpenACC signature.
+* \*\*\* Current priorities for implementing missing APIs. This column will disappear as soon as all are implemented.

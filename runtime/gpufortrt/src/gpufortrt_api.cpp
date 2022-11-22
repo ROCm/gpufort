@@ -22,6 +22,12 @@ void gpufortrt_set_device_num(int dev_num) {
   HIP_CHECK(hipSetDevice(dev_num)) // TODO backend specific, externalize
 }
 
+int gpufortrt_get_num_devices() {
+  int dev_num;
+  HIP_CHECK(hipGetDeviceCount(&dev_num))
+  return dev_num;
+}
+
 int gpufortrt_get_device_num() {
   int dev_num;
   HIP_CHECK(hipGetDevice(&dev_num))

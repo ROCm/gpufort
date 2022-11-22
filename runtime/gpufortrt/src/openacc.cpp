@@ -63,7 +63,7 @@ acc_device_t acc_get_device_type(void) {
 
 int acc_get_num_devices(acc_device_t dev_type) {
   if ( ::check_device_type(dev_type) == acc_device_hip ) {
-    return gpufortrt_get_device_num();
+    return gpufortrt_get_num_devices();
   } else { // host
     return 1;
   }

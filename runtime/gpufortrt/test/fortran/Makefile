@@ -10,6 +10,7 @@ LDFLAGS = $(shell gpufort --print-acc-ldflags) -lgfortran
 
 # sources
 TEST_SRC      = \
+				./test_acc_get_num_devices_00.f90 \
 				./test_acc_update_00.f90 \
 				./test_acc_delete_00.f90 \
 				./test_acc_create_00.f90 \

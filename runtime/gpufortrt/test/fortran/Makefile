@@ -21,7 +21,8 @@ TEST_SRC      = \
 				./test_acc_copyin_00.f90 \
 				./test_acc_async_test_00.f90 \
 				./test_acc_get_property_00.f90 \
-				./test_acc_is_present.f90 \
+				./test_acc_is_present_00.f90 \
+				./test_acc_is_present_01.f90 \
 				./test_acc_get_device_num_00.f90 \
 				./test_acc_set_device_num_00.f90 \
 				./test_acc_init_shutdown_00.f90 \
@@ -52,8 +53,8 @@ TEST_CONV_SRC = $(TEST_SRC:.f90=.f90-gpufort.f08)
 all: $(TEST_NAME)
 
 $(TEST_NAME): %: %.f90-gpufort.f08
-	$(HIPCC) $(HIPCC_CFLAGS) -c $@.f90-gpufort.cpp
-	$(HIPFC) $^ -o $@ $@.f90-gpufort.o $(HIPFC_CFLAGS) $(LDFLAGS)
+	$(HIPCC) $(HIPCC_CFLAGS) -c -g $@.f90-gpufort.cpp
+	$(HIPFC) -g $^ -o $@ $@.f90-gpufort.o $(HIPFC_CFLAGS) $(LDFLAGS)
 
 $(TEST_CONV_SRC): %-gpufort.f08: %
 	gpufort --wrap $^ --dest hipgpufort

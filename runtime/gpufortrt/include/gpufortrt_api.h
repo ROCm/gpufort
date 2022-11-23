@@ -89,6 +89,10 @@ extern "C" {
   void* gpufortrt_present(
           void* hostptr,
           std::size_t num_bytes);
+
+  bool gpufortrt_is_present(
+          void* hostptr,
+          std::size_t num_bytes);
   
   void* gpufortrt_create(
           void* hostptr,

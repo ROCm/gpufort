@@ -153,7 +153,7 @@ void acc_shutdown(acc_device_t dev_type) {
 }
 
 int acc_is_present(void* hostptr,std::size_t num_bytes) {
-  if(gpufortrt_present(hostptr, num_bytes)) 
+  if(gpufortrt_is_present(hostptr, num_bytes)) 
     return 1;
   else 
     return 0;

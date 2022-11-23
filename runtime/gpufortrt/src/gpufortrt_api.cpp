@@ -786,16 +786,10 @@ void* gpufortrt_use_device(void* hostptr,bool if_arg,bool if_present_arg) {
 }
 
 bool gpufortrt_is_present(void* hostptr,std::size_t num_bytes) {
-  if ( !gpufortrt::internal::initialized ) LOG_ERROR("update: runtime not initialized")
+  if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_is_present: runtime not initialized")
   if ( hostptr != nullptr ) { // nullptr means no-op
     auto list_tuple/*success,loc,offset*/ = gpufortrt::internal::record_list.find_record(hostptr,num_bytes);
-    const bool& success = std::get<0>(list_tuple);
-    // const std::size_t& loc = std::get<1>(list_tuple);
-    if ( !success ) { 
-      LOG_ERROR("update: no record found for hostptr="<<hostptr)
-    } else if ( success ) {
-          return true;
-    }
+    return std::get<0>(list_tuple);
   } else{
       return false;
   }

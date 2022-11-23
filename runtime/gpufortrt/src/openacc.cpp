@@ -287,3 +287,12 @@ void acc_update_self_async(h_void* data_arg, size_t bytes,
 d_void* acc_deviceptr(h_void* data_arg){
   return gpufortrt_deviceptr(data_arg);
 }
+
+d_void* acc_malloc(size_t bytes){
+  h_void* hostptr = nullptr;
+  d_void* deviceptr = nullptr; 
+  hostptr = (h_void*) malloc(bytes);
+  deviceptr = gpufortrt_create(hostptr, bytes, false);
+  free(hostptr);
+  return deviceptr;
+}

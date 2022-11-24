@@ -41,7 +41,7 @@ def _parse_arith_expr(expr_as_str,scope):
     return parse_result
 
 def _parse_assignment(expr_as_str,scope):
-    parse_result = tree.grammar.fortran_assignment.parseString(
+    parse_result = tree.grammar.assignment.parseString(
         expr_as_str, parseAll=True)[0]
     if scope != None:
         semantics_checker.resolve_assignment(parse_result,scope)

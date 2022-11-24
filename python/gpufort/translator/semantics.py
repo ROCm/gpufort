@@ -113,7 +113,7 @@ class Semantics:
         expected_type = ttfunc.get_expected_ttargument_type(ttarg_name)
         if actual_type != expected_type:
             raise util.error.SemanticError(
-               "function {} '{}': ttargument type mismatch; expected type '{}' instead of '{}'".format(
+               "function {} '{}': argument type mismatch; expected type '{}' instead of '{}'".format(
                  func_type, func_name, expected_type, actual_type
               )                         
             )                           
@@ -125,7 +125,7 @@ class Semantics:
         )
         if actual_bytes_per_element != expected_bytes_per_element:
             raise util.error.SemanticError(
-               "function {} '{}': ttargument kind mismatch; expected kind '{}' instead of '{}'".format(
+               "function {} '{}': argument kind mismatch; expected kind '{}' instead of '{}'".format(
                  func_bytes_per_element, func_name,
                  expected_kind, actual_kind
               )                         
@@ -251,20 +251,70 @@ class Semantics:
                 if ttpart.element.type != "type":
                     self._lookup_bytes_per_element(ttpart.element)
     
-    def _check_complex_arith_expr(self,ttcomplexarithexpr,scope):
+    def _check_complex_constructor(self,ttcomplexconstructor,scope):
         """Check if a complex type is constructed of compatible components:
         - real and integer are allowed
         - all components must have rank 0
         """ 
-        for child in self.child_nodes:
+        for child in ttcomplexconstructor.child_nodes():
             if child.type not in [tree.Literal.REAL,
                                   tree.Literal.INTEGER]:
-                raise error.SemanticError("components of complex must be real or integer")
+                raise util.error.SemanticError("complex constructor components must be real or integer")
             elif child.rank != 0:
-                raise error.SemanticError("rank of complex components must be 0")
+                raise util.error.SemanticError("rank of complex constructor components must be 0")
+    
+    def _check_matrix_constructor(self,ttmatrixconstructor,scope):
+        """Check if a matrix type is constructed of compatible items:
+        - types may not be mixed. Basic datatype and bytes per element must be identical.
+        - complex may not be mixed with other numeric types
+        - all items must have rank 0 except if the component is a matrix
+          constructor itself. Then, rank 1 is allowed.
+        """
+        current_type = None
+        current_bytes_per_element = None
+        current_derived_type_kind = None
+        if not len(ttmatrixconstructor.entries):
+            raise util.error.SemanticError(
+              "array constructor must have at least one element"
+            )
+        for entry in ttmatrixconstructor.entries:
+            entry_type = entry.type
+            if entry_type == "type":
+                # don't know number of bytes per element of derived type
+                entry_bytes_per_element = None
+                entry_derived_type_kind = entry.kind
+            else:
+                entry_bytes_per_element = entry.bytes_per_element
+                entry_derived_type_kind = None 
+            if current_type == None:
+                current_type = entry_type
+                current_bytes_per_element = entry_bytes_per_element
+                current_derived_type_kind = entry_derived_type_kind
+            if (
+                current_type != entry_type
+                or current_derived_type_kind != entry_derived_type_kind
+                or current_bytes_per_element != entry_bytes_per_element
+              ):
+                err_msg = (
+                  "type mismatch in array constructor: "
+                )
+                if current_derived_type_kind == None:
+                    err_msg += "{2} bytes '{0}' vs {3} bytes '{1}'".format(
+                      current_type, entry_type,
+                      current_bytes_per_element, entry_bytes_per_element
+                    )
+                else:
+                    err_msg += "'{0}({2})' vs '{1}({3})'".format(
+                      current_type, entry_type,
+                      current_bytes_per_element, entry_bytes_per_element
+                    )
+                raise util.error.SemanticError(err_msg)
+            if entry.rank > 0 and not isinstance(entry,tree.TTMatrixConstructor):
+                raise util.error.SemanticError("rank of array constructor entries must be 0")
     
     def _compare_op_and_opd_type(self,op_type,opd_type):
-        """check if operator and operand type agree."""
+        """check if operator and operand type agree.
+        :note: No support of derived types with overloaded operators."""
         if opd_type in ["real","integer"]:
             if op_type == tree.OperatorType.LOGIC:
                 raise util.error.SemanticError("cannot apply logical binary operator to real type")
@@ -332,14 +382,18 @@ class Semantics:
         ttnode.bytes_per_element = current_bytes_per_element
    
     def _resolve_value(self,ttnode,scope):
-        if isinstance(ttnode._value,tree.Literal):
-            self._resolve_literal(ttnode._value,scope)
-        elif isinstance(ttnode._value,tree.TTIdentifier):
-            self._resolve_identifier(ttnode._value,scope)
-        elif isinstance(ttnode._value,tree.TTFunctionCall):
-            self._resolve_function_call(ttnode._value,scope)
-        elif isinstance(ttnode._value,tree.TTDerivedTypePart):
-            self._resolve_derived_type(ttnode._value,scope)
+        if isinstance(ttnode.value,tree.Literal):
+            self._resolve_literal(ttnode.value,scope)
+        elif isinstance(ttnode.value,tree.TTIdentifier):
+            self._resolve_identifier(ttnode.value,scope)
+        elif isinstance(ttnode.value,tree.TTFunctionCall):
+            self._resolve_function_call(ttnode.value,scope)
+        elif isinstance(ttnode.value,tree.TTDerivedTypePart):
+            self._resolve_derived_type(ttnode.value,scope)
+        elif isinstance(ttnode.value,tree.TTComplexConstructor):
+            self._check_complex_constructor(ttnode.value,scope)
+        elif isinstance(ttnode.value,tree.TTArrayConstructor):
+            self._check_matrix_constructor(ttnode.value,scope)
  
     def resolve_arith_expr(self,ttarithexpr,scope):
         """Resolve the types in an arithmetic expression parse tree.

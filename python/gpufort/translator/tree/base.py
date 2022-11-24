@@ -13,6 +13,7 @@ class TTNode(object):
     def compare_label(self,label1,label2):
         """:return: If this bel equals argument, case is ignored.
         """
+        #todo: introduce base class for statements, not all nodes can be labelled
         if label2 == None and label1 == None:
             return True
         if label2 != None and label1 != None:
@@ -27,8 +28,6 @@ class TTNode(object):
     def _init(self):
         self.parent = None
         self.numeric_label = None
-        self._fstr = None 
-        self._cstr = None 
     
     def _assign_fields(self, tokens):
         pass
@@ -50,12 +49,6 @@ class TTNode(object):
         for child in self.child_nodes():
             yield from child.walk_postorder()
         yield self
-  
-    def overwrite_fstr(self,expr):
-        self._fstr = expr
-    
-    def overwrite_cstr(self,expr):
-        self._cstr = expr
 
     def fstr(self):
         assert False, "Must be implemented by subclass"
@@ -80,6 +73,7 @@ class TTNone(TTNode):
         return "" 
     def fstr(self):
         return ""
+
 class FlowStatementMarker:
     pass
 

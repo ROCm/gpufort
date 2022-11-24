@@ -129,7 +129,7 @@ class Grammar:
                 else:
                     arith_expr_op_list.append(tup)
         self.arith_expr <<= pyp.infixNotation( # note: forward declared
-          ( self.rvalue | self.complex_arith_expr ),
+          self.rvalue,
           arith_expr_op_list
         )
 
@@ -139,8 +139,9 @@ class Grammar:
           binary_op_parse_action
         ):
         # arithmetic logical expressions and assignments
-        self.complex_arith_expr = pyp.Forward()
         self.arith_expr = pyp.Forward()
+        self.complex_constructor = pyp.Forward()
+        self.array_constructor = pyp.Forward()
         
         self.function_call_arg = pyp.Forward()
         self.function_call_args = pyp.Optional(pyp.delimitedList(self.function_call_arg))
@@ -164,24 +165,16 @@ class Grammar:
         #self.conversion = pyp.Forward()
         #self.inquiry_function = pyp.Forward()
         self.rvalue = (
-          self.derived_type_elem 
+          self.array_constructor
+          | self.complex_constructor
+          | self.derived_type_elem 
           | self.function_call 
           | self.identifier 
           | self.logical 
           | self.character 
           | self.number
         )# |: ordered OR, order is import
-        # legacy
-        #self.rvalue = (
-        #  self.conversion 
-        #  | self.inquiry_function 
-        #  | self.derived_type_elem 
-        #  | self.function_call 
-        #  | self.identifier 
-        #  | self.logical 
-        #  | self.character 
-        #  | self.number
-        #)# |: ordered OR, order is import
+        
         self.lvalue = (
           self.derived_type_elem 
           | self.function_call 
@@ -198,16 +191,15 @@ class Grammar:
         self.assignment = self.lvalue + self.EQ + self.arith_expr # ! emits 2 tokens: *,*
         self.keyword_argument = self.identifier_no_action + self.EQ + self.arith_expr
         
-        self.matrix_arith_expr = self.MATLPAR + pyp.Group(pyp.delimitedList(self.arith_expr)) + self.MATRPAR
-        self.matrix_assignment = self.lvalue + self.EQ + self.matrix_arith_expr
-        
-        self.complex_arith_expr <<= self.LPAR + pyp.Group(self.arith_expr + self.COMMA + self.arith_expr) + self.RPAR 
-        self.complex_assignment = self.lvalue + self.EQ + self.complex_arith_expr
-        
-        self.fortran_assignment = ( 
-          self.matrix_assignment
-          | self.complex_assignment
-          | self.assignment
+        self.array_constructor <<= ( 
+          self.MATLPAR 
+          + pyp.delimitedList(self.arith_expr | self.complex_constructor) 
+          + self.MATRPAR
+        )
+        self.complex_constructor <<= (
+          self.LPAR 
+          + pyp.Group(self.arith_expr + self.COMMA + self.arith_expr) 
+          + self.RPAR 
         )
         COLON = pyp.Literal(":").suppress()
         opt_arith_expr = pyp.Optional(self.arith_expr,default=None)
@@ -217,71 +209,6 @@ class Grammar:
         )
         # define forward declared tokens
         self.function_call_arg <<= self.tensor_slice | self.keyword_argument | self.arith_expr
-        
-        # conversion functions
-        # todo: check type of variable when translating
-        # see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
-        # for now, always assume conversion between complex and float types
-        # todo: handle directly in function call
-        # todo: better support for intrinsics in indexer
-        #func_kind = (
-        #  self.COMMA 
-        #  + ( self.KIND + self.EQ + self.arith_expr )
-        #) # emits one token # todo: generalize to keyword argument
-        #single_arg_plus_kind = (
-        #  self.LPAR 
-        #  + (~func_kind+self.arith_expr) 
-        #  + pyp.Optional(func_kind,default=None) 
-        #  + self.RPAR
-        #) # emits 2 tokens: *,*,*
-        #double_arg_plus_kind = (
-        #  self.LPAR 
-        #  + (~func_kind+self.arith_expr) 
-        #  + pyp.Optional(self.COMMA 
-        #  + (~func_kind+self.arith_expr),default="0") 
-        #  + pyp.Optional(func_kind,default=None)
-        #  + self.RPAR 
-        #) # emits 2 tokens: *,*
-        #
-        #self.convert_to_extract_real   = ( self.REAL | self.FLOAT ) + single_arg_plus_kind # emits 2 tokens,
-        #self.convert_to_double         = self.DBLE   + single_arg_plus_kind # emits 2 tokens,
-        #self.convert_to_complex        = self.CMPLX  + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
-        #self.convert_to_double_complex = self.DCMPLX + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
-        #self.extract_imag              = self.AIMAG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> y
-        #self.conjugate                 = self.CONJG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
-        #self.conjugate_double_complex  = self.DCONJG + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
-        #
-        #self.conversion <<= (
-        #  self.convert_to_extract_real
-        #  | self.convert_to_double
-        #  | self.convert_to_complex
-        #  | self.convert_to_double_complex
-        #  | self.extract_imag
-        #  | self.conjugate
-        #  | self.conjugate_double_complex
-        #)        
-        ## inquiry functions
-        #inquiry_function_arg = ( 
-        #  self.lvalue 
-        #  + pyp.Optional(
-        #      self.COMMA
-        #      + pyp.Optional(self.DIM + self.EQ) 
-        #      + self.arith_expr,default=None
-        #  ) 
-        #  + pyp.Optional(
-        #      self.COMMA
-        #      + pyp.Optional(self.KIND + self.EQ)
-        #      + self.arith_expr,default=None
-        #  )
-        #)
-        #self.size_inquiry = self.SIZE   + self.LPAR + inquiry_function_arg + self.RPAR  
-        #self.lbound_inquiry = self.LBOUND + self.LPAR + inquiry_function_arg + self.RPAR 
-        #self.ubound_inquiry = self.UBOUND + self.LPAR + inquiry_function_arg + self.RPAR 
-        #self.inquiry_function <<= (
-        #  self.size_inquiry
-        #  | self.lbound_inquiry
-        #  | self.ubound_inquiry
-        #)
 
     def _init_fortran_statements(self,ignorecase):
         self.fortran_subroutine_call = self.CALL + self.function_call

@@ -1,6 +1,21 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #from translator_base import *
+"""
+
+Generators:
+
+* walk_values_ignore_args: Certain nodes are equipped with this generator.
+  This generator can be used to analyze the operands of 
+  Fortran array expressions. Unlike the `walk_preorder` and `walk_postorder`
+  routines, the generator does not descend into function call arguments and array indices.
+  The only exception being elemental function calls.
+  Here, the generator descends directly into the argument list and does
+  not yield the elemental function call expression itself.
+  It further does not yield any unary and binary operators. 
+  It exclusively yields TTValue instances.
+"""
+
 import pyparsing
 import ast
 
@@ -22,6 +37,7 @@ class Literal(base.TTNode):
     CHARACTER = "character"
     INTEGER = "integer"
     REAL = "real"
+    COMPLEX = "complex"
             
     def _assign_fields(self, tokens):
         """
@@ -31,7 +47,7 @@ class Literal(base.TTNode):
         self._value = self._raw_value
         self._kind = None
         if "_" in self._raw_value:
-            parts = self._raw_value.rsplit("_",maxsplit=1)
+            parts = self._raw_value.split("_",maxsplit=1)
             self._value = parts[0]
             self._kind = parts[1] 
         self._bytes_per_element = None
@@ -197,12 +213,8 @@ class VarExpr(base.TTNode):
 class TTIdentifier(VarExpr):
         
     def _assign_fields(self, tokens):
-        self._name = tokens[0]
+        self.name = tokens[0]
         VarExpr._assign_fields(self,tokens)
-    
-    @property
-    def name(self):
-        return self._name
 
     @property 
     def rank(self):
@@ -230,10 +242,10 @@ class TTIdentifier(VarExpr):
         return not self.is_array
   
     def fstr(self):
-        return str(self._name)
+        return self.name
 
     def cstr(self):
-        return self.fstr().lower()
+        return self.name.lower()
 
     def __str__(self):    
         return "TTIdentifier(name:"+str(self._name)+")"
@@ -364,15 +376,20 @@ class TTFunctionCall(VarExpr):
         """
         if ( self.is_function_call
              and self.is_elemental_function_call ):
+            one_array_is_contiguous = False
             for name, value in self.iter_actual_arguments():
-                if self.result_depends_on_kind:
-                    if (name != "kind"
-                       and not value.is_contiguous_array):
+                if value.is_contiguous_array:
+                    one_array_is_contiguous = True
+                if not (
+                    value.is_contiguous_array
+                    or value.is_scalar
+                  ):
+                    if self.result_depends_on_kind:
+                        if name != "kind":
                             return False
-                else:
-                    if not value.is_contiguous_array:
+                    else:
                         return False
-            return True
+            return one_array_is_contiguous
         elif self.is_array_expr:
             last_slice = -1 # must be initialized with -1
                             # as then: i-last==1 at i=0
@@ -415,18 +432,24 @@ class TTFunctionCall(VarExpr):
     def is_full_array(self):
         """Checks if this array section expression
         covers all elements of an original array.
+        For elemental functions
         """
         if ( self.is_function_call
              and self.is_elemental_function_call ):
+            one_array_is_full = False
             for name, value in self.iter_actual_arguments():
-                if self.result_depends_on_kind:
-                    if (name != "kind"
-                       and not value.is_full_array):
+                if value.is_full_array:
+                    one_array_is_full = True
+                if not (
+                    value.is_full_array
+                    or value.is_scalar
+                  ):
+                    if self.result_depends_on_kind:
+                        if name != "kind":
                             return False
-                else:
-                    if not value.is_full_array:
+                    else:
                         return False
-            return True
+            return one_array_is_full
         elif self.is_array_expr:
             for arg in self.args:
                 if (not isinstance(arg,TTSlice)
@@ -523,64 +546,31 @@ class TTFunctionCall(VarExpr):
     def get_actual_argument_rank(self,arg_name):
         return self.get_actual_argument(arg_name).rank
 
-    def name_cstr(self):
-        """:return: C name of the function. 
-        Converts to lower case. Prefixes intrinsics with "_".
-        """
-        name = self.name.lower()
-        if self.is_intrinsic_call():
-            ## todo
-            #name = prepostprocess.modernize_fortran_function_name(name)
-            #if name in [
-            #  "max",
-            #  "min",
-            #  ]:
-            #    num_args = len(self._args)
-            #    return "max" + str(num_args)
-            #else:
-            #    return name
-            return "_" + name  # Fortran identifiers, keywords cannot start with "_"
-        else:
-            return name
-    
-    # TODO reassess
-    def __args_cstr(self,name,is_array=False,fortran_style_array_access=True):
-        args = self.args
-        if len(args):
-            if (not fortran_style_array_access and is_array):
-                return "[_idx_{0}({1})]".format(name, ",".join([
-                    traversals.make_cstr(s) for s in args
-                ])) # Fortran identifiers cannot start with "_"
-            else:
-                return "({})".format(
-                    ",".join([traversals.make_cstr(s) for s in args]))
-        else:
-            return ""
-
-    def __args_fstr(self):
+    def _args_as_str(self,converter):
+        """Assumes Fortran style () operators are used in any case.
+        :note: This is the default implementation."""
         args = self.args
         if len(args):
             return "({0})".format(",".join(
-                traversals.make_fstr(el) for el in args))
+                converter(el) for el in args))
         else:
             return ""
 
     def cstr(self):
-        name = self.name_cstr()
-        return "".join([
-          name,
-          self.__args_cstr(
-            name,
-            self.is_array_expr,
-            opts.fortran_style_array_access)
-        ])
+        return (
+          self.name.lower()
+          + self._args_as_str(
+            traversals.make_cstr
+          )
+        )
     
     def fstr(self):
-        name = traversals.make_fstr(self.name)
-        return "".join([
-            name,
-            self.__args_fstr()
-            ])
+        return (
+          self.name
+          + self._args_as_str(
+            traversals.make_fstr
+          )
+        )
     
     def __str__(self):
         return "TTFunctionCall(name:"+str(self.name)+",is_array_expr:"+str(self.is_array_expr)+")"
@@ -589,85 +579,78 @@ class TTFunctionCall(VarExpr):
 class TTSlice(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._lbound, self._ubound, self._stride =\
+        self.lbound, self.ubound, self.stride =\
           None, None, None 
         if len(tokens) == 1:
-            self._ubound = tokens[0]
+            self.ubound = tokens[0]
         elif len(tokens) == 2:
-            self._lbound = tokens[0]
-            self._ubound = tokens[1]
+            self.lbound = tokens[0]
+            self.ubound = tokens[1]
         elif len(tokens) == 3:
-            self._lbound = tokens[0]
-            self._ubound = tokens[1]
-            self._stride = tokens[2]
+            self.lbound = tokens[0]
+            self.ubound = tokens[1]
+            self.stride = tokens[2]
+        self._cstr = None
 
     @property
     def type(self):
-        return self._ubound.type
+        return self.ubound.type
     @property
     def kind(self):
-        return self._ubound.kind
+        return self.ubound.kind
     @property
     def bytes_per_element(self):
-        return self._ubound.bytes_per_element
+        return self.ubound.bytes_per_element
     @property
     def rank(self):
-        return self._ubound.rank
+        return self.ubound.rank
 
     def has_lbound(self):
-        return self._lbound != None
+        return self.lbound != None
     def has_ubound(self):
-        return self._ubound != None
+        return self.ubound != None
     def has_stride(self):
-        return self._stride != None
-
-    def l_bound(self, converter=traversals.make_cstr):
-        return converter(self._lbound)
-    def u_bound(self, converter=traversals.make_cstr):
-        return converter(self._ubound)
-    def stride(self, converter=traversals.make_cstr):
-        return converter(self._stride)
-
-    def set_loop_var(self, name):
-        self._loop_var = name
+        return self.stride != None
 
     def size(self, converter=traversals.make_cstr):
-        result = "{1} - ({0}) + 1".format(converter(self._lbound),
-                                          converter(self._ubound))
+        result = "{1} - ({0}) + 1".format(
+          converter(self.lbound),
+          converter(self.ubound)
+        )
         try:
             result = str(ast.literal_eval(result))
         except:
             try:
-                result = " - ({0}) + 1".format(converter(self._lbound))
+                result = " - ({0}) + 1".format(converter(self.lbound))
                 result = str(ast.literal_eval(result))
                 if result == "0":
-                    result = converter(self._ubound)
+                    result = converter(self.ubound)
                 else:
-                    result = "{1}{0}".format(result, converter(self._ubound))
+                    result = "{1}{0}".format(result, converter(self.ubound))
             except:
                 pass
         return result
 
+    def overwrite_cstr(self,cstr):
+        self._cstr = cstr
+
     def cstr(self):
         #return self.size(traversals.make_cstr)
-        return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
-
-    def overwrite_fstr(self,fstr):
-        self._fstr = fstr
+        if self._cstr == None:
+            return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
+        else:
+            return self._cstr 
     
     def fstr(self):
-        if self._fstr != None:
-            return self._fstr
-        else:
-            result = ""
-            if not self._lbound is None:
-                result += traversals.make_fstr(self._lbound)
-            result += ":"
-            if not self._ubound is None:
-                result += traversals.make_fstr(self._ubound)
-            if not self._stride is None:
-                result += ":" + traversals.make_fstr(self._stride)
-            return result
+        result = ""
+        if not self.lbound is None:
+            result += traversals.make_fstr(self.lbound)
+        result += ":"
+        if not self.ubound is None:
+            result += traversals.make_fstr(self.ubound)
+        if not self.stride is None:
+            result += ":" + traversals.make_fstr(self.stride)
+        return result
 
 class TTDerivedTypePart(base.TTNode):
 
@@ -702,20 +685,20 @@ class TTDerivedTypePart(base.TTNode):
             yield from self._element.walk_derived_type_parts_postorder()
         yield self
 
-    # todo: should rather into ttvalue
-    def get_innermost_member(self):
-        """:return: inner most derived type member.
+    @property
+    def innermost_part(self):
+        """:return: inner most derived type part.
         """
         for current in self.walk_derived_type_parts_preorder():
             pass
         return current
 
-    # todo: should rather into ttvalue
-    def get_type_defininig_node(self):
-        return self.get_innermost_member().element
+    @property
+    def type_defininig_node(self):
+        return self.innermost_part.element
 
-    # todo: should rather into ttvalue
-    def get_rank_defining_node(self):
+    @property
+    def rank_defining_node(self):
         r""":return: The subexpression part that contains the information on 
         the rank of this derived type member access expression.
         :note: Assumes semantics check has been performed beforehand
@@ -734,8 +717,8 @@ class TTDerivedTypePart(base.TTNode):
                 return current.derived_type
         return current.element 
 
-    def identifier_part(self,converter=traversals.make_fstr):
-        # todo: adopt walk_members generator
+    @property
+    def name(self):
         result = converter(self._derived_type)
         current = self._element
         while isinstance(current,TTDerivedTypePart):
@@ -747,15 +730,9 @@ class TTDerivedTypePart(base.TTNode):
             result += "%"+converter(current)
         return result             
 
-    def overwrite_cstr(self,expr):
-        self._cstr = expr
-
     def cstr(self):
-        if self._cstr == None:
-            return traversals.make_cstr(self._derived_type) + "." + traversals.make_cstr(
-                self._element)
-        else:
-            return self._cstr
+        return traversals.make_cstr(self._derived_type) + "." + traversals.make_cstr(
+            self._element)
 
     def fstr(self):
         return traversals.make_fstr(self._derived_type) + "%" + traversals.make_fstr(
@@ -765,48 +742,185 @@ class TTDerivedTypePart(base.TTNode):
         return "TTDerivedTypePart(name:"+str(self._derived_type)+"member:"+str(self._element)+")"
     __repr__ = __str__
 
-class TTValue(base.TTNode):
-    
+class TTComplexConstructor(base.TTNode):
+
     def _assign_fields(self, tokens):
-        self._value = tokens[0]
-        self._reduction_index = None
-        self._fstr = None
+        self.real, self.imag = tokens[0]
 
-    def get_type_defining_node(self):
-        if isinstance(self._value,(TTDerivedTypePart)):
-            return self._value.get_type_defininig_node()
-        else:
-            return self._value
-
-    def get_rank_defining_node(self):
-        if isinstance(self._value,(TTDerivedTypePart)):
-            return self._value.get_rank_defining_node()
-        else:
-            return self._value
+    def child_nodes(self):
+        yield self.real; yield self.imag
 
     @property
     def type(self):
-        return self.get_type_defining_node().type
-    
+        return Literal.COMPLEX
+
     @property
     def kind(self):
-        return self.get_type_defining_node().kind
-    
-    @property
-    def bytes_per_element(self):
-        return self.get_type_defining_node().bytes_per_element
+        if self.bytes_per_element == 4:
+            return "c_float_complex"
+        elif self.bytes_per_element == 8:
+            return "c_double_complex"
+        elif self.bytes_per_element == 16:
+            return "c_long_double_complex"
+        else:
+            assert False, "not supported"
 
     @property
     def rank(self):
-        return self.get_rank_defining_node().rank
+        return 0
+    @property
+    def is_scalar(self): return True
+    @property
+    def is_array(self): return False
+    @property
+    def is_contiguous_array(self): return False
+    @property
+    def is_full_array(self): return False
+    
+    def walk_values_ignore_args(self):
+        yield from self.real.walk_values_ignore_args()
+        yield from self.imag.walk_values_ignore_args()
+
+    @property
+    def bytes_per_element(self):
+        """:return: Size of the real/imag component of this complex arithmetic expression.
+        - If one of the components is a 16-byte real, the result is a 32 byte complex (2 quads)
+        - Else:
+          - If one of the components is an 8-byte real, the result is a 16 byte complex (2 doubles)
+          - Else:
+              the result is a 8-byte complex (2 floats)
+        """
+        max_bytes_per_element = 4
+        for component in self.child_nodes():
+           if component.type == Literal.REAL:
+               max_bytes_per_element = max(
+                 max_bytes_per_element,
+                 component.bytes_per_element
+               )
+        return max_bytes_per_element
+
+    def cstr(self):
+        return "make_hip_complex({real},{imag})".format(\
+                real=traversals.make_cstr(self.real),\
+                imag=traversals.make_cstr(self.imag))
+
+    def fstr(self):
+        return "({real},{imag})".format(\
+                real=traversals.make_fstr(self.real),\
+                imag=traversals.make_fstr(self.imag))
+
+class TTArrayConstructor(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self.entries = tokens
 
     def child_nodes(self):
-        yield self._value
-   
-    def is_identifier(self):
-        return isinstance(self._value, TTIdentifier)
+        yield from self.entries
 
-    def identifier_part(self,converter=traversals.make_fstr):
+    @property
+    def type(self):
+        return self.entries[0].type
+    @property
+    def bytes_per_element(self):
+        return self.entries[0].bytes_per_element
+    @property
+    def rank(self):
+        return 1
+    @property
+    def size(self):
+        return len(self.entries)
+    @property
+    def is_scalar(self): return False
+    @property
+    def is_array(self): return True
+    @property
+    def is_contiguous_array(self): return True
+    @property
+    def is_full_array(self): return True
+    
+    def walk_values_ignore_args(self):
+        yield self
+
+    def cstr(self):
+        # todo array types need
+        assert False, "Not implemented"
+
+    def fstr(self):
+        return "[{}]".format(
+          ",".join([traversals.make_fstr(e) for e in self.entries])
+        )
+
+class TTValue(base.TTNode):
+    
+    def _assign_fields(self, tokens):
+        self.value = tokens[0]
+        # for overwriting C representation
+        self._cname = None 
+        self._cargs = []
+
+    @property
+    def type_defining_node(self):
+        if isinstance(self.value,(TTDerivedTypePart)):
+            return self.value.type_defininig_node
+        else:
+            return self.value
+
+    @property
+    def rank_defining_node(self):
+        if isinstance(self.value,(TTDerivedTypePart)):
+            return self.value.rank_defining_node
+        else:
+            return self.value
+
+    @property
+    def type(self):
+        return self.type_defining_node.type
+    
+    @property
+    def kind(self):
+        return self.type_defining_node.kind
+    
+    @property
+    def bytes_per_element(self):
+        return self.type_defining_node.bytes_per_element
+
+    @property
+    def rank(self):
+        return self.rank_defining_node.rank
+
+    def child_nodes(self):
+        yield self.value
+   
+    @property
+    def is_identifier_expr(self):
+        """The variable expression is a simple identifier."""
+        return isinstance(self.value, TTIdentifier)
+    @property
+    def is_function_call_expr(self):
+        """The variable expression is an identifier plus a list of arguments in () brackets.
+        :note: Something that looks like a function call in Fortran may actually be 
+               an array indexing expression and vice versa. Hence from the syntax alone
+               it is often not clear what the expression actually represents.
+               In this 
+        """
+        return isinstance(self.value, TTFunctionCall)
+    @property
+    def is_derived_type_member_expr(self):
+        """The variable expression is a %-delimited sequence of identifiers
+        and function call expressions."""
+        return isinstance(self.value, TTDerivedTypePart)
+    @property
+    def is_complex_constructor_expr(self):
+        """The variable expression has the shape ( <expr1>, <expr2> ) """
+        return isinstance(self.value, TTComplexConstructor)
+    @property
+    def is_array_constructor_expr(self):
+        """The variable expression has the shape [ <expr1>, <expr2>, ... ]
+           or [ <expr1>, <expr2>, ... ]."""
+        return isinstance(self.value, TTArrayConstructor)
+
+    @property
+    def name(self):
         """
         :return: The identifier part of the expression. In case
                  of a function call/tensor access expression, 
@@ -814,13 +928,21 @@ class TTValue(base.TTNode):
                  In case of a derived type, excludes the argument
                  list of the innermost member.
         """
-        if type(self._value) is TTFunctionCall:
-            return converter(self._value._name)
-        elif type(self._value) is TTDerivedTypePart:
-            return self._value.identifier_part(converter)
+        assert isinstance(self.value,
+          (TTIdentifier,TTFunctionCall,TTDerivedTypePart))
+        return self.value.name
+   
+    @property
+    def cname(self):
+        """C-style identifier of the expression, i.e. '%' replaced by '.'.
+        :note: May still contain index range expressions.
+        :note: If self._cname is set, it is returned instead.
+        """
+        if self._cname != None:
+            return self._cname
         else:
-            return converter(self._value)
-    
+            return self.name.replace("%",".") 
+ 
     @property
     def is_array(self):
         """:note: Does not require array to be contiguous.
@@ -828,7 +950,7 @@ class TTValue(base.TTNode):
                   allowed too. Hence we use the rank-defining 
                   derived type part.
         """
-        return self.get_rank_defining_node().is_array
+        return self.rank_defining_node.is_array
     
     @property
     def is_scalar(self):
@@ -839,18 +961,18 @@ class TTValue(base.TTNode):
         """note: Only applicable to innermost element.
                  hence we use the innermost, the type-defining, 
                  derived type part."""
-        return self.get_type_defining_node().is_contiguous_array
+        return self.type_defining_node.is_contiguous_array
     
     @property
     def is_full_array(self):
         """note: Only applicable to innermost element.
                  hence we use the innermost, the type-defining, 
                  derived type part."""
-        return self.get_type_defining_node().is_full_array
+        return self.type_defining_node.is_full_array
     
     @property
     def is_function_call(self):
-        type_defining_node = self.get_type_defining_node()
+        type_defining_node = self.type_defining_node
         if isinstance(type_defining_node,TTFunctionCall):
             return type_defining_node.is_function_call
         else:
@@ -858,7 +980,7 @@ class TTValue(base.TTNode):
 
     @property
     def is_intrinsic_call(self):
-        type_defining_node = self.get_type_defining_node()
+        type_defining_node = self.type_defining_node
         if isinstance(type_defining_node,TTFunctionCall):
             return type_defining_node.is_intrinsic_call
         else:
@@ -866,7 +988,7 @@ class TTValue(base.TTNode):
    
     @property
     def is_elemental_function_call(self):
-        type_defining_node = self.get_type_defining_node()
+        type_defining_node = self.type_defining_node
         if isinstance(type_defining_node,TTFunctionCall):
             return type_defining_node.is_elemental_function_call
         else:
@@ -874,7 +996,7 @@ class TTValue(base.TTNode):
 
     @property
     def is_converter_call(self):
-        type_defining_node = self.get_type_defining_node()
+        type_defining_node = self.type_defining_node
         if isinstance(type_defining_node,TTFunctionCall):
             return type_defining_node.is_converter_call
         else:
@@ -882,61 +1004,70 @@ class TTValue(base.TTNode):
  
     @property
     def result_depends_on_kind(self):
-        type_defining_node = self.get_type_defining_node()
+        type_defining_node = self.type_defining_node
         if isinstance(type_defining_node,TTFunctionCall):
             return type_defining_node.result_depends_on_kind
         else:
             return False
 
-    @property
-    def value(self):
-        return self._value 
-
-    def name(self):
-        return self._value.fstr()
-
     def slice_args(self):
-        if type(self._value) is TTFunctionCall:
-            yield from self._value.slice_args()
-        elif type(self._value) is TTDerivedTypePart:
-            yield from self._value.innermost_member_slice_args()
+        """:note: While multiple derived type member parts can have
+        an argument list, only one can have index ranges as arguments.
+        """
+        rank_defining_node = self.rank_defining_node
+        if isinstance(rank_defining_node,TTFunctionCall):
+            yield from rank_defining_node.slice_args()
         else:
             yield from ()
-   
-    @property    
-    def args(self):
-        if type(self._value) is TTFunctionCall:
-            yield from self._value._args
-        elif type(self._value) is TTDerivedTypePart:
-            yield from self._value.innermost_member_args()
+
+    def walk_values_ignore_args(self):
+        """Only descend into elemental functions and yield their arguments,
+        otherwise yield `self`."""
+        if (self.is_function_call
+           and self.is_elemental_function_call):
+            for arg_name, arg_value in self.value.iter_actual_arguments():
+                if not (
+                    self.result_depends_on_kind 
+                    and arg_name == "kind"
+                  ):
+                    yield from arg_value.walk_values_ignore_args()
         else:
-            yield from ()
+            yield self
     
     def fstr(self):
-        if self._fstr != None:
-            return self._fstr
-        else:
-            return traversals.make_fstr(self._value)
+        return traversals.make_fstr(self.value)
+
+    def overwrite_cstr(cname,cargs):
+        """:param str cname: Overwrite name of variable when generating C expression.
+        :param list(str) cargs: Overwrite argument list when generating C expression.
+        :note: Should only be applied to derived type member access expressions
+        if the rank and type defining node coincide, i.e. none or only the innermost element
+        is an subarray or array.
+        """
+        self._cname = cname
+        self._cargs = cargs
 
     def cstr(self):
-        result = traversals.make_cstr(self._value)
-        if self._reduction_index != None:
-            if opts.fortran_style_array_access:
-                result += "({idx})".format(idx=self._reduction_index)
-            else:
-                result += "[{idx}]".format(idx=self._reduction_index)
-        return result.lower()
+        if self._cname != None:
+            result = self.cname
+            if len(self._cargs):
+                result += "({})".format(
+                  traversal.make_cstr(self._cargs)
+                )
+            return result
+        else:
+            return traversals.make_cstr(self.value)
 
 class TTLvalue(TTValue):
     def __str__(self):
-        return "TTLvalue(val:"+str(self._value)+")"
+        return "TTLvalue(val:"+str(self.value)+")"
     __repr__ = __str__
 
 class TTRvalue(TTValue):
     def __str__(self):
-        return "TTRvalue(val:"+str(self._value)+")"
+        return "TTRvalue(val:"+str(self.value)+")"
     __repr__ = __str__
-
+    
 def _need_to_add_brackets(op,other_opd):
     return isinstance(other_opd,(TTUnaryOp,TTBinaryOpChain))
 
@@ -1002,6 +1133,9 @@ class TTUnaryOp(base.TTNode):
     @property
     def is_full_array(self):
         return self.opd.is_full_array
+
+    def walk_values_ignore_args(self):
+        yield from walk_values_ignore_args(self.opd)
  
     def _op_c_template(self):
         return TTUnaryOp.f2c.get(self.op.lower())
@@ -1206,6 +1340,10 @@ class TTBinaryOpChain(base.TTNode):
                 one_full_array_found = True
         return one_full_array_found
     
+    def walk_values_ignore_args(self):
+        for opd in self.operands:
+            yield from opd.walk_values_ignore_args()
+    
     def _op_c_template(self,op):
         return TTBinaryOpChain.f2c.get(op.lower())
     
@@ -1253,112 +1391,42 @@ class TTBinaryOpChain(base.TTNode):
 class TTArithExpr(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._expr = tokens[0] # either: rvalue,unary op,binary op
+        self.expr = tokens[0] # either: rvalue,unary op,binary op
 
     def child_nodes(self):
-        yield self._expr
+        yield self.expr
     
     @property
     def type(self):
-        return self._expr.type
-
+        return self.expr.type
     @property
     def rank(self):
-        return self._expr.rank
-    
+        return self.expr.rank
     @property
     def bytes_per_element(self):
-        return self._expr.bytes_per_element
-    
+        return self.expr.bytes_per_element
     @property
     def is_array(self):
-        return self._expr.is_array
-
+        return self.expr.is_array
     @property
     def is_contiguous_array(self):
-        return self._expr.is_contiguous_array
-    
+        return self.expr.is_contiguous_array
     @property
     def is_full_array(self):
-        return self._expr.is_full_array
-    
+        return self.expr.is_full_array
     @property
     def is_scalar(self):
-        return self._expr.is_scalar
-
-    def walk_rvalues_preorder(self):
-        """Yields all TTDerivedTypePart instances.
-        """
-        yield self
-        if isinstance(self._element,TTDerivedTypePart):
-            yield from self._element.walk_derived_type_parts_preorder()
+        return self.expr.is_scalar
     
-    def walk_rvalues_postorder(self):
-        """Yields all TTDerivedTypePart instances.
-        """
-        if isinstance(self._expr,TTRvalue):
-            yield self._expr
-        
-    def cstr(self):
-        return self._expr.cstr()
-
-    def fstr(self):
-        return self._expr.fstr()
-
-class TTComplexArithExpr(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._real, self._imag = tokens[0]
-
-    def child_nodes(self):
-        yield self._real; yield self._imag
-
-    @property
-    def type(self):
-        return Literal.REAL
-
-    @property
-    def kind(self):
-        if self.bytes_per_element == 4:
-            return "c_float_complex"
-        elif self.bytes_per_element == 8:
-            return "c_double_complex"
-        elif self.bytes_per_element == 16:
-            return "c_long_double_complex"
-        else:
-            assert False, "not supported"
-
-    @property
-    def rank(self):
-        return 0
-
-    @property
-    def bytes_per_element(self):
-        """:return: Size of the real/imag component of this complex arithmetic expression.
-        - If one of the components is a 16-byte real, the result is a 32 byte complex (2 quads)
-        - Else:
-          - If one of the components is an 8-byte real, the result is a 16 byte complex (2 doubles)
-          - Else:
-              the result is a 8-byte complex (2 floats)
-        """
-        max_bytes_per_element = 4
-        for component in self.child_nodes():
-           if component.type == Literal.REAL:
-               max_bytes_per_element = max(
-                 max_bytes_per_element,
-                 component.bytes_per_element
-               )
-        return max_bytes_per_element
+    def walk_values_ignore_args(self):
+        yield from self.expr.walk_values_ignore_args()
 
     def cstr(self):
-        return "make_hip_complex({real},{imag})".format(\
-                real=traversals.make_cstr(self._real),\
-                imag=traversals.make_cstr(self._imag))
+        return self.expr.cstr()
 
     def fstr(self):
-        return "({real},{imag})".format(\
-                real=traversals.make_fstr(self._real),\
-                imag=traversals.make_fstr(self._imag))
+        return self.expr.fstr()
+
 
 class TTKeywordArgument(base.TTNode):
     def _assign_fields(self, tokens):
@@ -1391,6 +1459,9 @@ class TTKeywordArgument(base.TTNode):
 
     def child_nodes(self):
         yield self.value
+    
+    def walk_values_ignore_args(self):
+        yield from self.value.walk_values_ignore_args()
 
     def cstr(self):
         return self.key + "=" + self.value.cstr() + ";\n"
@@ -1413,6 +1484,10 @@ class TTAssignment(base.TTNode):
     @property
     def bytes_per_element(self):
         return self.lhs.bytes_per_element
+    
+    def walk_values_ignore_args(self):
+        yield from self.lhs.walk_values_ignore_args()
+        yield from self.rhs.walk_values_ignore_args()
 
     def child_nodes(self):
         yield self.rhs; yield self.rhs
@@ -1420,71 +1495,6 @@ class TTAssignment(base.TTNode):
         return self.lhs.cstr() + "=" + self.rhs.cstr() + ";\n"
     def fstr(self):
         return self.lhs.fstr() + "=" + self.rhs.fstr() + ";\n"
-
-# statements
-class TTComplexAssignment(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self.lhs, self.rhs = tokens
-        self._type = None
-        self._rank = None
-        self._bytes_per_element = None   
- 
-    @property
-    def type(self):
-        return self.lhs.type
-    @property
-    def rank(self):
-        return self.lhs.rank
-    @property
-    def bytes_per_element(self):
-        return self.lhs.bytes_per_element
-
-    def child_nodes(self):
-        yield self.lhs; yield self.rhs
-    def cstr(self):
-        """Expand the complex assignment.
-        """
-        result = ""
-        result += "{}.x = {};\n".format(traversals.make_cstr(self.lhs),
-                                        traversals.make_cstr(self.rhs._real))
-        result += "{}.y = {};\n".format(traversals.make_cstr(self.lhs),
-                                        traversals.make_cstr(self.rhs._imag))
-        return result
-
-class TTMatrixAssignment(base.TTNode):
-    # a = [1,2,3...]
-    # todo: currently expected to not be used in kernels 
-
-    def _assign_fields(self, tokens):
-        self.lhs, self.rhs = tokens
-        self._type = None
-        self._rank = None
-        self._bytes_per_element = None   
- 
-    @property
-    def type(self):
-        return self.lhs.type
-    @property
-    def rank(self):
-        return self.lhs.rank
-    @property
-    def bytes_per_element(self):
-        return self.lhs.bytes_per_element
-
-    def child_nodes(self):
-        yield self.lhs; yield self.rhs
-    def cstr(self):
-        """
-        Expand the matrix assignment.
-        User still has to fix the ranges manually. 
-        """
-        result = "// TODO: fix ranges"
-        for expression in self.rhs:
-            result += traversals.make_cstr(
-                self.lhs) + argument + "=" + flatten_arith_expr(
-                    expression) + ";\n"
-        return result
 
 class TTSubroutineCall(base.TTNode):
 
@@ -1505,11 +1515,11 @@ def set_arith_expr_parse_actions(grammar):
     grammar.function_call.setParseAction(TTFunctionCall)
     grammar.tensor_slice.setParseAction(TTSlice)
     grammar.arith_expr.setParseAction(TTArithExpr)
-    grammar.complex_arith_expr.setParseAction(
-        TTComplexArithExpr)
+    grammar.complex_constructor.setParseAction(
+        TTComplexConstructor)
+    grammar.array_constructor.setParseAction(
+        TTArrayConstructor)
     grammar.keyword_argument.setParseAction(TTKeywordArgument)
     # statements
     grammar.assignment.setParseAction(TTAssignment)
-    grammar.matrix_assignment.setParseAction(TTMatrixAssignment)
-    grammar.complex_assignment.setParseAction(TTComplexAssignment)
     grammar.fortran_subroutine_call.setParseAction(TTSubroutineCall)

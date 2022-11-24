@@ -60,6 +60,10 @@ class TestSemantics(unittest.TestCase):
     
     parse_arith_expr_testdata = [
       "1", 
+      "(1.0,2.0)",
+      "(1.0_c_double,2.0)",
+      "[1.0,2.0,3.0]",
+      "[1,2,i,j,k]",
       "A(i) + B(i,j)",
       "A(i) + B(i,j) - C(i,j,k)",
       "A(i) + B(i,j)*C(i,j,k)",
@@ -78,6 +82,10 @@ class TestSemantics(unittest.TestCase):
     
     resolve_arith_expr_results = [
       ('integer', 4, 0),
+      ('complex', 4, 0),
+      ('complex', 8, 0),
+      ('real', 4, 1),
+      ('integer', 4, 1),
       ('integer', 4, 0),
       ('integer', 4, 0),
       ('integer', 4, 0),
@@ -106,6 +114,7 @@ class TestSemantics(unittest.TestCase):
             result_tuple = (ttarithexpr.type,
                       ttarithexpr.bytes_per_element,
                       ttarithexpr.rank)
+            #print(result_tuple)
             self.assertEqual(TestSemantics.resolve_arith_expr_results[i],result_tuple)
 
     parse_rvalue_testdata = [

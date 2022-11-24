@@ -14,16 +14,42 @@ from . import loopmgr
 from . import resulttypes
 from . import arrayexpr
 
+#class HipKernelArgument:
+#   def __init__(
+#      self,
+#      symbol_info,
+#      fstr,
+#      cstr,
+#      rank
+#    ):
+#      self._symbol_info = symbol_info
+#      self._fstr = fstr
+#      self._rank = rank
+#   @property
+#   def fortran_arg_as_str(self):
+#       pass
+#   @property
+#   def kernel_launcher_arg_as_str(self):
+#       pass
+#   @property
+#   def kernel_arg_as_str(self):
+#       pass
+
 class __HIPKernelBodyGenerator:
 
     def __init__(self):
+        # options
         self.single_level_indent = "" 
+        self.map_to_flat_arrays = False
+        self.map_to_flat_scalars = False
         # traversal state: 
         self._indent = ""
         self._scope = None
         self._resource_filter = None
         self._result = None
         self._loopnest_mgr = None
+        #
+        self._optional_args = None
 
     def _check_loop_parallelism(self,
           resource_filter,
@@ -124,6 +150,60 @@ class __HIPKernelBodyGenerator:
         self._result.generated_code += loops.render_hip_kernel_prolog_acc()
         if acc_construct_info.firstprivate_vars.specified: 
             self._result.firstprivate_vars = acc_construct_info.firstprivate_vars
+
+    def _traverse_values(self,values):
+        # overwrite: c_name for derived type members if appropriate
+        for ttvalue in values:
+            # todo: set a c_name for derived type members if appropriate
+            if ttvalue.is_derived_type_member_expr:
+                if ttvalue.is_scalar and self.map_to_flat_scalars:
+                    cname = util.parsing.mangle_fortran_var_expr(ttvalue.cname)
+                    ttvalue.overwrite_cstr(cname,[])
+                elif ttvalue.is_array and self.map_to_flat_arrays:
+                    cname = util.parsing.mangle_fortran_var_expr(ttvalue.cname)
+                    type_defining_node = ttvalue.type_defining_node
+                    rank_defining_node = ttvalue.rank_defining_node
+                    if type_defining_node != rank_defining_node:
+                        raise util.error.TransformationError("cannot flatten array")
+                    if isinstance(rank_defining_node,TTFunctionCall):
+                        ttvalue.overwrite_cstr(cname,list(rank_defining_node.args))
+                    else:
+                        ttvalue.overwrite_cstr(cname,[])
+            elif ttvalue.is_function_call_expr:
+                ttfunccall = ttvalue.value
+                if (ttfunccall.is_function_call
+                   and ttfunccall.is_intrinsic_call):
+                     func_name = ttfunccall.name.lower() 
+                     if func_name == "present":
+                         # add optional argument
+                         pass
+                     elif ttfunccall.is_elemental_call:
+                        ttfunccall.overwrite_cstr(
+                          "_"+func_name,
+                          list(ttfunccall.rank_defining_node.args)
+                        )
+
+    def _find_rvalues_in_directive(self,ttnode):
+        rvalues = []
+        analysis.acc.find_rvalues_in_directive(
+          ttnode,
+          rvalues
+        )
+        self._result.rvalues += rvalues
+        self._traverse_values(rvalues)
+    
+    def _find_lvalues_rvalues_in_arith_expr(self,ttnode):
+        lvalues = []
+        rvalues = []
+        analysis.fortran.find_lvalues_and_rvalues(
+          ttnode,
+          lvalues,
+          rvalues
+        )
+        self._result.lvalues += lvalues
+        self._result.rvalues += rvalues
+        self._traverse_values(lvalues)
+        self._traverse_values(rvalues)
    
     def _visit_acc_loop_directive(self,ttnode):  
         """Create new AccLoopnestManager instance. Append it to the result's list.
@@ -135,11 +215,8 @@ class __HIPKernelBodyGenerator:
           ttnode,
           self._result.device_type
         ) 
-        # loop directives might contain lvalues, rvalues that need to be passed
-        analysis.acc.find_rvalues_in_directive(
-          ttnode,
-          self._result.rvalues
-        )
+        # loop directives might contain rvalues that need to be passed
+        self._find_rvalues_in_directive(ttnode)
         #todo: split annotation from loop, init AccLoopnestManager solely with acc_loop_info
         self._check_loop_parallelism(
           self._resource_filter,
@@ -180,12 +257,7 @@ class __HIPKernelBodyGenerator:
         self._init_loopnest_mgr(ttdo,acc_loop_info)
 
     def _traverse_container(self,ttnode):
-        analysis.fortran.find_lvalues_and_rvalues(
-          ttnode,
-          self._result.lvalues,
-          self._result.rvalues
-        )
-        #todo: modify expressions
+        self._find_lvalues_rvalues_in_arith_expr(ttnode)
         self._result.generated_code += textwrap.indent(
           ttnode.header_cstr(),
           self._indent
@@ -250,18 +322,117 @@ class __HIPKernelBodyGenerator:
             # TODO fix statement filter
             self._unpack_render_result_and_descend(ttdo,render_result)
 
+    def _generate_loop_indices(self,num):
+        loop_indices = []
+        loop_indices_decl = []
+        for i in range(0,num):
+            loop_indices.append(loops.unique_label("i"))
+            loop_indices_decl.append(
+              loops.render_const_int_decl(loop_indices[i])
+            )
+        return loop_indices, loop_indices_decl
+
+    def _replace_original_array_indices(self,ttvalue,loop_indices):
+        cargs = []
+        rank_defining_node = ttvalue.rank_defining_node
+        #if isinstance(rank_defining_node,tree.TTIdentifier):
+        #    pass
+        #elif isinstance(rank_defining_node,tree.TTFunctionCall):
+        #    # have to check if it is an elemental call
+        #    #if rank_defining_node.
+        #    pass
+        #for enumerate(ttarg in args:
+        #    if isinstance
+        #    cargs.append(              
+
+    def _generate_linear_index_offset_for_contiguous_array(self,ttvalue):
+        """
+        :note: Assumes that the index ranges come first,
+               as guaranteed by the semantics check.
+        :note: Assumes that only the first index range may have
+                a specified lbound and only 
+               the last index range may have an upper bound.
+        :note: Assumes that the array is represent as C++ type
+               with a function `linearized_index(int i1, ..., int i_rank)` 
+               and `lbound(dim)`. 
+        """
+        assert not ttvalue.is_full_array
+        index_offset_template = "{var}.linearized_index({args})"
+        lbounds = []
+        args = []
+        for i,ttarg in enumerate(ttvalue.args):
+            if isinstance(ttarg,TTSlice):
+                if ttarg.has_lbound:
+                    ttarg.lbound
+                     
+
+    def _generate_loops_from_lvalue(self,ttvalue):
+        # todo: derived type members
+        assert isinstance(ttvalue,tree.TTValue)
+        index_offset = None
+        if ttvalue.is_full_array:
+            pass
+        elif ttvalue.is_contiguous_array:
+            index_offset_template = "{var}.linearized_index({args})"
+            lbounds = []
+            for i,ttarg in enumerate(ttvalue.args):
+                if isinstance(ttarg,TTSlice):
+                    pass
+        else:
+            assert ttvalue.is_array
+            pass
+
+    def _traverse_array_assignment(self,ttnode):
+        """
+        - generate collapsed loopnest if one of the expressions is not 
+          contiguous or full array
+  `       - assign collapsed loop index directly to full_array 
+          - assign collapsed loop index + offset directly to contiguous array
+        - generate 
+        """
+        # need to construct loop/loopnest, need to know collapsed index
+        if ttnode.lhs.is_full_array:
+            if ttnode.rhs.is_full_array:
+                pass
+            elif ttnode.rhs.is_contiguous_array:
+                # need to know rhs offset
+                pass
+            elif ttnode.rhs.is_scalar:
+                pass
+            else:
+                assert ttnode.rhs.is_array
+                pass
+        elif ttnode.lhs.is_full_array:
+            if ttnode.rhs.is_full_array:
+                pass
+            elif ttnode.rhs.is_contiguous_array:
+                pass
+            elif ttnode.rhs.is_scalar:
+                pass
+            else:
+                assert ttnode.rhs.is_array
+                pass
+        else: # ttnode is array
+            if ttnode.rhs.is_full_array:
+                pass
+            elif ttnode.rhs.is_contiguous_array:
+                pass
+            elif ttnode.rhs.is_scalar:
+                pass
+            else:
+                assert ttnode.rhs.is_array
+                pass
 
     def _traverse_statement(self,ttnode):
-        analysis.fortran.find_lvalues_and_rvalues(
-          ttnode,
-          self._result.lvalues,
-          self._result.rvalues
+        self._find_lvalues_rvalues_in_arith_expr(
+          ttnode
         )
         #todo: expand array assignment expressions
-        #if isinstance(ttnode,tree.TTAssignment):
-        #    if arrayexpr.is_array_assignment(ttnode._lhs,self._scope):
-        #        pass
-        # todo: modify expressions
+        if isinstance(ttnode,tree.TTAssignment):
+            if ttnode.lhs.rank > 0:
+                self._traverse_array_assignment(ttnode)
+            else:
+                pass
         self._result.generated_code += textwrap.indent(
           ttnode.cstr().rstrip("\n")+"\n",
           self._indent

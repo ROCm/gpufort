@@ -4,18 +4,6 @@ import enum
 
 from .. import tree
 
-#def _visit_values(expr,parents,lvalues,rvalues):
-#  """Traversal action that collects lvalues and rvalues, 
-#  excludes numbers and characters."""
-#  if isinstance(expr,tree.TTValue):
-#      if isinstance(expr._value,(tree.TTNumber,
-#                                 tree.TTCharacter)):
-#          pass
-#      elif isinstance(expr,tree.TTRvalue):
-#          rvalues.append(expr)
-#      elif isinstance(expr,tree.TTLvalue):
-#          lvalues.append(expr)
-
 def find_lvalues_and_rvalues(ttnode,lvalues,rvalues):
     """Collect lvalues and rvalues, exclude numbers and characters."""
     for child in ttnode.walk_preorder():
@@ -23,14 +11,6 @@ def find_lvalues_and_rvalues(ttnode,lvalues,rvalues):
             rvalues.append(child)
         elif isinstance(child,tree.TTLvalue):
             lvalues.append(child)
-
-    #tree.traversals.traverse(
-    #    ttnode,
-    #    _visit_values,
-    #    tree.traversals.no_action,
-    #    tree.traversals.no_crit,
-    #    lvalues,
-    #    rvalues)
 
 class ArithExprInfo:
     """:todo: For the time being, we ignore

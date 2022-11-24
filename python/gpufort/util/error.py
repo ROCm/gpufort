@@ -11,3 +11,6 @@ class LimitationError(Exception):
 
 class LookupError(Exception):
     pass
+
+class TransformationError(Exception):
+    pass

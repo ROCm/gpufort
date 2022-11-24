@@ -794,3 +794,18 @@ bool gpufortrt_is_present(void* hostptr,std::size_t num_bytes) {
       return false;
   }
 }
+
+void* gpufortrt_malloc(size_t bytes){
+  void* deviceptr = nullptr;
+  hipError_t ierr = hipMalloc(&deviceptr,bytes);      
+  if ( ierr == hipSuccess ) {
+    return deviceptr;
+  } else {
+    LOG_ERROR("gpufortrt_malloc: could not allocate memory on device")
+    return nullptr; /* terminates beforehand */
+  }
+}
+
+void gpufortrt_free(void* data_dev){
+  HIP_CHECK( hipFree(data_dev) );   
+}

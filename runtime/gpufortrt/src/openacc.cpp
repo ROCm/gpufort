@@ -288,11 +288,10 @@ d_void* acc_deviceptr(h_void* data_arg){
   return gpufortrt_deviceptr(data_arg);
 }
 
-d_void* acc_malloc(size_t bytes){
-  h_void* hostptr = nullptr;
-  d_void* deviceptr = nullptr; 
-  hostptr = (h_void*) malloc(bytes);
-  deviceptr = gpufortrt_create(hostptr, bytes, false);
-  free(hostptr);
-  return deviceptr;
+d_void* acc_malloc(size_t bytes){ 
+  return gpufortrt_malloc(bytes);
+}
+
+void acc_free(d_void* data_dev){ 
+  gpufortrt_free(data_dev);
 }

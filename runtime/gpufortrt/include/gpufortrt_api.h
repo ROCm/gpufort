@@ -163,6 +163,8 @@ extern "C" {
   int gpufortrt_async_test_all_device(int dev_num);
 
   gpufortrt_queue_t gpufortrt_get_stream(int async_arg);
+  void* gpufortrt_malloc(size_t bytes);
+  void gpufortrt_free(void* data_dev);
  
   /** \return device pointer associated with `hostptr`, or nullptr.
    *  First searches through the structured region stack and then

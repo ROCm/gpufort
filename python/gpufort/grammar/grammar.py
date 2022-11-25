@@ -86,58 +86,87 @@ class Grammar:
         self.logical = pyp.Regex(r"\.(true|false)\.?(_\w+)?", flags)
         self.character = pyp.QuotedString("'", escQuote="\\")
 
-    def _init_arith_expr(self,
-          ignorecase,
-          unary_op_parse_action,
-          binary_op_parse_action):
+    def _make_arith_expr_op_list(self,
+        ignorecase,
+        unary_op_parse_action,
+        binary_op_parse_action,
+        no_logic_ops,
+        no_custom_ops,
+      ):
+        result = []
         flags = self._re_flags(ignorecase)
-        precedence_ordered_op_list = [
-          (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)[a-zA-Z]+\.",flags),
-            1,pyp.opAssoc.RIGHT), # custom unary op (negative lookahead excludes taken tokens)
+        # note: don't break the ordering below, it is important
+        precedence_ordered_op_list = []
+        if not no_custom_ops:
+            precedence_ordered_op_list += [
+              (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)[a-zA-Z]+\.",flags),
+              1,pyp.opAssoc.RIGHT), # custom unary op (negative lookahead excludes taken tokens)
+            ]
+        precedence_ordered_op_list += [
           (pyp.Regex(r"\*\*"), 2, pyp.opAssoc.RIGHT), # weirdly enough, -2**2**3 in Fortran is -pow(2,pow(2,3)) in C
           (pyp.Regex(r"[*/]"), 2, pyp.opAssoc.LEFT),
           (pyp.Regex(r"[+-]"), 1, pyp.opAssoc.RIGHT),
           (pyp.Regex(r"[+-]"), 2, pyp.opAssoc.LEFT),
-          (pyp.Regex(r"<=?|=?>|[/=]=|\.(eq|ne|[gl][te])\.",flags), 
-            2, pyp.opAssoc.LEFT),
-          (pyp.Regex(r"\.not\.",flags),1,pyp.opAssoc.RIGHT),
-          (pyp.Regex(r"\.and\.",flags),2,pyp.opAssoc.LEFT),
-          (pyp.Regex(r"\.or\.",flags),2,pyp.opAssoc.LEFT),
-          (pyp.Regex(r"\.\(xor\|eqv\|neqv\)\.",flags), 
-            2, pyp.opAssoc.LEFT),
-          (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)[a-zA-Z]+\.",flags),
-            2,pyp.opAssoc.LEFT), # custom binary op (negative lookahead excludes taken tokens)
-          #(pyp.Regex(r"=",flags), 
-          # 2, pyp.opAssoc.RIGHT),
         ]
-     
-        arith_expr_op_list = []
+        if not no_logic_ops:
+            precedence_ordered_op_list += [
+              (pyp.Regex(r"<=?|=?>|[/=]=|\.(eq|ne|[gl][te])\.",flags), 
+                2, pyp.opAssoc.LEFT),
+              (pyp.Regex(r"\.not\.",flags),1,pyp.opAssoc.RIGHT),
+              (pyp.Regex(r"\.and\.",flags),2,pyp.opAssoc.LEFT),
+              (pyp.Regex(r"\.or\.",flags),2,pyp.opAssoc.LEFT),
+              (pyp.Regex(r"\.\(xor\|eqv\|neqv\)\.",flags), 
+                2, pyp.opAssoc.LEFT),
+            ]
+        if not no_custom_ops:
+            precedence_ordered_op_list += [
+              (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)[a-zA-Z]+\.",flags),
+                2,pyp.opAssoc.LEFT), # custom binary op (negative lookahead excludes taken tokens)
+              #(pyp.Regex(r"=",flags), 
+              # 2, pyp.opAssoc.RIGHT),
+            ]
         for tup in precedence_ordered_op_list:
             expr, num_ops, opassoc = tup
             if num_ops == 1:
                 if unary_op_parse_action != None:
-                    arith_expr_op_list.append(
+                    result.append(
                       (expr, num_ops, opassoc, unary_op_parse_action)
                     )
                 else:
-                    arith_expr_op_list.append(tup)
+                    result.append(tup)
             if num_ops == 2:
                 if binary_op_parse_action != None:
-                    arith_expr_op_list.append(
+                    result.append(
                       (expr, num_ops, opassoc, binary_op_parse_action)
                     )
                 else:
-                    arith_expr_op_list.append(tup)
+                    result.append(tup)
+        return result
+
+    def _init_arith_expr(self,
+          ignorecase,
+          unary_op_parse_action,
+          binary_op_parse_action,
+          no_logic_ops,
+          no_custom_ops):
         self.arith_expr <<= pyp.infixNotation( # note: forward declared
           self.rvalue,
-          arith_expr_op_list
+          self._make_arith_expr_op_list(
+            ignorecase,
+            unary_op_parse_action,
+            binary_op_parse_action,
+            no_logic_ops,
+            no_custom_ops,
+          )
         )
 
     def _init_arithmetic_expressions(self,
-          ignorecase,
-          unary_op_parse_action,
-          binary_op_parse_action
-        ):
+        ignorecase,
+        unary_op_parse_action,
+        binary_op_parse_action,
+        no_logic_ops,
+        no_custom_ops
+      ):
         # arithmetic logical expressions and assignments
         self.arith_expr = pyp.Forward()
         self.complex_constructor = pyp.Forward()
@@ -184,7 +213,9 @@ class Grammar:
         self._init_arith_expr(
           ignorecase,
           unary_op_parse_action,
-          binary_op_parse_action
+          binary_op_parse_action,
+          no_logic_ops,
+          no_custom_ops
         )
         
         self.assignment_begin = self.lvalue + self.EQ
@@ -599,9 +630,12 @@ class Grammar:
         )
 
     def __init__(self,
-                 ignorecase=False,
-                 unary_op_parse_action=None,
-                 binary_op_parse_action=None):
+        ignorecase=False,
+        unary_op_parse_action=None,
+        binary_op_parse_action=None,
+        no_logic_ops=False,
+        no_custom_ops=False
+      ):
         """
         :param bool ignorecase: Create case-insensitive parser for Fortran keywords.
                                  Otherwise, assume lower case.
@@ -609,6 +643,10 @@ class Grammar:
                                       Look up pyparsing parse actions for more details.
         :param binary_op_parse_action: Pyparsing parse action (function or class) to run (or init) when parsing binary operator applications.
                                       Look up pyparsing parse actions for more details.
+        :param no_logic_ops: Include logic operations into the arithmetic expression grammar,
+                                     defaults to False. Has impact on performance.
+        :param no_custom_ops: Include custom operations into the arithmetic expression grammar,
+                                     defaults to False. Has impact on performance.
         """
         # basic
         self._init_default_values()
@@ -618,7 +656,9 @@ class Grammar:
         self._init_arithmetic_expressions(
           ignorecase,
           unary_op_parse_action,
-          binary_op_parse_action
+          binary_op_parse_action,
+          no_logic_ops,
+          no_custom_ops
         ) 
         self._init_fortran_statements(ignorecase) 
         self._init_gpufort_control_directives(ignorecase)

@@ -101,9 +101,7 @@ class TestSemantics(unittest.TestCase):
 
     def test_02_parse_arith_expr(self):
         for i,test in enumerate(TestSemantics.parse_arith_expr_testdata):
-            ttarithexpr = translator.tree.grammar.arith_expr.parseString(
-              test,parseAll=True
-            )[0]
+            ttarithexpr = translator.parser.parse_arith_expr(test)
             TestSemantics.parse_arith_expr_parse_results.append(ttarithexpr)
     
     def test_03_resolve_arith_expr(self):
@@ -169,9 +167,7 @@ class TestSemantics(unittest.TestCase):
     
     def test_04_parse_rvalue(self):
         for i,test in enumerate(TestSemantics.parse_rvalue_testdata):
-            ttrvalue = translator.tree.grammar.rvalue.parseString(
-              test,parseAll=True
-            )[0]
+            ttrvalue = translator.parser.parse_rvalue(test)
             TestSemantics.parse_rvalue_parse_results.append(ttrvalue)
 
     def test_05_resolve_rvalue(self):
@@ -211,7 +207,17 @@ class TestSemantics(unittest.TestCase):
           "int(X+Y(:,1),kind=c_long)",
           "int(Y(:,1),kind=c_long)",
           "int(Y(1,:),kind=c_long)",
+          "cmplx(1,2)",
+          "cmplx(1,2d0)",
+          "cmplx(1,2d0,kind=c_float_complex)",
+          "cmplx(Y,kind=c_float_complex)",
+          "cmplx(Y(:,1),kind=c_float_complex)",
+          "cmplx(Y(1,:),kind=c_float_complex)",
+          "cmplx(1,Y,kind=c_float_complex)",
+          "cmplx(1,Y(:,1),kind=c_float_complex)",
+          "cmplx(1,Y(1,:),kind=c_float_complex)",
         ]
+        #function|elemental|converter|type|kind|bytes_per_element|rank|is_contiguous|is_full_array
         results = [
           (True, True, True, 'real', None, 4, 0, False, False),
           (True, True, True, 'real', '8', 8, 0, False, False),
@@ -231,6 +237,15 @@ class TestSemantics(unittest.TestCase):
           (True, True, True, 'integer', 'c_long', 8, 1, True, False),
           (True, True, True, 'integer', 'c_long', 8, 1, True, False),
           (True, True, True, 'integer', 'c_long', 8, 1, False, False),
+          (True, True, True, 'complex', None, 8, 0, False, False),
+          (True, True, True, 'complex', None, 8, 0, False, False),
+          (True, True, True, 'complex', 'c_float_complex', 8, 0, False, False),
+          (True, True, True, 'complex', 'c_float_complex', 8, 2, True, True),
+          (True, True, True, 'complex', 'c_float_complex', 8, 1, True, False),
+          (True, True, True, 'complex', 'c_float_complex', 8, 1, False, False),
+          (True, True, True, 'complex', 'c_float_complex', 8, 2, True, True),
+          (True, True, True, 'complex', 'c_float_complex', 8, 1, True, False),
+          (True, True, True, 'complex', 'c_float_complex', 8, 1, False, False),
         ]
 
         for i,test in enumerate(testdata):
@@ -251,10 +266,10 @@ class TestSemantics(unittest.TestCase):
             )
             #print(test)
             #print(result_tuple)
-            #self.assertEqual(
-            #  results[i],
-            #  result_tuple
-            #)
+            self.assertEqual(
+              results[i],
+              result_tuple
+            )
 
 if __name__ == '__main__':
     unittest.main() 

@@ -51,6 +51,7 @@ class Semantics:
                 var=ttnode.name 
               )
             )
+
         for arg in ttnode.args:
             if not isinstance(arg,tree.TTSlice):
                 if arg.type == "integer":
@@ -98,38 +99,53 @@ class Semantics:
         # check if all required arguments have been specified 
         for dummy_arg_name in dummy_arg_names:
             if dummy_arg_name not in used_arg_names:
-                if not ttnode.get_expected_argument_is_optional(dummy_arg_name):
+                if not ttnode.get_expected_argument(dummy_arg_name).is_optional:
                     raise util.error.SemanticError(
                       "required argument '{}' not specified".format(
                         dummy_arg_name
                       )
                     )
         return used_arg_names # assumed to be all in lower case
-  
-    def _check_function_call_ttarg_type(self,ttfunc,ttarg,scope):
+ 
+    def _check_function_call_arg_type(self,ttfunc,ttarg,arg_name,scope):
         """Check that ttargument type and kind agree.
         """
+        func_name = ttfunc.name
+        func_type = "intrinsic" if ttfunc.is_intrinsic_call else "function"
         actual_type = ttarg.type
-        expected_type = ttfunc.get_expected_ttargument_type(ttarg_name)
-        if actual_type != expected_type:
+        actual_rank = ttarg.rank
+        expected_arg = ttfunc.get_expected_argument(arg_name)
+        # rank
+        if not expected_arg.matches_type(actual_type): 
             raise util.error.SemanticError(
                "function {} '{}': argument type mismatch; expected type '{}' instead of '{}'".format(
-                 func_type, func_name, expected_type, actual_type
+                 func_type, func_name, expected_arg.type, actual_type
               )                         
-            )                           
-        actual_kind = ttarg.kind
-        actual_bytes_per_element = ttarg.bytes_per_element
-        expected_kind = ttfunc.get_expected_ttargument_kind(ttarg_name)
-        expected_bytes_per_element = _lookup_bytes_per_element1(
-          expected_kind
-        )
-        if actual_bytes_per_element != expected_bytes_per_element:
+            )                  
+        # check rank
+        if not expected_arg.matches_rank(actual_rank,ttarg.min_rank): 
             raise util.error.SemanticError(
-               "function {} '{}': argument kind mismatch; expected kind '{}' instead of '{}'".format(
-                 func_bytes_per_element, func_name,
-                 expected_kind, actual_kind
+               "function {} '{}': argument rank mismatch; expected rank '{}' instead of '{}'".format(
+                 func_type, func_name, expected_rank, actual_rank
               )                         
-            )                           
+            )                 
+        # check bumber of bytes          
+        if expected_arg.type != "type":
+            actual_kind = None
+            actual_bytes_per_element = ttarg.bytes_per_element
+            # 
+            expected_kind = ttfunc.get_expected_argument(arg_name).kind
+            expected_bytes_per_element = self._lookup_bytes_per_element1(
+              expected_arg.type,
+              expected_arg.kind
+            )
+            if actual_bytes_per_element != expected_bytes_per_element:
+                raise util.error.SemanticError(
+                   "function {} '{}': argument kind mismatch; expected kind '{}' instead of '{}'".format(
+                     func_bytes_per_element, func_name,
+                     expected_kind, actual_kind
+                  )                         
+                )                           
 
     def _check_elemental_function_call_args(self,ttfunc,used_arg_names,scope):
         """Rank of the elemental function result. All arguments must
@@ -177,13 +193,13 @@ class Semantics:
                           )
                         )
             else:
-                self._check_function_call_arg_type(ttfunc,ttarg,scope)
+                self._check_function_call_arg_type(ttfunc,ttarg,arg_name,scope)
                                                 
     def _check_other_function_call_args(self,ttfunc,used_arg_names,scope):
         """Check that the arguments of non-elemental functions match."""
         for arg_name in used_arg_names:
             ttarg = ttfunc.get_actual_argument(arg_name)
-            self._check_function_call_arg_type(ttfunc,ttarg,scope)
+            self._check_function_call_arg_type(ttfunc,ttarg,arg_name,scope)
  
     def _resolve_function_call(self,ttnode,scope):
         """

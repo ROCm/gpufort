@@ -20,6 +20,7 @@ import pyparsing
 import ast
 
 from gpufort import util
+from gpufort import indexer
 
 from .. import opts
 from .. import conv
@@ -68,6 +69,8 @@ class Literal(base.TTNode):
     
     @property
     def rank(self): return 0
+    @property
+    def min_rank(self): return 0
     @property
     def is_scalar(self): return True
     @property
@@ -189,11 +192,11 @@ class VarExpr(base.TTNode):
 
     @property 
     def type(self):
-        return self._get_type_defining_record()["f_type"]
+        return self._get_type_defining_record().type
     
     @property 
     def is_parameter(self):
-        return "parameter" in self._get_type_defining_record()["attributes"]
+        return self._get_type_defining_record().is_parameter
 
     @property
     def bytes_per_element(self):
@@ -219,11 +222,25 @@ class TTIdentifier(VarExpr):
     @property 
     def rank(self):
         assert self.partially_resolved
-        return self.symbol_info["rank"]
+        return self.symbol_info.rank
+
+    @property
+    def min_rank(self):
+        """:return: Minimum rank if an '*' or '..' is present in the array bounds
+        specification. Otherwise, returns the same value as `rank`.
+        :note: This routine only makes sense in the context of procedure arguments.
+        """
+        rank = self.rank
+        if rank == indexer.indexertypes.IndexVariable.ANY_RANK_GREATER_THAN_MIN_RANK:
+            return len([e for e in bounds if "*" in bounds])
+        elif rank == indexer.indexertypes.IndexVariable.ANY_RANK:
+            return 0
+        else:
+            return rank
     
     @property 
     def kind(self):
-        return self._get_type_defining_record()["kind"]
+        return self._get_type_defining_record().kind
 
     @property
     def is_array(self):
@@ -265,16 +282,12 @@ class TTFunctionCall(VarExpr):
     # override
     def _get_type_defining_record(self):
         symbol_info = self.symbol_info
-        if "rank" in symbol_info: # is variable
+        if isinstance(symbol_info,indexer.indexertypes.IndexVariable): # is variable
             return symbol_info
         else:
-            assert symbol_info["kind"] == "function"
-            result_name = symbol_info["result_name"]
-            ivar = next((ivar
-              for ivar in symbol_info["variables"] 
-              if ivar["name"] == result_name),None)
-            assert ivar != None
-            return ivar
+            assert isinstance(symbol_info,indexer.indexertypes.IndexProcedure)
+            result_name = symbol_info.result_name
+            return symbol_info.get_variable(result_name) 
     
     @property 
     def kind(self):
@@ -294,7 +307,7 @@ class TTFunctionCall(VarExpr):
             except util.error.LookupError:
                 return None # default
         else:
-            return self._get_type_defining_record()["kind"]
+            return self._get_type_defining_record().kind
 
     @property
     def rank(self):
@@ -309,7 +322,11 @@ class TTFunctionCall(VarExpr):
         elif self.is_array_expr:
             return len([arg for arg in self.slice_args()])
         else: 
-            return self._get_type_defining_record()["rank"] 
+            return self._get_type_defining_record().rank
+
+    @property
+    def min_rank(self):
+        return self.rank
 
     def child_nodes(self):
         for arg in self.args:
@@ -327,7 +344,7 @@ class TTFunctionCall(VarExpr):
     def is_array_expr(self):
         """:return: if this expression represents
         an array section or array element (array section of size 1)."""
-        return "rank" in self.symbol_info
+        return isinstance(self.symbol_info,indexer.indexertypes.IndexVariable)
    
     @property
     def is_array(self):
@@ -468,26 +485,24 @@ class TTFunctionCall(VarExpr):
     @property
     def is_intrinsic_call(self):
         assert self.is_function_call
-        return "intrinsic" in self.symbol_info["attributes"]
+        return self.symbol_info.is_intrinsic
    
     @property
     def is_elemental_function_call(self):
         assert self.is_function_call
-        return "elemental" in self.symbol_info["attributes"]
+        return self.symbol_info.is_elemental
 
     @property
     def is_converter_call(self):
         """:note: Conversions are always elemental."""
         assert self.is_elemental_function_call
-        #print(self.symbol_info["attributes"])
-        return "conversion" in self.symbol_info["attributes"]
+        return self.symbol_info.is_conversion 
     
     @property
     def result_depends_on_kind(self):
         """:note: Conversions are always elemental."""
         assert self.is_elemental_function_call
-        #print(self.symbol_info["attributes"])
-        return "kind_arg" in self.symbol_info["attributes"]
+        return self.symbol_info.result_depends_on_kind
 
     @property
     def dummy_args(self):
@@ -499,27 +514,10 @@ class TTFunctionCall(VarExpr):
 
     # todo: this should better go into a symbol_info
     # that indexer.scope creates when you look up a variable
-    def get_expected_argument_symbol_info(self,arg_name):
+    def get_expected_argument(self,arg_name):
         assert self.is_function_call
-        for ivar in self.symbol_info["variables"]:
-            if ivar["name"] == arg_name:
-                return ivar
-        raise util.error.LookupError(
-          "no index record found for argument "
-          + "'{}' of procedure '{}'".format(
-            arg_name,
-            self.symbol_info["name"]
-          )
-        )
-    def get_expected_argument_type(self,arg_name):
-        return self.get_expected_argument_symbol_info(arg_name)["type"]
-    def get_expected_argument_kind(self,arg_name):
-        return self.get_expected_argument_symbol_info(arg_name)["kind"]
-    def get_expected_argument_rank(self,arg_name):
-        return self.get_expected_argument_symbol_info(arg_name)["rank"]
-    def get_expected_argument_is_optional(self,arg_name):
-        return "optional" in self.get_expected_argument_symbol_info(arg_name)["attributes"]
-    
+        return self.symbol_info.get_argument(arg_name)
+
     # todo: this should better go into a symbol_info
     # that indexer.scope creates when you look up a variable
     def get_actual_argument(self,arg_name):
@@ -539,12 +537,6 @@ class TTFunctionCall(VarExpr):
             arg_name
           )
         )
-    def get_actual_argument_type(self,arg_name):
-        return self.get_actual_argument(arg_name).type
-    def get_actual_argument_kind(self,arg_name):
-        return self.get_actual_argument(arg_name).kind
-    def get_actual_argument_rank(self,arg_name):
-        return self.get_actual_argument(arg_name).rank
 
     def _args_as_str(self,converter):
         """Assumes Fortran style () operators are used in any case.
@@ -769,6 +761,9 @@ class TTComplexConstructor(base.TTNode):
     def rank(self):
         return 0
     @property
+    def min_rank(self):
+        return 0
+    @property
     def is_scalar(self): return True
     @property
     def is_array(self): return False
@@ -825,6 +820,9 @@ class TTArrayConstructor(base.TTNode):
         return self.entries[0].bytes_per_element
     @property
     def rank(self):
+        return 1
+    @property
+    def min_rank(self):
         return 1
     @property
     def size(self):
@@ -887,6 +885,10 @@ class TTValue(base.TTNode):
     @property
     def rank(self):
         return self.rank_defining_node.rank
+    
+    @property
+    def min_rank(self):
+        return self.rank_defining_node.min_rank
 
     def child_nodes(self):
         yield self.value
@@ -1117,6 +1119,10 @@ class TTUnaryOp(base.TTNode):
     @property
     def rank(self):
         return self.opd.rank
+    
+    @property
+    def min_rank(self):
+        return self.opd.min_rank
 
     @property
     def is_array(self):
@@ -1275,6 +1281,9 @@ class TTBinaryOpChain(base.TTNode):
     @rank.setter
     def rank(self,rank):
         self._rank = rank
+    @property
+    def min_rank(self):
+        return self.rank 
  
     @property
     def bytes_per_element(self):
@@ -1403,6 +1412,9 @@ class TTArithExpr(base.TTNode):
     def rank(self):
         return self.expr.rank
     @property
+    def min_rank(self):
+        return self.expr.min_rank
+    @property
     def bytes_per_element(self):
         return self.expr.bytes_per_element
     @property
@@ -1444,6 +1456,9 @@ class TTKeywordArgument(base.TTNode):
     @property
     def rank(self):
         return self.value.rank
+    @property
+    def min_rank(self):
+        return self.value.min_rank
     @property
     def is_array(self):
         return self.value.is_array

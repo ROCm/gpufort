@@ -35,14 +35,13 @@ def _is_ignored_fortran_directive(tokens):
            or util.parsing.compare_ignore_case(tokens[1:3],["acc","routine"]))
 
 def _parse_arith_expr(expr_as_str,scope):
-    parse_result = tree.grammar.parse_arith_expr(expr_as_str)
+    parse_result = parse_arith_expr(expr_as_str)
     if scope != None:
         semantics_checker.resolve_arith_expr(parse_result,scope)
     return parse_result
 
 def _parse_assignment(expr_as_str,scope):
-    parse_result = tree.grammar.assignment.parseString(
-        expr_as_str, parseAll=True)[0]
+    parse_result = parse_assignment(expr_as_str)
     if scope != None:
         semantics_checker.resolve_assignment(parse_result,scope)
     return parse_result
@@ -459,6 +458,86 @@ def parse_fortran_code(code,result_name=None,scope=None):
             error_("unknown and not ignored")
 
     return ttree
+    
+_p_logic_op = re.compile(r"<=?|=?>|[/=]=|\.(eq|ne|not|and|or|xor|eqv|neqv|[gl][te])\.|\.not\.",re.IGNORECASE)
+_p_custom_op = re.compile(r"\.[a-zA-Z]+\.") # may detect logic ops too
+
+def _contains_logic_ops(tokens):
+    for tk in tokens:
+        if _p_logic_op.match(tk):
+            return True 
+    return False
+
+def _contains_custom_ops(tokens):
+    for tk in tokens:
+        if _p_custom_op.match(tk):
+            if not _p_logic_op.match(tk):
+                return True 
+    return False
+
+# API
+def parse_arith_expr(expr_as_str,parse_all=True):
+    tokens = util.parsing.tokenize(expr_as_str)
+    contains_logic_ops = _contains_logic_ops(tokens)
+    contains_custom_ops = _contains_custom_ops(tokens)
+    if not contains_custom_ops and not contains_logic_ops:
+        return tree.grammar_no_logic_no_custom.arith_expr.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    elif not contains_logic_ops:
+        return tree.grammar_no_logic.arith_expr.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    elif not contains_custom_ops:
+        return tree.grammar_no_custom.arith_expr.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    else:
+        return tree.grammar.arith_expr.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    
+def parse_assignment(expr_as_str,parse_all=True):
+    tokens = util.parsing.tokenize(expr_as_str)
+    contains_logic_ops = _contains_logic_ops(tokens)
+    contains_custom_ops = _contains_custom_ops(tokens)
+    if not contains_custom_ops and not contains_logic_ops:
+        return tree.grammar_no_logic_no_custom.assignment.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    elif not contains_logic_ops:
+        return tree.grammar_no_logic.assignment.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    elif not contains_custom_ops:
+        return tree.grammar_no_custom.assignment.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    else:
+        return tree.grammar.assignment.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+
+def parse_rvalue(expr_as_str,parse_all=True):
+    tokens = util.parsing.tokenize(expr_as_str)
+    contains_logic_ops = _contains_logic_ops(tokens)
+    contains_custom_ops = _contains_custom_ops(tokens)
+    if not contains_custom_ops and not contains_logic_ops:
+        return tree.grammar_no_logic_no_custom.rvalue.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    elif not contains_logic_ops:
+        return tree.grammar_no_logic.rvalue.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    elif not contains_custom_ops:
+        return tree.grammar_no_custom.rvalue.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
+    else:
+        return tree.grammar.rvalue.parseString(
+          expr_as_str, parseAll=parse_all
+        )[0]
 
 # API
 # todo: parsing and translation is similar but analysis differs between the different kernel

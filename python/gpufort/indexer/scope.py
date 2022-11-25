@@ -492,14 +492,12 @@ def search_scope_for_var(scope,
       "entry found for variable tag '{}'".format(variable_tag))
     util.logging.log_leave_function(opts.log_prefix,
                                     "search_scope_for_var")
-    return result
+    return indexertypes.IndexVariable(result)
 
 def search_scope_for_implicitly_declared_var(scope,var_expr):
-    return _lookup_implicitly_declared_var(var_expr,scope["implicit"])
-    
-
-def is_intrinsic(name):
-    return name.lower() in intrinsics.intrinsics
+    return indexertypes.IndexVariable(
+      _lookup_implicitly_declared_var(var_expr,scope["implicit"])
+    )
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_scope_for_type(scope, type_name):
@@ -508,8 +506,7 @@ def search_scope_for_type(scope, type_name):
     """
     result = _search_scope_for_type_or_procedure(
         scope, type_name, "types", indexertypes.EMPTY_TYPE)
-    return result
-
+    return indexertypes.IndexType(result)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_scope_for_procedure(scope, procedure_name):
@@ -518,7 +515,7 @@ def search_scope_for_procedure(scope, procedure_name):
     """
     result = _search_scope_for_type_or_procedure(
         scope, procedure_name, "procedures", indexertypes.EMPTY_PROCEDURE)
-    return result
+    return indexertypes.IndexProcedure(result)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -536,7 +533,9 @@ def search_index_for_var(index,
     try:
         result = search_scope_for_var(scope, var_expr)
         util.logging.log_leave_function(opts.log_prefix, "search_index_for_var")
-        return result
+        return indexertypes.IndexVariable(
+          result
+        )
     except util.error.LookupError as e:
         msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
         e.args = (msg, )
@@ -554,7 +553,9 @@ def search_index_for_type(index, parent_tag, type_name):
         result = _search_index_for_type_or_procedure(
             index, parent_tag, type_name, "types", indexertypes.EMPTY_TYPE)
         util.logging.log_leave_function(opts.log_prefix, "search_index_for_type")
-        return result
+        return indexertypes.IndexType(
+          result
+        )
     except util.error.LookupError as e:
         msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
         e.args = (msg, )
@@ -573,7 +574,9 @@ def search_index_for_procedure(index, parent_tag, procedure_name):
             index, parent_tag, procedure_name, "procedures", indexertypes.EMPTY_PROCEDURE)
         util.logging.log_leave_function(opts.log_prefix,
                                         "search_index_for_procedure")
-        return result
+        return indexertypes.IndexProcedure(
+          result
+        )
     except util.error.LookupError as e:
         msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
         e.args = (msg, )
@@ -599,7 +602,7 @@ def search_scope_for_value_expr(scope,expr):
         except util.error.LookupError:
             try:
                 #print([proc["name"] for proc in scope["procedures"]])
-                irecord = _lookup_implicitly_declared_var(expr,scope["implicit"])
+                irecord = search_scope_for_implicitly_declared_var(scope,expr)
             except:
                 raise util.error.LookupError(
                   "expression '"+expr+"' could not be associated with any variable (explicitly or implicitly declared), procedure, or intrinsic"

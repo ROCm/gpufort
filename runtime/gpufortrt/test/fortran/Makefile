@@ -10,6 +10,7 @@ LDFLAGS = $(shell gpufort --print-acc-ldflags) -lgfortran
 
 # sources
 TEST_SRC      = \
+				./test_acc_map_data_00.f90 \
 				./test_acc_malloc_00.f90 \
 				./test_acc_get_num_devices_00.f90 \
 				./test_acc_update_00.f90 \

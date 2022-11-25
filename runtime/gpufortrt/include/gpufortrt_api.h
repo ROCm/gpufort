@@ -165,6 +165,8 @@ extern "C" {
   gpufortrt_queue_t gpufortrt_get_stream(int async_arg);
   void* gpufortrt_malloc(size_t bytes);
   void gpufortrt_free(void* data_dev);
+  void gpufortrt_map_data(void* data_arg, void* data_dev,
+                        size_t bytes);
  
   /** \return device pointer associated with `hostptr`, or nullptr.
    *  First searches through the structured region stack and then

@@ -809,3 +809,15 @@ void* gpufortrt_malloc(size_t bytes){
 void gpufortrt_free(void* data_dev){
   HIP_CHECK( hipFree(data_dev) );   
 }
+
+void gpufortrt_map_data(void* data_arg, void* data_dev,
+                  size_t bytes){
+  // TODO: Check wether data_arg is sub_section of host memory
+  if ( data_arg != nullptr ) {
+    HIP_CHECK(hipMemcpy(
+        data_arg,
+        data_dev,
+        bytes,
+        hipMemcpyDeviceToHost));
+  }
+}

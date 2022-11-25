@@ -295,3 +295,8 @@ d_void* acc_malloc(size_t bytes){
 void acc_free(d_void* data_dev){ 
   gpufortrt_free(data_dev);
 }
+
+void acc_map_data(h_void* data_arg, d_void* data_dev,
+                  size_t bytes){
+  gpufortrt_map_data(data_arg, data_dev, bytes);
+}

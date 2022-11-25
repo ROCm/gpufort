@@ -249,9 +249,7 @@ class TestSemantics(unittest.TestCase):
         ]
 
         for i,test in enumerate(testdata):
-            ttrvalue = translator.tree.grammar.rvalue.parseString(
-              test,parseAll=True
-            )[0]
+            ttrvalue = translator.parser.parse_rvalue(test)
             semantics.resolve_arith_expr(ttrvalue,scope)
             result_tuple = (
               ttrvalue.is_function_call,

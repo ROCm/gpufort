@@ -360,7 +360,7 @@ class IndexProcedure(IndexFortranConstructBase):
 class IndexVariable(IndexRecordAccessorBase):
     ANY_TYPE = "*"
     ANY_RANK = -2
-    ANY_RANK_GREATER_THAN_MIN_RANK = -1
+    ANY_RANK_GREATER_ZERO = -1
   
     class Intent(enum.Enum):
         DEFAULT = 0
@@ -389,59 +389,45 @@ class IndexVariable(IndexRecordAccessorBase):
     @property
     def rank(self):
         """:return: Rank of the variable.
-        :note: Might return negative values IndexVariable.ANY_RANK
-               and IndexVariable.ANY_RANK_GREATER_THAN_MIN_RANK if '*' or '..' expressions are found
-               as array bounds. Such notation is only applicable to procedure arguments.
         :see: matches_rank
         """
         # todo: remove rank from index records
         bounds = self.bounds
-        num_asterisk = len([e for e in bounds if "*" in bounds])
-        if len(bounds) == 1 and bounds[0] == "..":
-            return IndexVariable.ANY_RANK
-        elif num_asterisk > 0:
-            return IndexVariable.ANY_RANK_GREATER_THAN_MIN_RANK
-        else:
-            return len(bounds)
+        return len(bounds)
+
     @property
     def min_rank(self):
-        """:return: Minimum rank if an '*' or '..' is present in the array bounds
-        specification. Otherwise, returns the same value as `rank`.
+        """:return: Minimum accepted argument rank if an '*' or '..' is present in the array bounds
+        specification of an argument declaration. Otherwise, returns the same value as `rank`.
         :note: This routine only makes sense in the context of procedure arguments.
         :see: matches_rank
         """
-        rank = self.rank
-        if rank == IndexVariable.ANY_RANK_GREATER_THAN_MIN_RANK:
-            return len([e for e in bounds if "*" in bounds])
-        elif rank == IndexVariable.ANY_RANK:
-            return 0
-        else:
-            return rank
-    def matches_rank(self,rank,minrank):
+        for expr in bounds:
+            if "*" in expr:
+                return 1
+            elif expr == "..":
+                return 0
+        return self.rank
+
+    def matches_rank(self,rank):
         """:return: If the given rank matches the rank
-        of the variable or the expected rank of the 
+        of this record. 
         """
-        thisrank = self.rank
-        if thisrank == IndexVariable.ANY_RANK:
-            return True
-        elif thisrank == IndexVariable.ANY_RANK_GREATER_THAN_MIN_RANK:
-            if rank == IndexVariable.ANY_RANK:
-                return False
-            elif rank == IndexVariable.ANY_RANK_GREATER_THAN_MIN_RANK:
-                return min_rank == self.min_rank
-            else:
-                return min_rank >= self.min_rank
-        else:
-            return thisrank == rank
+        return rank >= self.min_rank
+
     def matches_bounds(self,bounds):
         """:return: If the bounds agree.
         """
         # todo: implementation would require knowledge of
         # parameters and equivalency checks between expressions.
+        # might be so complex that it must be better moved
+        # into semantics module
         assert False, "not implemented"
+
     @property
     def attributes(self):
         return self.record["attributes"]
+
     def get_attribute(self,key):
         """:return: The attribute if found, or None.
         :note: In case of 'intent' and 'dimension'

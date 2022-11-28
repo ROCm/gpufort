@@ -483,16 +483,18 @@ class __HIPKernelBodyGenerator:
 __instance = __HIPKernelBodyGenerator()
 
 def map_to_hip_cpp(
-      ttcomputeconstruct,
-      scope,
-      device_type = None
-    ):
+    ttcomputeconstruct,
+    scope,
+    device_type = None
+  ):
     """Transform an OpenACC compute construct or routine body to HIP C++.
     :param scope: A scope object, see GPUFORT's indexer component.
     :param str device_type: The device type (`nvidia`, `radeon` or None).
      """
     loops.single_level_indent = opts.single_level_indent
     __instance.single_level_indent = opts.single_level_indent
+    __instance.map_to_flat_arrays = opts.map_to_flat_arrays
+    __instance.map_to_flat_scalars = opts.map_to_flat_scalars
     return __instance.map_to_hip_cpp(
       ttcomputeconstruct,
       scope,

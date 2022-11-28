@@ -123,7 +123,7 @@ class Semantics:
               )                         
             )                  
         # check rank
-        if not expected_arg.matches_rank(actual_rank,ttarg.min_rank): 
+        if not expected_arg.matches_rank(actual_rank): 
             raise util.error.SemanticError(
                "function {} '{}': argument rank mismatch; expected rank '{}' instead of '{}'".format(
                  func_type, func_name, expected_rank, actual_rank

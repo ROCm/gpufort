@@ -70,8 +70,6 @@ class Literal(base.TTNode):
     @property
     def rank(self): return 0
     @property
-    def min_rank(self): return 0
-    @property
     def is_scalar(self): return True
     @property
     def is_array(self): return False
@@ -223,20 +221,6 @@ class TTIdentifier(VarExpr):
     def rank(self):
         assert self.partially_resolved
         return self.symbol_info.rank
-
-    @property
-    def min_rank(self):
-        """:return: Minimum rank if an '*' or '..' is present in the array bounds
-        specification. Otherwise, returns the same value as `rank`.
-        :note: This routine only makes sense in the context of procedure arguments.
-        """
-        rank = self.rank
-        if rank == indexer.indexertypes.IndexVariable.ANY_RANK_GREATER_THAN_MIN_RANK:
-            return len([e for e in bounds if "*" in bounds])
-        elif rank == indexer.indexertypes.IndexVariable.ANY_RANK:
-            return 0
-        else:
-            return rank
     
     @property 
     def kind(self):
@@ -323,10 +307,6 @@ class TTFunctionCall(VarExpr):
             return len([arg for arg in self.slice_args()])
         else: 
             return self._get_type_defining_record().rank
-
-    @property
-    def min_rank(self):
-        return self.rank
 
     def child_nodes(self):
         for arg in self.args:
@@ -761,9 +741,6 @@ class TTComplexConstructor(base.TTNode):
     def rank(self):
         return 0
     @property
-    def min_rank(self):
-        return 0
-    @property
     def is_scalar(self): return True
     @property
     def is_array(self): return False
@@ -820,9 +797,6 @@ class TTArrayConstructor(base.TTNode):
         return self.entries[0].bytes_per_element
     @property
     def rank(self):
-        return 1
-    @property
-    def min_rank(self):
         return 1
     @property
     def size(self):
@@ -885,10 +859,6 @@ class TTValue(base.TTNode):
     @property
     def rank(self):
         return self.rank_defining_node.rank
-    
-    @property
-    def min_rank(self):
-        return self.rank_defining_node.min_rank
 
     def child_nodes(self):
         yield self.value
@@ -1119,10 +1089,6 @@ class TTUnaryOp(base.TTNode):
     @property
     def rank(self):
         return self.opd.rank
-    
-    @property
-    def min_rank(self):
-        return self.opd.min_rank
 
     @property
     def is_array(self):
@@ -1281,9 +1247,6 @@ class TTBinaryOpChain(base.TTNode):
     @rank.setter
     def rank(self,rank):
         self._rank = rank
-    @property
-    def min_rank(self):
-        return self.rank 
  
     @property
     def bytes_per_element(self):
@@ -1412,9 +1375,6 @@ class TTArithExpr(base.TTNode):
     def rank(self):
         return self.expr.rank
     @property
-    def min_rank(self):
-        return self.expr.min_rank
-    @property
     def bytes_per_element(self):
         return self.expr.bytes_per_element
     @property
@@ -1456,9 +1416,6 @@ class TTKeywordArgument(base.TTNode):
     @property
     def rank(self):
         return self.value.rank
-    @property
-    def min_rank(self):
-        return self.value.min_rank
     @property
     def is_array(self):
         return self.value.is_array

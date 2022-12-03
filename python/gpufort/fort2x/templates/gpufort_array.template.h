@@ -115,7 +115,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
 {{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) const {
       return this->index_offset
@@ -131,7 +131,7 @@ namespace gpufort {
     __host__ __device__ __forceinline__ T& operator() (
 {{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
 {{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -152,7 +152,7 @@ namespace gpufort {
     __host__ __device__ __forceinline__ const T& operator() (
 {{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
 {{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -692,10 +692,10 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
 {{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
 {{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
     }
@@ -771,7 +771,7 @@ namespace gpufort {
       const int n{{e}}  = this->size({{e}});
       const int lb{{e}} = this->lbound({{e}});
 {% endfor %}
-      const int index = linearized_index(
+      const int index = c_idx(
 {{"" | indent(8,True)}}{% for e in range(1,d+1) %}lb{{e}},{{"\n" if loop.last}}{%- endfor %}
 {{"" | indent(8,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last}}{%- endfor %});
       T* data_host_new = nullptr; 
@@ -852,7 +852,7 @@ namespace gpufort {
 {% for col in range(1,rank_ub) %}
     for ( int i{{rank_ub-col}} = halo_layers; i{{rank_ub-col}} < n{{rank_ub-col}}-halo_layers; i{{rank_ub-col}}++ ) {
 {% endfor %}
-      const int idx = this->linearized_index({% for col in range(1,rank_ub) -%}i{{col}}{{ "," if not loop.last }}{% endfor -%});
+      const int idx = this->c_idx({% for col in range(1,rank_ub) -%}i{{col}}{{ "," if not loop.last }}{% endfor -%});
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);

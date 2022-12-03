@@ -266,7 +266,7 @@ class TTCufNonZeroCheck(base.TTNode):
             return "associated({0})".format(traversals.make_fstr(self._lhs))
 
 
-class TTCufPointerAssignment(base.TTNode):
+class TTCufPointerAssignment(base.TTStatement):
     """
     For `type(c_ptr)` variables that replace device array pointers,
     the Fortran pointer assignment operator `=>` must be replaced by `=`.
@@ -366,7 +366,7 @@ class CufMemcpyBase():
             return traversals.make_fstr(self._stream)
 
 
-class TTCufMemcpyIntrinsic(base.TTNode, CufMemcpyBase):
+class TTCufMemcpyIntrinsic(base.TTStatement, CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src
     def _assign_fields(self, tokens):
         self._dest = tokens[0]
@@ -386,7 +386,7 @@ class TTCufMemcpyIntrinsic(base.TTNode, CufMemcpyBase):
             api=api, args=", ".join(args))
 
 
-class TTCufCudaMemcpy(base.TTNode, CufMemcpyBase):
+class TTCufCudaMemcpy(base.TTStatement, CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src
     def _assign_fields(self, tokens):
         #print(tokens)
@@ -409,7 +409,7 @@ class TTCufCudaMemcpy(base.TTNode, CufMemcpyBase):
         return "{api}({args})".format(api=api, args=",".join(args))
 
 
-class TTCufCudaMemcpy2d(base.TTNode, CufMemcpyBase):
+class TTCufCudaMemcpy2d(base.TTStatement, CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
     def _assign_fields(self, tokens):
         self._api = tokens[0]
@@ -437,7 +437,7 @@ class TTCufCudaMemcpy2d(base.TTNode, CufMemcpyBase):
         return "{api}({args})".format(api=api, args=",".join(args))
 
 
-class TTCufCudaMemcpy3d(base.TTNode, CufMemcpyBase):
+class TTCufCudaMemcpy3d(base.TTStatement, CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
     def _assign_fields(self, tokens):
         self._api = tokens[0]
@@ -471,7 +471,7 @@ class TTCufCudaMemcpy3d(base.TTNode, CufMemcpyBase):
         return "{api}({args})".format(api=api, args=",".join(args))
 
 
-class TTCufCublasCall(base.TTNode):
+class TTCufCublasCall(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self._api = tokens[0] # does not include cublas

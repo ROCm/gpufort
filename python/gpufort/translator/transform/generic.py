@@ -183,7 +183,7 @@ def _loop_range_cstr(ttdo,counter):
       "_begin{} = {}".format(counter,ttdo.begin_cstr()),
       "_end{} = {}".format(counter,ttdo.end_cstr()),
     ]
-    if ttdo.has_step():
+    if ttdo.has_step()():
         result.append("_step{} = {}".format(counter,ttdo.step_cstr()))
     else:
         result.append("_step{} = 1".format(counter))

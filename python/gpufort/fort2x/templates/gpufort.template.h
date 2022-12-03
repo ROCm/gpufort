@@ -26,11 +26,11 @@
 {%- macro binop(op,n) -%}
 #define {{op}}{{n}}({{ binop_internal(op,n,result,"",1) }}) {{ binop_internal(op,n,result,"",0) }}
 {%- endmacro -%}
-{%- macro linearized_index(rank) -%}
+{%- macro c_idx(rank) -%}
 {%- if rank == 1 -%}
 i{{rank}}
 {%- else -%}
-{%- for c in range(1,rank) -%}n{{c}}{{ "*" if not loop.last }}{%- endfor -%}*i{{rank}}+{{ linearized_index(rank-1) }}
+{%- for c in range(1,rank) -%}n{{c}}{{ "*" if not loop.last }}{%- endfor -%}*i{{rank}}+{{ c_idx(rank-1) }}
 {%- endif -%}
 {%- endmacro -%}
 {%- macro print_array_arglist(prefix,rank) -%}
@@ -107,7 +107,7 @@ namespace {
 {% for col in range(1,rank+1) %}
     for ( int i{{rank+1-col}} = 0; i{{rank+1-col}} < n{{rank+1-col}}; i{{rank+1-col}}++ ) {
 {% endfor %}
-      T value = A_h[{{ linearized_index(rank) }}];
+      T value = A_h[{{ c_idx(rank) }}];
       if ( print_norms ) {
         min  = std::min(value,min);
         max  = std::max(value,max);

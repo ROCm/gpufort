@@ -27,13 +27,13 @@ void test1() {
   assert( 21==int_array2.data.index_offset);
   assert(321==int_array3.data.index_offset);
   
-  assert(0==int_array1.linearized_index(-1));
-  assert(0==int_array2.linearized_index(-1,-2));
-  assert(0==int_array3.linearized_index(-1,-2,-3));
+  assert(0==int_array1.c_idx(-1));
+  assert(0==int_array2.c_idx(-1,-2));
+  assert(0==int_array3.c_idx(-1,-2,-3));
 
-  assert(  9==int_array1.linearized_index(-1+10-1)); // upper bound
-  assert( 99==int_array2.linearized_index(-1+10-1,-2+10-1));
-  assert(999==int_array3.linearized_index(-1+10-1,-2+10-1,-3+10-1));
+  assert(  9==int_array1.c_idx(-1+10-1)); // upper bound
+  assert( 99==int_array2.c_idx(-1+10-1,-2+10-1));
+  assert(999==int_array3.c_idx(-1+10-1,-2+10-1,-3+10-1));
 
   launch_fill_int_array_1(int_array1);
   launch_fill_int_array_2(int_array2);

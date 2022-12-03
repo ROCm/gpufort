@@ -29,7 +29,12 @@ real :: x,y,z,u
 testdata = [
   """\
 !$acc kernels
-c(:) = b(:,1)+3 
+c(:) = b(:,1)
+!$acc end kernels
+""",
+  """\
+!$acc kernels
+c(:) = b(1,1)+3 
 !$acc end kernels
 """,
   """\
@@ -96,7 +101,7 @@ class TestTransformAcc(unittest.TestCase):
     def test_01_transform(self):
         device_type = "radeon"
         #for i,test in enumerate(testdata[-1:]):
-        for i,test in enumerate(testdata[0:1]):
+        for i,test in enumerate(testdata[0:]):
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
               statements,result_name=None,scope=scope

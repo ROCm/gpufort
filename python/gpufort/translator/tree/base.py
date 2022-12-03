@@ -51,12 +51,29 @@ class TTNode(object):
         yield self
 
     def fstr(self):
+        """:return: Fortran representation."""
         assert False, "Must be implemented by subclass"
 
     def cstr(self):
+        """:return: C/C++ representation."""
         assert False, "Must be implemented by subclass"
 
     #__repr__ = __str__
+
+class TTDummy(TTNode):
+    """A node with user-defined C/C++ and Fortran
+    representations.
+    """
+
+    def __init__(self,cstr,fstr):
+        """:param str cstr: The C/C++ representation.
+        :param str fstr: The Fortran representation."""
+        self._cstr = cstr
+        self._fstr = fstr 
+    def cstr(self):
+        return self._cstr
+    def fstr(self):
+        return self._fstr
 
 class TTNone(TTNode):
     """Node modelling non-existing nodes or empty lists."""
@@ -74,10 +91,10 @@ class TTNone(TTNode):
     def fstr(self):
         return ""
 
-class FlowStatementMarker:
+class TTStatement(TTNode):
     pass
 
-class TTContainer(TTNode,FlowStatementMarker):
+class TTContainer(TTStatement):
     """Container node for manual parser construction.
     """
     def __init__(self, tokens=[]):
@@ -123,13 +140,3 @@ class TTRoot(TTContainer):
 
     def __init__(self):
         TTContainer._init(self)
-
-def f_keyword(keyword):
-    if opts.keyword_case == "upper":
-        return keyword.upper()
-    elif opts.keyword_case == "lower":
-        return keyword.lower()
-    elif opts.keyword_case == "camel":
-        return keyword[0].upper() + keyword[1:].lower()
-    else:
-        return keyword

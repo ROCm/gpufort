@@ -15,18 +15,7 @@ from . import traversals
 
 import enum
 
-class TTSimpleToken(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._text = " ".join(tokens)
-
-    def cstr(self):
-        return "{};".format(self._text.lower())
-
-    def fstr(self):
-        return str(self._text)
-
-class TTReturn(base.TTNode,base.FlowStatementMarker):
+class TTReturn(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self._result_name = ""
@@ -40,7 +29,7 @@ class TTReturn(base.TTNode,base.FlowStatementMarker):
     def fstr(self):
         return "return"
 
-class TTLabel(base.TTNode,base.FlowStatementMarker):
+class TTLabel(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self._label = tokens[0]
@@ -55,14 +44,14 @@ class TTLabel(base.TTNode,base.FlowStatementMarker):
             result += " ;"
         return result
 
-class TTContinue(base.TTNode,base.FlowStatementMarker):
+class TTContinue(base.TTStatement):
     def cstr(self):
         return ";"
 
     def fstr(self):
         return "continue"
 
-class TTCycle(base.TTNode,base.FlowStatementMarker):
+class TTCycle(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self._result_name = ""
@@ -83,7 +72,7 @@ class TTCycle(base.TTNode,base.FlowStatementMarker):
     def fstr(self):
         return "cycle {}".format(self.label)
 
-class TTExit(base.TTNode,base.FlowStatementMarker):
+class TTExit(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self._label = tokens[0]
@@ -105,7 +94,7 @@ class TTExit(base.TTNode,base.FlowStatementMarker):
     def fstr(self):
         return "exit {}".format(self.label)
 
-class TTUnconditionalGoTo(base.TTNode,base.FlowStatementMarker):
+class TTUnconditionalGoTo(base.TTStatement):
     #todo: More complex expressions possible with jump label list
     #todo: Target numeric label can be renamed to identifier (deleted Fortran feature)
     def _assign_fields(self, tokens):
@@ -133,11 +122,6 @@ class TTCommentedOut(base.TTNode):
     def cstr(self):
         return "// {}".format(self._text)
 
-class TTIgnore(base.TTNode):
-
-    def cstr(self):
-        return ""
- 
 class TTDo(base.TTContainer):
 
     def _assign_fields(self, tokens):

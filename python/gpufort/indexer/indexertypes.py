@@ -308,11 +308,23 @@ class IndexProcedure(IndexFortranConstructBase):
         #del self.is_public_member
         #del self.is_private_member
     @property
-    def name(self):
-        return self.record["name"]
+    def is_subroutine(self):
+        return self.record["kind"] == "subroutine"
+    @property
+    def is_function(self):
+        return not self.is_subroutine
     @property
     def result_name(self):
         return self.record["result_name"]
+    @property
+    def result(self):
+        assert self.is_function
+        return self.get_variable(
+          self.result_name
+        )
+    @property
+    def name(self):
+        return self.record["name"]
     @property
     def attributes(self):
         return self.record["attributes"]

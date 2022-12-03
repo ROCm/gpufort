@@ -3,6 +3,14 @@
 #from translator_base import *
 """
 
+Concepts:
+
+Aside from the operators, 
+
+* `is_<tensor_kind>` indicate that the expression is actually of the tensor kind (scalar, array (contiguous,full,generic)).
+* `yield_<tensor_kind>` routines indicate that an operator, including the identity operator,
+  as well as elemental and transformational function calls produce a tensor of that kind.
+
 Generators:
 
 * walk_values_ignore_args: Certain nodes are equipped with this generator.
@@ -69,6 +77,7 @@ class Literal(base.TTNode):
     
     @property
     def rank(self): return 0
+    
     @property
     def is_scalar(self): return True
     @property
@@ -77,6 +86,15 @@ class Literal(base.TTNode):
     def is_contiguous_array(self): return False
     @property
     def is_full_array(self): return False
+    
+    @property
+    def yields_scalar(self): return self.is_scalar
+    @property
+    def yields_array(self): return self.is_array
+    @property
+    def yields_contiguous_array(self): return self.is_contiguous_array
+    @property
+    def yields_full_array(self): return self.is_full_array
 
     @property
     def resolved(self):
@@ -225,22 +243,32 @@ class TTIdentifier(VarExpr):
     @property 
     def kind(self):
         return self._get_type_defining_record().kind
-
+    
     @property
     def is_array(self):
         return self.rank > 0
-
     @property
     def is_contiguous_array(self):
         return self.is_array
-    
     @property
     def is_full_array(self):
         return self.is_array
-    
     @property
     def is_scalar(self):
         return not self.is_array
+
+    @property
+    def yields_array(self):
+        return self.rank > 0
+    @property
+    def yields_contiguous_array(self):
+        return self.yields_array
+    @property
+    def yields_full_array(self):
+        return self.yields_array
+    @property
+    def yields_scalar(self):
+        return not self.yields_array
   
     def fstr(self):
         return self.name
@@ -323,25 +351,109 @@ class TTFunctionCall(VarExpr):
     @property
     def is_array_expr(self):
         """:return: if this expression represents
-        an array section or array element (array section of size 1)."""
+        an array (full array or subarray) or a single array element.
+        :see: is_subarray.
+        :see: is_full_aray"""
         return isinstance(self.symbol_info,indexer.indexertypes.IndexVariable)
+ 
    
     @property
-    def is_array(self):
-        """If this an array expression, check if there is an index range.
-        If this is an elemental function, check if one argument
-        is an array.
-        """
-        # todo incomplete
-        if ( self.is_function_call
-             and self.is_elemental_function_call ):
-            for arg in self.args:
-                if arg.is_array:
-                    return True
-        elif self.is_array_expr:
+    def is_subarray(self):
+        """:return: if this is a subarray expression,
+        i.e. if it contains index ranges."""
+        if self.is_array_expr:
             for arg in self.args:
                 if isinstance(arg,TTSlice):
                     return True
+        return False
+ 
+    @property
+    def is_array(self):
+        """:return: if the expression describes
+        an array.
+        Might be a subarray, a full array but no array element.
+        :see: is_subarray
+        :see is_full_array"""
+        return self.is_subarray
+    
+    @property
+    def is_scalar(self):
+        """Checks if none of the array index arguments 
+        are index ranges.
+        """
+        return not self.is_array
+    
+    @property
+    def is_contiguous_array(self):
+        """Checks if this array section expression
+        is a contiguous section of an original array.
+        
+        :return: true if one or more index range have been found at 
+          the begin of the index argument list
+            - and all bounds and step sizes are unspecified with
+              the only allowed exception being the lower and upper bound of the last index range.
+        
+        :note: It is generally not possible to know by static analysis
+               if an array argument to a procedure is contiguous 
+               if this is not indicated via the `contiguous` keyword.
+               On the device, we have to assume
+               that all array arguments that are mapped to the device are contiguous.
+               We need to outsource the check of this property to the host compiler.
+        :todo: Currently assumes that array contiguity is destroyed if
+               a lower bound is specified for any index range at position != 0.
+               However, we might need to consider scenarios where an index lower bound 
+               is specified and coincides with the array variable's lower bound.
+        """
+        if self.is_array_expr:
+            last_slice = -1 # must be initialized with -1
+                            # as then: i-last==1 at i=0
+            first_slice_with_ubound_or_lbound = 10**20
+            for i,arg in enumerate(self.args):
+                if isinstance(arg,TTSlice):
+                    if (
+                        arg.has_stride()
+                        or i - last_slice > 1 # distance between strides > 1
+                        or i > first_slice_with_ubound_or_lbound
+                      ):
+                        return False
+                    if (arg.has_lbound()
+                       or arg.has_ubound()):
+                        first_slice_with_ubound_or_lbound = min(
+                          i,first_slice_with_ubound_or_lbound
+                        )
+                    last_slice = i
+            # no strides in any slice at this point
+            return last_slice >= 0
+        else:
+            return False
+
+    @property
+    def is_full_array(self):
+        for arg in self.args:
+            if (not isinstance(arg,TTSlice)
+               or arg.has_lbound()
+               or arg.has_ubound()
+               or arg.has_stride()):
+                return False
+        return True
+ 
+    @property
+    def yields_array(self):
+        """If this an array expression, check if there is an index range.
+        If this is an elemental function, check if one argument
+        is an array. If this is any other function, check if the result
+        is an array.
+        """
+        # todo incomplete
+        if self.is_function_call:
+           if self.is_elemental_function_call:
+               for arg in self.args:
+                   if arg.yields_array:
+                       return True
+           else:
+                return self.symbol_info.result.rank > 0
+        elif self.is_array_expr:
+            return self.is_array 
         return False
        
     def iter_actual_arguments(self):
@@ -358,7 +470,7 @@ class TTFunctionCall(VarExpr):
             yield (name, value)
  
     @property
-    def is_contiguous_array(self):
+    def yields_contiguous_array(self):
         """Checks if this array section expression
         is a contiguous section of an original array.
         
@@ -371,92 +483,63 @@ class TTFunctionCall(VarExpr):
         - or if one index range has been found at the
           begin of the index argument list and no other index range.
         """
-        if ( self.is_function_call
-             and self.is_elemental_function_call ):
-            one_array_is_contiguous = False
-            for name, value in self.iter_actual_arguments():
-                if value.is_contiguous_array:
-                    one_array_is_contiguous = True
-                if not (
-                    value.is_contiguous_array
-                    or value.is_scalar
-                  ):
-                    if self.result_depends_on_kind:
-                        if name != "kind":
-                            return False
-                    else:
-                        return False
-            return one_array_is_contiguous
-        elif self.is_array_expr:
-            last_slice = -1 # must be initialized with -1
-                            # as then: i-last==1 at i=0
-            last_slice_with_ubound = -1
-            last_slice_with_lbound = -1
-            for i,arg in enumerate(self.args):
-                if isinstance(arg,TTSlice):
-                    if (
-                        arg.has_stride()
-                        or i - last_slice != 1
-                        or i > 0 and arg.has_lbound()
-                        or last_slice_with_lbound >= 0
-                        or last_slice_with_ubound >= 0
+        if self.is_function_call:
+            if self.is_elemental_function_call:
+                one_array_is_contiguous = False
+                for name, value in self.iter_actual_arguments():
+                    if value.yields_contiguous_array:
+                        one_array_is_contiguous = True
+                    if not (
+                        value.yields_contiguous_array
+                        or value.yields_scalar
                       ):
-                        return False
-                    if arg.has_lbound():
-                        last_slice_with_lbound = i
-                    if arg.has_ubound():
-                        last_slice_with_ubound = i
-                    last_slice = i
-            # no strides in any slice at this point
-            return not (
-              last_slice < 0 # is scalar
-              #or last_slice_with_lbound > 1 # lower bound specified for dim other than 0
-              #or last_slice_with_lbound < last_slice # other ranges found after dim with lower bound
-              #or (last_slice_with_ubound >= 0 # upper bound specified for lower dim
-              #   and last_slice_with_ubound < last_slice)
-            )
+                        if self.result_depends_on_kind:
+                            if name != "kind":
+                                return False
+                        else:
+                            return False
+                return one_array_is_contiguous
+            else:
+                return self.symbol_info.result.rank > 0
+        elif self.is_array_expr:
+            return self.is_contiguous_array
         else:
             return False
-    
-    @property
-    def is_scalar(self):
-        """Checks if none of the array index arguments 
-        are index ranges.
-        """
-        return not self.is_array
 
     @property
-    def is_full_array(self):
+    def yields_full_array(self):
         """Checks if this array section expression
         covers all elements of an original array.
         For elemental functions
         """
-        if ( self.is_function_call
-             and self.is_elemental_function_call ):
-            one_array_is_full = False
-            for name, value in self.iter_actual_arguments():
-                if value.is_full_array:
-                    one_array_is_full = True
-                if not (
-                    value.is_full_array
-                    or value.is_scalar
-                  ):
-                    if self.result_depends_on_kind:
-                        if name != "kind":
+        if self.is_function_call:
+           if self.is_elemental_function_call:
+                one_array_is_full = False
+                for name, value in self.iter_actual_arguments():
+                    if value.yields_full_array:
+                        one_array_is_full = True
+                    if not (
+                        value.yields_full_array
+                        or value.yields_scalar
+                      ):
+                        if self.result_depends_on_kind:
+                            if name != "kind":
+                                return False
+                        else:
                             return False
-                    else:
-                        return False
-            return one_array_is_full
+                return one_array_is_full
+           else:
+               return self.symbol_info.result.rank > 0
         elif self.is_array_expr:
-            for arg in self.args:
-                if (not isinstance(arg,TTSlice)
-                   or arg.has_lbound()
-                   or arg.has_ubound()
-                   or arg.has_stride()):
-                    return False
-            return True
+            return self.is_full_array
         else:
             return False
+    
+    @property
+    def yields_scalar(self):
+        """Checks if this expression yields a scalar. 
+        """
+        return not self.yields_array
 
     @property
     def is_function_call(self):
@@ -552,7 +635,7 @@ class TTSlice(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.lbound, self.ubound, self.stride =\
-          None, None, None 
+          None, None, None  # note: all three might be None
         if len(tokens) == 1:
             self.ubound = tokens[0]
         elif len(tokens) == 2:
@@ -562,20 +645,29 @@ class TTSlice(base.TTNode):
             self.lbound = tokens[0]
             self.ubound = tokens[1]
             self.stride = tokens[2]
-        self._cstr = None
+        else: # ::
+            assert len(tokens) == 0
 
     @property
     def type(self):
-        return self.ubound.type
+        if self.ubound == None:
+            return Literal.INTEGER
+        else:
+            return self.ubound.type
     @property
     def kind(self):
-        return self.ubound.kind
+        if self.ubound == None:
+            return None
+        else:
+            return self.ubound.kind
     @property
     def bytes_per_element(self):
+        assert self.ubound != None
+        # todo: consider in semantics
         return self.ubound.bytes_per_element
     @property
     def rank(self):
-        return self.ubound.rank
+        return 0
 
     def has_lbound(self):
         return self.lbound != None
@@ -583,6 +675,24 @@ class TTSlice(base.TTNode):
         return self.ubound != None
     def has_stride(self):
         return self.stride != None
+    
+    @property
+    def is_scalar(self): return False
+    @property
+    def is_array(self): return True
+    @property
+    def is_contiguous_array(self): return not self.has_stride # :todo: support unit strides 
+    @property
+    def is_full_array(self): return self.is_contiguous_array # :todo: cannot know the bounds of array, must be set during semantic analysis
+    
+    @property
+    def yields_scalar(self): return self.is_scalar
+    @property
+    def yields_array(self): return self.is_array
+    @property
+    def yields_contiguous_array(self): return self.is_contiguous_array
+    @property
+    def yields_full_array(self): return self.is_full_array
 
     def size(self, converter=traversals.make_cstr):
         result = "{1} - ({0}) + 1".format(
@@ -603,15 +713,9 @@ class TTSlice(base.TTNode):
                 pass
         return result
 
-    def overwrite_cstr(self,cstr):
-        self._cstr = cstr
-
     def cstr(self):
         #return self.size(traversals.make_cstr)
-        if self._cstr == None:
-            return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
-        else:
-            return self._cstr 
+        return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
     
     def fstr(self):
         result = ""
@@ -740,6 +844,7 @@ class TTComplexConstructor(base.TTNode):
     @property
     def rank(self):
         return 0
+    
     @property
     def is_scalar(self): return True
     @property
@@ -748,6 +853,15 @@ class TTComplexConstructor(base.TTNode):
     def is_contiguous_array(self): return False
     @property
     def is_full_array(self): return False
+    
+    @property
+    def yields_scalar(self): return self.is_scalar
+    @property
+    def yields_array(self): return self.is_array
+    @property
+    def yields_contiguous_array(self): return self.is_contiguous_array
+    @property
+    def yields_full_array(self): return self.is_full_array
     
     def walk_values_ignore_args(self):
         yield from self.real.walk_values_ignore_args()
@@ -801,6 +915,7 @@ class TTArrayConstructor(base.TTNode):
     @property
     def size(self):
         return len(self.entries)
+    
     @property
     def is_scalar(self): return False
     @property
@@ -809,6 +924,15 @@ class TTArrayConstructor(base.TTNode):
     def is_contiguous_array(self): return True
     @property
     def is_full_array(self): return True
+    
+    @property
+    def yields_scalar(self): return self.is_scalar
+    @property
+    def yields_array(self): return self.is_array
+    @property
+    def yields_contiguous_array(self): return self.is_contiguous_array
+    @property
+    def yields_full_array(self): return self.is_full_array
     
     def walk_values_ignore_args(self):
         yield self
@@ -827,8 +951,9 @@ class TTValue(base.TTNode):
     def _assign_fields(self, tokens):
         self.value = tokens[0]
         # for overwriting C representation
-        self._cname = None 
-        self._cargs = []
+        self._c_repr_name = None 
+        self._c_repr_args = None
+        self._c_repr_use_square_brackets = False
 
     @property
     def type_defining_node(self):
@@ -901,20 +1026,20 @@ class TTValue(base.TTNode):
                  list of the innermost member.
         """
         assert isinstance(self.value,
-          (TTIdentifier,TTFunctionCall,TTDerivedTypePart))
+          (TTIdentifier,TTFunctionCall,TTDerivedTypePart)), type(self.value)
         return self.value.name
    
     @property
     def cname(self):
         """C-style identifier of the expression, i.e. '%' replaced by '.'.
         :note: May still contain index range expressions.
-        :note: If self._cname is set, it is returned instead.
+        :note: If self._c_repr_name is set, it is returned instead.
         """
-        if self._cname != None:
-            return self._cname
+        if self._c_repr_name != None:
+            return self._c_repr_name.lower()
         else:
-            return self.name.replace("%",".") 
- 
+            return self.name.replace("%",".").lower()
+    
     @property
     def is_array(self):
         """:note: Does not require array to be contiguous.
@@ -923,24 +1048,47 @@ class TTValue(base.TTNode):
                   derived type part.
         """
         return self.rank_defining_node.is_array
-    
     @property
     def is_scalar(self):
         return not self.is_array
-        
     @property
     def is_contiguous_array(self):
         """note: Only applicable to innermost element.
                  hence we use the innermost, the type-defining, 
                  derived type part."""
         return self.type_defining_node.is_contiguous_array
-    
     @property
     def is_full_array(self):
         """note: Only applicable to innermost element.
                  hence we use the innermost, the type-defining, 
                  derived type part."""
         return self.type_defining_node.is_full_array
+    # As the innermost node, could be a call to a member
+    # function, we cannot simply delegate the yields_<shape> to the is_<shape>
+    # functions.
+    @property
+    def yields_array(self):
+        """:note: Does not require array to be contiguous.
+                  Expressions like array(:)%scalar are thus 
+                  allowed too. Hence we use the rank-defining 
+                  derived type part.
+        """
+        return self.rank_defining_node.yields_array
+    @property
+    def yields_scalar(self):
+        return not self.yields_array
+    @property
+    def yields_contiguous_array(self):
+        """note: Only applicable to innermost element.
+                 hence we use the innermost, the type-defining, 
+                 derived type part."""
+        return self.type_defining_node.yields_contiguous_array
+    @property
+    def yields_full_array(self):
+        """note: Only applicable to innermost element.
+                 hence we use the innermost, the type-defining, 
+                 derived type part."""
+        return self.type_defining_node.yields_full_array
     
     @property
     def is_function_call(self):
@@ -1005,28 +1153,90 @@ class TTValue(base.TTNode):
                     yield from arg_value.walk_values_ignore_args()
         else:
             yield self
+
+    def loop_bounds_as_str(self,
+        only_consider_slices=False,
+        converter=traversals.make_cstr
+      ):
+        """:return: triple of lower bounds, upper bounds, and strides as str.
+        :param bool only_consider_slices: Only extract lower bounds, upper bounds
+                                          and strides from TTSlice arguments.
+        :param converter: Routine to convert the expressions to strings, 
+                          defaults to `traversals.make_cstr`. Other legal option
+                          is `traversals.make_fstr`.
+        """
+        assert isinstance(self.value,TTFunctionCall)
+        if converter == traversals.make_cstr:
+            var_name = self.cname
+            bound_template = "{var}.{bound}({i})"
+        else:
+            assert converter == traversals.make_fstr
+            bound_template = "{bound}({var},{i})"
+        lbounds = []
+        ubounds = []
+        steps = []
+        for i,ttarg in enumerate(self.value.args,1):
+            if isinstance(ttarg,TTSlice):
+                if ttarg.has_lbound():
+                    lbounds.append(converter(ttarg.lbound))
+                else:
+                    lbounds.append(
+                      bound_template.format(
+                        bound="lbound",
+                        var = var_name,
+                        i = i
+                      )
+                    ) 
+                if ttarg.has_ubound():
+                    ubounds.append(converter(ttarg.ubound))
+                else:
+                    ubounds.append(
+                      bound_template.format(
+                        bound="ubound",
+                        var = var_name,
+                        i = i
+                      ) 
+                    )
+                if ttarg.has_stride():
+                    steps.append(converter(ttarg.stride))
+                else:
+                    steps.append(None)
+            elif not only_consider_slices:
+                lbounds.append(converter(ttarg))
+                ubounds.append(converter(ttarg))
+                steps.append(None)
+        return (lbounds, ubounds, steps)
     
     def fstr(self):
         return traversals.make_fstr(self.value)
 
-    def overwrite_cstr(cname,cargs):
-        """:param str cname: Overwrite name of variable when generating C expression.
-        :param list(str) cargs: Overwrite argument list when generating C expression.
-        :note: Should only be applied to derived type member access expressions
-        if the rank and type defining node coincide, i.e. none or only the innermost element
-        is an subarray or array.
+    def overwrite_c_repr(self,
+        name,
+        args,
+        use_square_brackets = False
+      ):
+        """Overwrites C representation of this TTValue as identifier plus optional
+        list of arguments.
+        :param str name: Overwrite name of the variable when generating C code.
+        :param list args: List of argument expressions, may be empty, or None.
+        :param bool use_square_brackets: Place argument list into C-style square brackets instead of parantheses.
         """
-        self._cname = cname
-        self._cargs = cargs
+        self._c_repr_name = name
+        self._c_repr_args = args
+        self._c_repr_use_square_brackets = False 
 
     def cstr(self):
-        if self._cname != None:
+        if self._c_repr_name != None:
             result = self.cname
-            if len(self._cargs):
-                result += "({})".format(
-                  traversal.make_cstr(self._cargs)
+            if self._c_repr_args != None:
+                arg_list = "{}".format(
+                  ",".join([traversals.make_cstr(arg) for arg in self._c_repr_args])
                 )
-            return result
+                if self._c_repr_use_square_brackets:
+                    result += "[" + arg_list + "]"
+                else:
+                    result += "(" + arg_list + ")"
+                return result
         else:
             return traversals.make_cstr(self.value)
 
@@ -1091,20 +1301,17 @@ class TTUnaryOp(base.TTNode):
         return self.opd.rank
 
     @property
-    def is_array(self):
-        return self.opd.is_array
-    
+    def yields_array(self):
+        return self.opd.yields_array
     @property
-    def is_scalar(self):
-        return not self.is_array
-        
+    def yields_scalar(self):
+        return not self.yields_array
     @property
-    def is_contiguous_array(self):
-        return self.opd.is_contiguous_array
-    
+    def yields_contiguous_array(self):
+        return self.opd.yields_contiguous_array
     @property
-    def is_full_array(self):
-        return self.opd.is_full_array
+    def yields_full_array(self):
+        return self.opd.yields_full_array
 
     def walk_values_ignore_args(self):
         yield from walk_values_ignore_args(self.opd)
@@ -1261,22 +1468,22 @@ class TTBinaryOpChain(base.TTNode):
             yield opd
     
     @property
-    def is_array(self):
+    def yields_array(self):
         """:note: Assumes that semantics check has already performed.
         """
         for opd in self.operands:
-            if opd.is_array:
+            if opd.yields_array:
                 return True
         return False
     
     @property
-    def is_scalar(self):
+    def yields_scalar(self):
         """:note: Assumes that semantics check has already performed.
         """
-        return not self.is_array
+        return not self.yields_array
 
     @property
-    def is_contiguous_array(self):
+    def yields_contiguous_array(self):
         """:return: If the operands are a mix of at least one contiguous array and scalars.
         :note: Assumes that semantics check has already performed, i.e.
                that all array ranks are consistent.
@@ -1284,31 +1491,31 @@ class TTBinaryOpChain(base.TTNode):
         """
         one_contiguous_array_found = False
         for opd in self.operands:
-            is_contiguous_array = opd.is_contiguous_array
+            yields_contiguous_array = opd.yields_contiguous_array
             if not (
-              is_contiguous_array
+              yields_contiguous_array
               or opd.is_scalar 
             ):
                return False
-            if is_contiguous_array:
+            if yields_contiguous_array:
                 one_contiguous_array_found = True
         return one_contiguous_array_found
     
     @property
-    def is_full_array(self):
+    def yields_full_array(self):
         """:return: If the operands are a mix of at least one full array and scalars.
         :note: Assumes that semantics check has already performed, i.e.
                that all array ranks are consistent.
         """
         one_full_array_found = False
         for opd in self.operands:
-            is_full_array = opd.is_full_array
+            yields_full_array = opd.yields_full_array
             if not (
-              is_full_array
+              yields_full_array
               or opd.is_scalar 
             ):
                return False
-            if is_full_array:
+            if yields_full_array:
                 one_full_array_found = True
         return one_full_array_found
     
@@ -1377,21 +1584,67 @@ class TTArithExpr(base.TTNode):
     @property
     def bytes_per_element(self):
         return self.expr.bytes_per_element
+
     @property
-    def is_array(self):
-        return self.expr.is_array
+    def yields_array(self):
+        return self.expr.yields_array
     @property
-    def is_contiguous_array(self):
-        return self.expr.is_contiguous_array
+    def yields_contiguous_array(self):
+        return self.expr.yields_contiguous_array
     @property
-    def is_full_array(self):
-        return self.expr.is_full_array
+    def yields_full_array(self):
+        return self.expr.yields_full_array
     @property
-    def is_scalar(self):
-        return self.expr.is_scalar
+    def yields_scalar(self):
+        return self.expr.yields_scalar
     
     def walk_values_ignore_args(self):
         yield from self.expr.walk_values_ignore_args()
+
+    @property
+    def applies_transformational_functions_to_arrays(self):
+        """:return: If the rank or shape of arrays in this expression
+        might be changed due to function calls.
+        :todo: How does this relate to 'elemental' property?
+               Seems it is more careful than checking that
+               every function is elemental in the expression.
+        """
+        for child in self.walk_preorder():
+            if (isinstance(child,TTFunctionCall)
+               and child.is_function_call
+               and not child.is_elemental):
+                for arg in child.args:
+                    if not isinstance(arg,TTSlice) and arg.yields_array:
+                        return True
+        return False    
+
+    @property
+    def contains_array_access_with_index_array(self):
+        """:return: If an array of indices is passed as index to 
+        an array access expression.
+
+        Examples:
+
+        array([1,2,3])
+        array1(array2)
+        
+        :todo: How does this relate to 'contiguous' property?
+               If index argument is non-contiguous the result is non-contiguous.
+               If index argument is contiguous the result is contiguous.
+               Shall we just assume that index arrays always destroy contiguity.
+        """
+        for child in self.walk_preorder():
+            if (isinstance(child,TTFunctionCall)
+               and child.is_array):
+                for arg in child.args:
+                    # treat slice without stride as contiguous array?
+                    if not isinstance(arg,TTSlice) and arg.yields_array:
+                        return True
+        return False    
+
+    @property
+    def is_unprefixed_single_value(self):
+        return isinstance(self.expr,TTValue)
 
     def cstr(self):
         return self.expr.cstr()
@@ -1417,17 +1670,17 @@ class TTKeywordArgument(base.TTNode):
     def rank(self):
         return self.value.rank
     @property
-    def is_array(self):
-        return self.value.is_array
+    def yields_array(self):
+        return self.value.yields_array
     @property
-    def is_scalar(self):
+    def yields_scalar(self):
         return self.value.is_scalar
     @property
-    def is_contiguous_array(self):
-        return self.value.is_contiguous_array
+    def yields_contiguous_array(self):
+        return self.value.yields_contiguous_array
     @property
-    def is_full_array(self):
-        return self.value.is_full_array
+    def yields_full_array(self):
+        return self.value.yields_full_array
 
     def child_nodes(self):
         yield self.value
@@ -1442,7 +1695,7 @@ class TTKeywordArgument(base.TTNode):
         return self.key + "=" + self.value.fstr()
 
 
-class TTAssignment(base.TTNode):
+class TTAssignment(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self.lhs, self.rhs = tokens
@@ -1456,19 +1709,45 @@ class TTAssignment(base.TTNode):
     @property
     def bytes_per_element(self):
         return self.lhs.bytes_per_element
+ 
+    @property
+    def is_copy(self):
+        """:return: if this assignment is a copy operation"""
+        return (
+          self.lhs.is_unprefixed_single_value
+          and (
+            (self.lhs.is_scalar
+            and self.rhs.is_scalar)
+            or
+            (self.lhs.yields_contiguous_array
+            and self.rhs.yields_contiguous_array)
+          )
+        )
     
+    @property
+    def is_setval(self):
+        """:return: if this assignment is a copy operation"""
+        return (
+          self.lhs.is_unprefixed_single_value
+          and self.lhs.is_scalar
+          and self.rhs.yields_contiguous_array
+        )
+
+    #todo: Detect (hip-)BLAS routines too?
+
     def walk_values_ignore_args(self):
         yield from self.lhs.walk_values_ignore_args()
         yield from self.rhs.walk_values_ignore_args()
 
     def child_nodes(self):
-        yield self.rhs; yield self.rhs
+        yield self.lhs
+        yield self.rhs
     def cstr(self):
         return self.lhs.cstr() + "=" + self.rhs.cstr() + ";\n"
     def fstr(self):
         return self.lhs.fstr() + "=" + self.rhs.fstr() + ";\n"
 
-class TTSubroutineCall(base.TTNode):
+class TTSubroutineCall(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self._subroutine = tokens[0]

@@ -54,15 +54,14 @@ class Semantics:
 
         for arg in ttnode.args:
             if not isinstance(arg,tree.TTSlice):
-                if arg.type == "integer":
-                    if not self.allow_arrays_as_array_index and arg.rank > 0:
-                        raise util.error.SemanticError("array index is array")
-                elif ttnode.type == "real":
+                if not self.allow_arrays_as_array_index and arg.rank > 0:
+                    raise util.error.LimitationError("array index is array")
+                if arg.type == "real":
                     if self.allow_real_as_array_index:
                         self.warnings.append("legacy extension: array index is real")
                     else:
                         raise util.error.SemanticError("array index is real")
-                else:
+                elif arg.type != "integer":
                     raise util.error.SemanticError(
                       "index must be either of integer "
                       + "or real type (legacy extension)"

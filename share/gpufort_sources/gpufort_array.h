@@ -91,7 +91,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1
     ) const {
       return this->index_offset
@@ -105,7 +105,7 @@ namespace gpufort {
     __host__ __device__ __forceinline__ T& operator() (
       const int i1
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -124,7 +124,7 @@ namespace gpufort {
     __host__ __device__ __forceinline__ const T& operator() (
       const int i1
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -1013,10 +1013,10 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
         i1
       );
     }
@@ -1118,7 +1118,7 @@ namespace gpufort {
       T l2  = 0;
       out << prefix << ":\n";
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1);
+      const int idx = this->c_idx(i1);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -1185,7 +1185,7 @@ namespace gpufort {
       T l2  = 0;
       out << prefix << ":\n";
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1);
+      const int idx = this->c_idx(i1);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -1262,7 +1262,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2
     ) const {
@@ -1279,7 +1279,7 @@ namespace gpufort {
       const int i1,
       const int i2
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -1301,7 +1301,7 @@ namespace gpufort {
       const int i1,
       const int i2
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -2197,11 +2197,11 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
         i1,i2
       );
     }
@@ -2274,7 +2274,7 @@ namespace gpufort {
     ) const {
       const int n1  = this->size(1);
       const int lb1 = this->lbound(1);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,
         i2);
       T* data_host_new = nullptr; 
@@ -2341,7 +2341,7 @@ namespace gpufort {
       out << prefix << ":\n";
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2);
+      const int idx = this->c_idx(i1,i2);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -2411,7 +2411,7 @@ namespace gpufort {
       out << prefix << ":\n";
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2);
+      const int idx = this->c_idx(i1,i2);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -2493,7 +2493,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3
@@ -2513,7 +2513,7 @@ namespace gpufort {
       const int i2,
       const int i3
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -2538,7 +2538,7 @@ namespace gpufort {
       const int i2,
       const int i3
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -3441,12 +3441,12 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
         i1,i2,i3
       );
     }
@@ -3523,7 +3523,7 @@ namespace gpufort {
       const int lb1 = this->lbound(1);
       const int n2  = this->size(2);
       const int lb2 = this->lbound(2);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,
         i3);
       T* data_host_new = nullptr; 
@@ -3557,7 +3557,7 @@ namespace gpufort {
     ) const {
       const int n1  = this->size(1);
       const int lb1 = this->lbound(1);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,
         i2,i3);
       T* data_host_new = nullptr; 
@@ -3627,7 +3627,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3);
+      const int idx = this->c_idx(i1,i2,i3);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -3700,7 +3700,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3);
+      const int idx = this->c_idx(i1,i2,i3);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -3787,7 +3787,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
@@ -3810,7 +3810,7 @@ namespace gpufort {
       const int i3,
       const int i4
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -3838,7 +3838,7 @@ namespace gpufort {
       const int i3,
       const int i4
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -4748,13 +4748,13 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
       const int i4
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
         i1,i2,i3,i4
       );
     }
@@ -4835,7 +4835,7 @@ namespace gpufort {
       const int lb2 = this->lbound(2);
       const int n3  = this->size(3);
       const int lb3 = this->lbound(3);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,
         i4);
       T* data_host_new = nullptr; 
@@ -4871,7 +4871,7 @@ namespace gpufort {
       const int lb1 = this->lbound(1);
       const int n2  = this->size(2);
       const int lb2 = this->lbound(2);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,
         i3,i4);
       T* data_host_new = nullptr; 
@@ -4906,7 +4906,7 @@ namespace gpufort {
     ) const {
       const int n1  = this->size(1);
       const int lb1 = this->lbound(1);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,
         i2,i3,i4);
       T* data_host_new = nullptr; 
@@ -4979,7 +4979,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4);
+      const int idx = this->c_idx(i1,i2,i3,i4);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -5055,7 +5055,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4);
+      const int idx = this->c_idx(i1,i2,i3,i4);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -5147,7 +5147,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
@@ -5173,7 +5173,7 @@ namespace gpufort {
       const int i4,
       const int i5
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4,i5
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -5204,7 +5204,7 @@ namespace gpufort {
       const int i4,
       const int i5
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4,i5
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -6121,14 +6121,14 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
       const int i4,
       const int i5
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
         i1,i2,i3,i4,i5
       );
     }
@@ -6213,7 +6213,7 @@ namespace gpufort {
       const int lb3 = this->lbound(3);
       const int n4  = this->size(4);
       const int lb4 = this->lbound(4);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,lb4,
         i5);
       T* data_host_new = nullptr; 
@@ -6251,7 +6251,7 @@ namespace gpufort {
       const int lb2 = this->lbound(2);
       const int n3  = this->size(3);
       const int lb3 = this->lbound(3);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,
         i4,i5);
       T* data_host_new = nullptr; 
@@ -6288,7 +6288,7 @@ namespace gpufort {
       const int lb1 = this->lbound(1);
       const int n2  = this->size(2);
       const int lb2 = this->lbound(2);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,
         i3,i4,i5);
       T* data_host_new = nullptr; 
@@ -6324,7 +6324,7 @@ namespace gpufort {
     ) const {
       const int n1  = this->size(1);
       const int lb1 = this->lbound(1);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,
         i2,i3,i4,i5);
       T* data_host_new = nullptr; 
@@ -6400,7 +6400,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4,i5);
+      const int idx = this->c_idx(i1,i2,i3,i4,i5);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -6479,7 +6479,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4,i5);
+      const int idx = this->c_idx(i1,i2,i3,i4,i5);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -6576,7 +6576,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
@@ -6605,7 +6605,7 @@ namespace gpufort {
       const int i5,
       const int i6
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4,i5,i6
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -6639,7 +6639,7 @@ namespace gpufort {
       const int i5,
       const int i6
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4,i5,i6
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -7563,7 +7563,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
@@ -7571,7 +7571,7 @@ namespace gpufort {
       const int i5,
       const int i6
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
         i1,i2,i3,i4,i5,i6
       );
     }
@@ -7660,7 +7660,7 @@ namespace gpufort {
       const int lb4 = this->lbound(4);
       const int n5  = this->size(5);
       const int lb5 = this->lbound(5);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,lb4,lb5,
         i6);
       T* data_host_new = nullptr; 
@@ -7700,7 +7700,7 @@ namespace gpufort {
       const int lb3 = this->lbound(3);
       const int n4  = this->size(4);
       const int lb4 = this->lbound(4);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,lb4,
         i5,i6);
       T* data_host_new = nullptr; 
@@ -7739,7 +7739,7 @@ namespace gpufort {
       const int lb2 = this->lbound(2);
       const int n3  = this->size(3);
       const int lb3 = this->lbound(3);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,
         i4,i5,i6);
       T* data_host_new = nullptr; 
@@ -7777,7 +7777,7 @@ namespace gpufort {
       const int lb1 = this->lbound(1);
       const int n2  = this->size(2);
       const int lb2 = this->lbound(2);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,
         i3,i4,i5,i6);
       T* data_host_new = nullptr; 
@@ -7814,7 +7814,7 @@ namespace gpufort {
     ) const {
       const int n1  = this->size(1);
       const int lb1 = this->lbound(1);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,
         i2,i3,i4,i5,i6);
       T* data_host_new = nullptr; 
@@ -7893,7 +7893,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4,i5,i6);
+      const int idx = this->c_idx(i1,i2,i3,i4,i5,i6);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -7975,7 +7975,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4,i5,i6);
+      const int idx = this->c_idx(i1,i2,i3,i4,i5,i6);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -8077,7 +8077,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
@@ -8109,7 +8109,7 @@ namespace gpufort {
       const int i6,
       const int i7
     ) {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4,i5,i6,i7
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -8146,7 +8146,7 @@ namespace gpufort {
       const int i6,
       const int i7
     ) const {
-      const int index = linearized_index(
+      const int index = c_idx(
         i1,i2,i3,i4,i5,i6,i7
       );
       #ifdef __HIP_DEVICE_COMPILE__
@@ -9077,7 +9077,7 @@ namespace gpufort {
      *
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ __device__ __forceinline__ int linearized_index (
+    __host__ __device__ __forceinline__ int c_idx (
       const int i1,
       const int i2,
       const int i3,
@@ -9086,7 +9086,7 @@ namespace gpufort {
       const int i6,
       const int i7
     ) const {
-      return this->data.linearized_index(
+      return this->data.c_idx(
         i1,i2,i3,i4,i5,i6,i7
       );
     }
@@ -9179,7 +9179,7 @@ namespace gpufort {
       const int lb5 = this->lbound(5);
       const int n6  = this->size(6);
       const int lb6 = this->lbound(6);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,lb4,lb5,lb6,
         i7);
       T* data_host_new = nullptr; 
@@ -9221,7 +9221,7 @@ namespace gpufort {
       const int lb4 = this->lbound(4);
       const int n5  = this->size(5);
       const int lb5 = this->lbound(5);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,lb4,lb5,
         i6,i7);
       T* data_host_new = nullptr; 
@@ -9262,7 +9262,7 @@ namespace gpufort {
       const int lb3 = this->lbound(3);
       const int n4  = this->size(4);
       const int lb4 = this->lbound(4);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,lb4,
         i5,i6,i7);
       T* data_host_new = nullptr; 
@@ -9302,7 +9302,7 @@ namespace gpufort {
       const int lb2 = this->lbound(2);
       const int n3  = this->size(3);
       const int lb3 = this->lbound(3);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,lb3,
         i4,i5,i6,i7);
       T* data_host_new = nullptr; 
@@ -9341,7 +9341,7 @@ namespace gpufort {
       const int lb1 = this->lbound(1);
       const int n2  = this->size(2);
       const int lb2 = this->lbound(2);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,lb2,
         i3,i4,i5,i6,i7);
       T* data_host_new = nullptr; 
@@ -9379,7 +9379,7 @@ namespace gpufort {
     ) const {
       const int n1  = this->size(1);
       const int lb1 = this->lbound(1);
-      const int index = linearized_index(
+      const int index = c_idx(
         lb1,
         i2,i3,i4,i5,i6,i7);
       T* data_host_new = nullptr; 
@@ -9461,7 +9461,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4,i5,i6,i7);
+      const int idx = this->c_idx(i1,i2,i3,i4,i5,i6,i7);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);
@@ -9546,7 +9546,7 @@ namespace gpufort {
     for ( int i3 = 0; i3 < n3; i3++ ) {
     for ( int i2 = 0; i2 < n2; i2++ ) {
     for ( int i1 = 0; i1 < n1; i1++ ) {
-      const int idx = this->linearized_index(i1,i2,i3,i4,i5,i6,i7);
+      const int idx = this->c_idx(i1,i2,i3,i4,i5,i6,i7);
       T value = A_h[idx];
       if ( print_norms ) {
         min  = std::min(value,min);

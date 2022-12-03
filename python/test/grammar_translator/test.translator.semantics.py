@@ -52,7 +52,7 @@ class TestSemantics(unittest.TestCase):
         real(c_double) :: U(m),V(m,n),W(m,n,k)
 
         type mytype_t
-          real :: X(m),Y(m,n),Z(m,n,k)
+          real :: tX(m),tY(m,n),tZ(m,n,k)
         end type
         
         type(mytype_t) :: mytypes(10)
@@ -81,22 +81,22 @@ class TestSemantics(unittest.TestCase):
     parse_arith_expr_parse_results = [] # will be filled by a test
     
     resolve_arith_expr_results = [
-      ('integer', 4, 0),
-      ('complex', 4, 0),
-      ('complex', 8, 0),
-      ('real', 4, 1),
-      ('integer', 4, 1),
-      ('integer', 4, 0),
-      ('integer', 4, 0),
-      ('integer', 4, 0),
-      ('integer', 4, 0),
-      ('integer', 4, 0),
-      ('real', 4, 1),
-      ('integer', 4, 1),
-      ('real', 4, 1),
-      ('real', 4, 2),
-      ('real', 8, 2),
-      ('real', 8, 2),
+      ('integer', 4, 0, True),
+      ('complex', 4, 0, True),
+      ('complex', 8, 0, True),
+      ('real', 4, 1, True),
+      ('integer', 4, 1, True),
+      ('integer', 4, 0, False),
+      ('integer', 4, 0, False),
+      ('integer', 4, 0, False),
+      ('integer', 4, 0, False),
+      ('integer', 4, 0, False),
+      ('real', 4, 1, False),
+      ('integer', 4, 1, False),
+      ('real', 4, 1, False),
+      ('real', 4, 2, False),
+      ('real', 8, 2, False),
+      ('real', 8, 2, False),
     ]
 
     def test_02_parse_arith_expr(self):
@@ -109,9 +109,12 @@ class TestSemantics(unittest.TestCase):
             ttarithexpr = TestSemantics.parse_arith_expr_parse_results[i]
             #print(ttarithexpr.fstr())
             semantics.resolve_arith_expr(ttarithexpr,scope)
-            result_tuple = (ttarithexpr.type,
-                      ttarithexpr.bytes_per_element,
-                      ttarithexpr.rank)
+            result_tuple = (
+              ttarithexpr.type,
+              ttarithexpr.bytes_per_element,
+              ttarithexpr.rank,
+              ttarithexpr.is_unprefixed_single_value
+            )
             #print(result_tuple)
             self.assertEqual(TestSemantics.resolve_arith_expr_results[i],result_tuple)
 
@@ -132,12 +135,13 @@ class TestSemantics(unittest.TestCase):
       "Y(1:5,1)",
       "Y(:,:5)",
       "Y(1,:5)",
-      "Y(1:,:5)",
+      "Y(1:,:5)", # not contiguous
       "Y(1:5,:5)",
+      "Y(:,1:5)", # contiguous
       # derived_type expressions 
-      "mytypes(i)%x(1)",
-      "mytypes(i)%x(:)",
-      "mytypes(:)%x(1)",
+      "mytypes(i)%tx(1)",
+      "mytypes(i)%tx(:)",
+      "mytypes(:)%tx(1)",
     ]
     
     parse_rvalue_parse_results = [] # will be filled by a test
@@ -160,6 +164,7 @@ class TestSemantics(unittest.TestCase):
       (False, True, False, False),
       (False, True, False, False),
       (False, True, False, False),
+      (False, True, True, False),
       (True, False, False, False),
       (False, True, True, True),
       (False, True, False, False),
@@ -171,14 +176,15 @@ class TestSemantics(unittest.TestCase):
             TestSemantics.parse_rvalue_parse_results.append(ttrvalue)
 
     def test_05_resolve_rvalue(self):
+        #print("# scalar|array|contiguous array|full array")
         for i,test in enumerate(TestSemantics.parse_rvalue_testdata):
             ttrvalue = TestSemantics.parse_rvalue_parse_results[i] 
             semantics.resolve_arith_expr(ttrvalue,scope)
             result_tuple = (
-              ttrvalue.is_scalar,
-              ttrvalue.is_array,
-              ttrvalue.is_contiguous_array,
-              ttrvalue.is_full_array,
+              ttrvalue.yields_scalar,
+              ttrvalue.yields_array,
+              ttrvalue.yields_contiguous_array,
+              ttrvalue.yields_full_array,
             )
             #print(test)
             #print(result_tuple)
@@ -186,70 +192,81 @@ class TestSemantics(unittest.TestCase):
               TestSemantics.resolve_rvalue_results[i],
               result_tuple
             )
+  
+    parse_function_call_testdata = [
+      "real(1)",
+      "real(1,8)",
+      "real(j,kind=8)",
+      "real(1,c_double)",
+      "real(j,kind=c_double)",
+      "real(X,kind=c_double)",
+      "real(Y(:,1),kind=c_double)",
+      "real(X+Y(:,1),kind=c_double)",
+      "real(Y(1,:),kind=c_double)",
+      "int(1)",
+      "int(1,8)",
+      "int(j,kind=8)",
+      "int(1,c_long)",
+      "int(j,kind=c_long)",
+      "int(X,kind=c_long)",
+      "int(X+Y(:,1),kind=c_long)",
+      "int(Y(:,1),kind=c_long)",
+      "int(Y(1,:),kind=c_long)",
+      "cmplx(1,2)",
+      "cmplx(1,2d0)",
+      "cmplx(1,2d0,kind=c_float_complex)",
+      "cmplx(Y,kind=c_float_complex)",
+      "cmplx(Y(:,1),kind=c_float_complex)",
+      "cmplx(Y(1,:),kind=c_float_complex)",
+      "cmplx(1,Y,kind=c_float_complex)",
+      "cmplx(1,Y(:,1),kind=c_float_complex)",
+      "cmplx(1,Y(1,:),kind=c_float_complex)",
+    ]
+   
+    parse_function_call_parse_results = [
+    ]
     
-    def test_06_resolve_function_call(self):
-        testdata = [
-          "real(1)",
-          "real(1,8)",
-          "real(j,kind=8)",
-          "real(1,c_double)",
-          "real(j,kind=c_double)",
-          "real(X,kind=c_double)",
-          "real(Y(:,1),kind=c_double)",
-          "real(X+Y(:,1),kind=c_double)",
-          "real(Y(1,:),kind=c_double)",
-          "int(1)",
-          "int(1,8)",
-          "int(j,kind=8)",
-          "int(1,c_long)",
-          "int(j,kind=c_long)",
-          "int(X,kind=c_long)",
-          "int(X+Y(:,1),kind=c_long)",
-          "int(Y(:,1),kind=c_long)",
-          "int(Y(1,:),kind=c_long)",
-          "cmplx(1,2)",
-          "cmplx(1,2d0)",
-          "cmplx(1,2d0,kind=c_float_complex)",
-          "cmplx(Y,kind=c_float_complex)",
-          "cmplx(Y(:,1),kind=c_float_complex)",
-          "cmplx(Y(1,:),kind=c_float_complex)",
-          "cmplx(1,Y,kind=c_float_complex)",
-          "cmplx(1,Y(:,1),kind=c_float_complex)",
-          "cmplx(1,Y(1,:),kind=c_float_complex)",
-        ]
-        #function|elemental|converter|type|kind|bytes_per_element|rank|is_contiguous|is_full_array
-        results = [
-          (True, True, True, 'real', None, 4, 0, False, False),
-          (True, True, True, 'real', '8', 8, 0, False, False),
-          (True, True, True, 'real', '8', 8, 0, False, False),
-          (True, True, True, 'real', 'c_double', 8, 0, False, False),
-          (True, True, True, 'real', 'c_double', 8, 0, False, False),
-          (True, True, True, 'real', 'c_double', 8, 1, True, True),
-          (True, True, True, 'real', 'c_double', 8, 1, True, False),
-          (True, True, True, 'real', 'c_double', 8, 1, True, False),
-          (True, True, True, 'real', 'c_double', 8, 1, False, False),
-          (True, True, True, 'integer', None, 4, 0, False, False),
-          (True, True, True, 'integer', '8', 8, 0, False, False),
-          (True, True, True, 'integer', '8', 8, 0, False, False),
-          (True, True, True, 'integer', 'c_long', 8, 0, False, False),
-          (True, True, True, 'integer', 'c_long', 8, 0, False, False),
-          (True, True, True, 'integer', 'c_long', 8, 1, True, True),
-          (True, True, True, 'integer', 'c_long', 8, 1, True, False),
-          (True, True, True, 'integer', 'c_long', 8, 1, True, False),
-          (True, True, True, 'integer', 'c_long', 8, 1, False, False),
-          (True, True, True, 'complex', None, 8, 0, False, False),
-          (True, True, True, 'complex', None, 8, 0, False, False),
-          (True, True, True, 'complex', 'c_float_complex', 8, 0, False, False),
-          (True, True, True, 'complex', 'c_float_complex', 8, 2, True, True),
-          (True, True, True, 'complex', 'c_float_complex', 8, 1, True, False),
-          (True, True, True, 'complex', 'c_float_complex', 8, 1, False, False),
-          (True, True, True, 'complex', 'c_float_complex', 8, 2, True, True),
-          (True, True, True, 'complex', 'c_float_complex', 8, 1, True, False),
-          (True, True, True, 'complex', 'c_float_complex', 8, 1, False, False),
-        ]
-
-        for i,test in enumerate(testdata):
+    #function|elemental|converter|type|kind|bytes_per_element|rank|is_contiguous|yields_full_array
+    resolve_function_call_results = [
+      (True, True, True, 'real', None, 4, 0, False, False),
+      (True, True, True, 'real', '8', 8, 0, False, False),
+      (True, True, True, 'real', '8', 8, 0, False, False),
+      (True, True, True, 'real', 'c_double', 8, 0, False, False),
+      (True, True, True, 'real', 'c_double', 8, 0, False, False),
+      (True, True, True, 'real', 'c_double', 8, 1, True, True),
+      (True, True, True, 'real', 'c_double', 8, 1, True, False),
+      (True, True, True, 'real', 'c_double', 8, 1, True, False),
+      (True, True, True, 'real', 'c_double', 8, 1, False, False),
+      (True, True, True, 'integer', None, 4, 0, False, False),
+      (True, True, True, 'integer', '8', 8, 0, False, False),
+      (True, True, True, 'integer', '8', 8, 0, False, False),
+      (True, True, True, 'integer', 'c_long', 8, 0, False, False),
+      (True, True, True, 'integer', 'c_long', 8, 0, False, False),
+      (True, True, True, 'integer', 'c_long', 8, 1, True, True),
+      (True, True, True, 'integer', 'c_long', 8, 1, True, False),
+      (True, True, True, 'integer', 'c_long', 8, 1, True, False),
+      (True, True, True, 'integer', 'c_long', 8, 1, False, False),
+      (True, True, True, 'complex', None, 8, 0, False, False),
+      (True, True, True, 'complex', None, 8, 0, False, False),
+      (True, True, True, 'complex', 'c_float_complex', 8, 0, False, False),
+      (True, True, True, 'complex', 'c_float_complex', 8, 2, True, True),
+      (True, True, True, 'complex', 'c_float_complex', 8, 1, True, False),
+      (True, True, True, 'complex', 'c_float_complex', 8, 1, False, False),
+      (True, True, True, 'complex', 'c_float_complex', 8, 2, True, True),
+      (True, True, True, 'complex', 'c_float_complex', 8, 1, True, False),
+      (True, True, True, 'complex', 'c_float_complex', 8, 1, False, False),
+    ]
+ 
+    def test_06_parse_function_call(self):
+        for i,test in enumerate(TestSemantics.parse_function_call_testdata):
+            #print(test)
             ttrvalue = translator.parser.parse_rvalue(test)
+            TestSemantics.parse_function_call_parse_results.append(ttrvalue)
+    
+    def test_07_resolve_function_call(self):
+        #print("# scalar|array|contiguous array|full array")
+        for i,test in enumerate(TestSemantics.parse_function_call_testdata):
+            ttrvalue = TestSemantics.parse_function_call_parse_results[i] 
             semantics.resolve_arith_expr(ttrvalue,scope)
             result_tuple = (
               ttrvalue.is_function_call,
@@ -259,13 +276,13 @@ class TestSemantics(unittest.TestCase):
               ttrvalue.kind,
               ttrvalue.bytes_per_element,
               ttrvalue.rank,
-              ttrvalue.is_contiguous_array,
-              ttrvalue.is_full_array, 
+              ttrvalue.yields_contiguous_array,
+              ttrvalue.yields_full_array, 
             )
             #print(test)
             #print(result_tuple)
             self.assertEqual(
-              results[i],
+              TestSemantics.resolve_function_call_results[i],
               result_tuple
             )
 

@@ -39,7 +39,7 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
                                oder to determine if a variable is unused. 
     :return: The modified HIP C++ code.
     """
-    statements = code_to_modify.split(";")
+    statements = code_to_modify.split(";") # TODO breaks for-loop
     condition = True
     while condition:
         condition = False
@@ -236,9 +236,10 @@ class AccResourceFilter:
           "vector_lane",self.vector_length
         )
         if len(conditions):
-            return "\n     && ".join(conditions)
+            return " && ".join(conditions)
+            #return "\n     && ".join(conditions)
         else:
-            return "true" 
+            return "true"
     def statement_selection_condition(self):
         self.assert_is_well_defined()
         conditions = []
@@ -257,9 +258,10 @@ class AccResourceFilter:
               )
             )
         if len(conditions):
-            return "\n     && ".join(conditions)
+            return " && ".join(conditions)
+            #return "\n     && ".join(conditions)
         else:
-            return "true" 
+            return "true"
     def index(self):
         return "_coords.get_vector_lane_id({res})".format(
           res=self.resource_triple_name       
@@ -534,10 +536,11 @@ if ( {loop_entry_condition} ) {{
         return (loop_open,loop_close,resource_filter)
 
     def map_to_hip_cpp(self,
-          remove_unnecessary=True):
+          remove_unnecessary=False):
         """:return: HIP C++ device code.
         :note: Maps to blocks and threads if self.grid_dim is chosen
                as 'x','y','z'.
+        :param bool remove_unnecessary: Experimental feature, can lead to erroneous results!
         """
         self.assert_is_well_defined()
         indent = "" 
@@ -676,10 +679,13 @@ if ( {loop_entry_condition} ) {{
                   element_loop.body_prolog.replace("$idx$",worker_id_var),
                   indent
                 )
-                loop_close = textwrap.indent(
-                  element_loop.body_epilog.replace("$idx$",worker_id_var),
-                  indent
-                ) + loop_close
+                loop_close = (
+                  textwrap.indent(
+                    element_loop.body_epilog.replace("$idx$",worker_id_var),
+                    indent
+                  ) 
+                  + loop_close
+                )
                 indent += element_loop.body_extra_indent
             if self.grid_dim == None: 
                 loop_close += hip_epilog
@@ -709,6 +715,7 @@ if ( {loop_entry_condition} ) {{
             self.body_epilog.replace("$idx$",self.index),
             indent
           ) + loop_close
+        print(loop_open)
         if remove_unnecessary:
             loop_open = remove_unnecessary_helper_variables(
               loop_open,[loop_close]
@@ -854,7 +861,10 @@ class Loopnest:
         result = Loopnest(tile_loops[:] + element_loops[:])
         return result
 
-    def map_to_hip_cpp(self,remove_unnecessary=True):
+    def map_to_hip_cpp(self,remove_unnecessary=False):
+        """
+        :param bool remove_unnecessary: Experimental feature, can lead to erroneous results!
+        """
         loopnest_open  = ""
         loopnest_close  = ""
         indent = ""
@@ -895,14 +905,3 @@ class Loopnest:
                loopnest_close,
                resource_filter,
                indent)
-
-# todo: implement
-# todo: workaround, for now expand all simple workshares
-# Workshares are interesting because the loop
-# bounds might actually coincide with the array
-# dimensions of a variable
-#class Workshare:
-#    pass
-## Workshare that reduces some array to a scalar, e.g. MIN/MAX/...
-#class ReducingWorkshare:
-#    pass 

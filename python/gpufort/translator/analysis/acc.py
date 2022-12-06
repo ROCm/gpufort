@@ -163,6 +163,7 @@ def _analyse_directive_action(
         if device_specific_clauses_apply_to_input_device_type:
             result.worker.value = ttnode.value
     elif isinstance(ttnode,tree.TTAccClauseVector):
+        print("hallo")
         if device_specific_clauses_apply_to_input_device_type:
             result.vector.value = ttnode.value
     elif isinstance(ttnode,tree.TTAccNoArgumentClause):
@@ -266,26 +267,16 @@ def analyze_directive(ttaccdirective,
     )
     return result
 
-def _find_rvalues_in_directive_action(expr,parents,lvalues,rvalues):
-    """Traversal action that searches through arguments of loop clauses and discover
-    rvalues expressions."""
-    if isinstance(expr,(
-        tree.TTAccClauseGang,
-        tree.TTAccClauseTile,
-        tree.TTAccClauseVector,
-        tree.TTAccClauseWorker)):
-          fortran.find_lvalues_and_rvalues(expr,lvalues,rvalues)
-
 def find_rvalues_in_directive(ttaccdirective,rvalues):
     """Search through arguments of loop directive clauses and discover
     rvalues expressions.
     :param list rvalues: List, inout argument
     """
     lvalues = []
-    tree.traversals.traverse(
-        ttaccdirective,
-        _find_rvalues_in_directive_action,
-        tree.traversals.no_action,
-        tree.traversals.no_crit,
-        lvalues,
-        rvalues)
+    for ttnode in ttaccdirective.walk_preorder():
+        if isinstance(expr,(
+            tree.TTAccClauseGang,
+            tree.TTAccClauseTile,
+            tree.TTAccClauseVector,
+            tree.TTAccClauseWorker)):
+              fortran.find_lvalues_and_rvalues(expr,lvalues,rvalues)

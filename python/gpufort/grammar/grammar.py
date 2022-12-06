@@ -1,14 +1,8 @@
-# SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import re
 
-# third-party modules
-#import cPyparsing as pyp # todo: unfortunately, evhub/cpyparsing seems to generate different parse tree
-# underlying pyparsing implementation might be too oudated (is from "python2.4 times").
-# Substantial performance gains might make it worth it to investigate this further.
-
 try:
-    import cPyparsing as pyp
+    import cPyparsing as pyp # cythonized version of pyparsing
 except:
     import pyparsing as pyp
     
@@ -16,6 +10,47 @@ pyp.ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
 pyp.ParserElement.enablePackrat()
 
 class Grammar:
+    
+    def __init__(self,
+        ignorecase=False,
+        unary_op_parse_action=None,
+        binary_op_parse_action=None,
+        no_logic_ops=False,
+        no_custom_ops=False
+      ):
+        """
+        :param bool ignorecase: Create case-insensitive parser for Fortran keywords.
+                                 Otherwise, assume lower case.
+        :param unary_op_parse_action: Pyparsing parse action (function or class) to run (or init) when parsing unary operator applications.
+                                      Look up pyparsing parse actions for more details.
+        :param binary_op_parse_action: Pyparsing parse action (function or class) to run (or init) when parsing binary operator applications.
+                                      Look up pyparsing parse actions for more details.
+        :param no_logic_ops: Include logic operations into the arithmetic expression grammar,
+                                     defaults to False. Has impact on performance.
+        :param no_custom_ops: Include custom operations into the arithmetic expression grammar,
+                                     defaults to False. Has impact on performance.
+        """
+        # basic
+        self._init_default_values()
+        self._init_basic_tokens()
+        self._init_keywords(ignorecase)
+        self._init_data_types(ignorecase)
+        self._init_arithmetic_expressions(
+          ignorecase,
+          unary_op_parse_action,
+          binary_op_parse_action,
+          no_logic_ops,
+          no_custom_ops
+        ) 
+        self._init_fortran_statements(ignorecase) 
+        self._init_gpufort_control_directives(ignorecase)
+        #
+        self._init_cuda_fortran_expressions(ignorecase)
+        #
+        self._init_openacc_keywords(ignorecase)
+        self._init_openacc_clauses(ignorecase)
+        self._init_openacc_directives(ignorecase)
+
     def _re_flags(self,ignorecase):
         if ignorecase:
             return re.IGNORECASE
@@ -454,6 +489,8 @@ class Grammar:
         flags = self._re_flags(ignorecase)
         #
         self.ACC = literal_cls("acc").suppress()
+        self.INIT = literal_cls("init").suppress()
+        self.SHUTDOWN = literal_cls("shutdown").suppress()
         self.KERNELS = literal_cls("kernels").suppress()
         self.PARALLEL = literal_cls("parallel").suppress()
         self.LOOP = literal_cls("loop").suppress()
@@ -464,7 +501,7 @@ class Grammar:
         self.ATOMIC = literal_cls("atomic").suppress()
         self.UPDATE = literal_cls("update").suppress()
         self.SERIAL = literal_cls("serial").suppress()
-        self.CACHE = literal_cls("cache").suppress()
+        self.cache = literal_cls("cache").suppress()
         self.ROUTINE = literal_cls("routine").suppress()
         self.DECLARE = literal_cls("declare").suppress()
         self.ASYNC = literal_cls("async").suppress()
@@ -472,7 +509,6 @@ class Grammar:
         self.NUM_GANGS = literal_cls("num_gangs").suppress()
         self.NUM_WORKERS = literal_cls("num_workers").suppress()
         self.VECTOR_LENGTH = literal_cls("vector_length").suppress()
-        self.DEVICE_TYPE = literal_cls("device_type").suppress()
         self.COPY = literal_cls("copy").suppress()
         self.COPYIN = literal_cls("copyin").suppress()
         self.COPYOUT = literal_cls("copyout").suppress()
@@ -503,41 +539,59 @@ class Grammar:
         self.WORKER = literal_cls("worker").suppress() 
         self.ACC_REDUCTION_OP = pyp.Regex(r"\+|\*|\b(max|min|iand|ior|ieor)\b|\.(and|or|eqv|neqv)\.",flags)
         self.DEVICE_TYPE = pyp.Regex(r"\b(dtype|device_type)\b",flags).suppress()
-        self.acc_noarg_clause = pyp.Regex(r"\b(seq|auto|independent|read|write|capture|nohost|finalize|if_present)\b",flags)
-        self.acc_routine_noarg_clause = pyp.Regex(r"\b(seq|auto|independent|read|write|capture|nohost|finalize|if_present)\b",flags)
+        self.DEVICE_NUM = literal_cls("device_num").suppress() 
+        self.acc_noarg_clause = pyp.Regex(r"\b(seq|auto|independent|read|write|capture|update|nohost|finalize|if_present)\b",flags)
 
-    def _init_openacc_directives(self,ignorecase):
+    def _init_openacc_clauses(self,ignorecase):
+        """
+        :note: Does not consider argument names as they can be used in
+               the acc cache argument, the copyin clause or the wait clause.
+        """
         literal_cls = self._literal_cls(ignorecase)
         flags = self._re_flags(ignorecase)
         #
-        self.acc_var_list = self.LPAR + pyp.Group(pyp.delimitedList(self.rvalue)) + self.RPAR
+        self.acc_var_list = self.LPAR + pyp.delimitedList(self.rvalue) + self.RPAR
+
+        def make_arg_(expr):
+            return self.LPAR + expr + self.RPAR
+        
+        arith_expr_arg = make_arg_(self.arith_expr)
+        opt_arith_expr_arg = pyp.Optional(arith_expr_arg)
         
         # clauses
-        self.acc_clause_gang = self.GANG + pyp.Optional(self.LPAR + self.arith_expr + self.RPAR,default = None)
-        self.acc_clause_worker = self.WORKER + pyp.Optional(self.LPAR + self.arith_expr + self.RPAR,default = None)
-        self.acc_clause_vector = self.VECTOR + pyp.Optional(self.LPAR + self.arith_expr + self.RPAR,default = None)
-        self.acc_clause_num_gangs = self.NUM_GANGS + self.LPAR + self.arith_expr + self.RPAR 
-        self.acc_clause_num_workers = self.NUM_WORKERS + self.LPAR + self.arith_expr + self.RPAR 
-        self.acc_clause_vector_length = self.VECTOR_LENGTH + self.LPAR + self.arith_expr + self.RPAR
-        
-        self.acc_clause_device_type = self.DEVICE_TYPE + self.LPAR + pyp.Group(pyp.delimitedList(self.identifier) | pyp.Literal("*")) + self.RPAR
-        self.acc_clause_if = self.IF + self.LPAR + self.arith_expr + self.RPAR
-        
-        # copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link
-        self.acc_mapping_clause = self.identifier.copy() + self.acc_var_list
+        self.acc_clause_gang = self.GANG + opt_arith_expr_arg # could be combined
+        self.acc_clause_worker = self.WORKER + opt_arith_expr_arg
+        self.acc_clause_vector = self.VECTOR + opt_arith_expr_arg 
+        self.acc_clause_num_gangs = self.NUM_GANGS + arith_expr_arg  # could be combined
+        self.acc_clause_num_workers = self.NUM_WORKERS + arith_expr_arg
+        self.acc_clause_vector_length = self.VECTOR_LENGTH + arith_expr_arg
+        self.acc_clause_device_num = self.DEVICE_NUM + arith_expr_arg
+        self.acc_clause_device_type = (
+          self.DEVICE_TYPE 
+          + make_arg_(pyp.Group(
+              pyp.delimitedList(self.identifier) 
+              | pyp.Literal("*")
+          ))
+        )
+        self.acc_clause_if = self.IF + arith_expr_arg
         
         self.acc_clause_default = self.DEFAULT + self.LPAR + pyp.Regex(r"none|present",flags) + self.RPAR # do not suppress
         self.acc_clause_reduction = self.REDUCTION + self.LPAR + self.ACC_REDUCTION_OP + pyp.Suppress(":") + pyp.Group(pyp.delimitedList(self.rvalue)) + self.RPAR
-        self.acc_clause_collapse = self.COLLAPSE + self.LPAR + self.arith_expr + self.RPAR
-        self.acc_clause_self = self.SELF + self.LPAR + self.arith_expr + self.RPAR # for compute constructs; not for update
+        self.acc_clause_collapse = self.COLLAPSE + arith_expr_arg 
+        self.acc_clause_self = self.SELF + arith_expr_arg # for compute constructs; not for update
         self.acc_clause_bind = self.BIND + self.LPAR + self.identifier + self.RPAR
-        self.acc_clause_tile = self.TILE + self.LPAR + pyp.Group(pyp.delimitedList(self.arith_expr)) + self.RPAR
-        self.acc_clause_wait = self.WAIT + pyp.Optional(pyp.Group(pyp.delimitedList(self.arith_expr)), default = [])
+        self.acc_clause_tile = self.TILE + self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR
+        self.acc_clause_wait = self.WAIT + pyp.Optional(self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR)
         self.acc_clause_async = self.ASYNC + pyp.Optional(self.LPAR + self.rvalue + self.RPAR, default = self.CLAUSE_VALUE_NOT_SPECIFIED) 
-        
-        # self.ACC LoopNest directive
-        self.ACC_START = self.PRAGMA + self.ACC 
-        self.ACC_END = self.ACC_START.copy() + self.END
+        # copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link
+        MAPPING_CLAUSE_KIND = py.Regex(
+          r"\b("
+          +"|".join([
+            "copy", "copyin", "copyout", "create", "no_create", "present", "deviceptr", "attach", "detach", 
+            "use_device", "delete", "private", "first_private", "host", "device_resident", "link"
+            ])
+          + r")\b"
+        self.acc_mapping_clause = MAPPING_CLAUSE_KIND + self.acc_var_list
         
         self.acc_clause = (
           self.acc_clause_if
@@ -548,6 +602,7 @@ class Grammar:
           | self.acc_clause_num_workers
           | self.acc_clause_vector_length
           | self.acc_clause_device_type
+          | self.acc_clause_device_num
           | self.acc_clause_default
           | self.acc_clause_reduction
           | self.acc_clause_collapse
@@ -559,25 +614,76 @@ class Grammar:
           | self.acc_mapping_clause
           | self.acc_noarg_clause
         )
-       
-        # todo: can be simplified as multi-line statementsa re collapsed
-        self.acc_clause_list = pyp.Group(
-          pyp.Optional(
-            pyp.OneOrMore(pyp.Optional(self.ACC_START + pyp.Literal("&")).suppress() + self.acc_clause),
-            default=[]
-          )
+        self.acc_clause_list = pyp.ZeroOrMore(self.acc_clause)
+        
+    def _init_openacc_directives(self,ignorecase):
+        literal_cls = self._literal_cls(ignorecase)
+        flags = self._re_flags(ignorecase)
+        
+        self.ACC_START = self.PRAGMA + self.ACC 
+        self.ACC_END = self.ACC_START.copy() + self.END
+        def make_acc_directive_(self,expr)
+            return self.ACC_START + expr + self.acc_clause_list
+        #
+        GENERIC_DIRECTIVE_KIND = pyp.Regex(
+          r"\b("+
+          "|".join([
+            r"data",
+            r"enter\s+data",
+            r"exit\s+data",
+            r"host_data",
+            r"loop",
+            # r"cache", has argument
+            r"atomic",
+            r"declare",
+            #r"routine", may have argument
+            r"init",
+            r"set",
+            r"update",
+            # r"wait", may have argument
+            r"serial",
+            r"parallel",
+            r"kernels",
+            r"parallel\s+loop",
+            r"kernels\s+loop",
+            r"shutdown"
+          ])
+          + r")\b",
+          flags
         )
-        
-        self.ACC_END_HOST_DATA = self.ACC_END + self.HOST_DATA
-        self.ACC_END_DATA = self.ACC_END + self.DATA
-        self.ACC_END_ATOMIC = self.ACC_END + self.ATOMIC
-        
-        self.acc_update = self.ACC_START + self.UPDATE + self.acc_clause_list # 2 tokens -> [(False|True),[*]],*
-        self.acc_wait = self.ACC_START + self.acc_clause_wait + self.acc_clause_list
-        self.acc_host_data = self.ACC_START + self.HOST_DATA + self.acc_clause_list
-        self.acc_data = self.ACC_START + self.DATA + self.acc_clause_list
-        self.acc_enter_data = self.ACC_START + self.ENTER + self.DATA + self.acc_clause_list
-        self.acc_exit_data = self.ACC_START + self.EXIT  + self.DATA + self.acc_clause_list
+
+        END_DIRECTIVE_KIND = pyp.Regex(
+          r"\b("+
+          "|".join([
+            r"data",
+            r"host_data",
+            r"cache",
+            r"atomic",
+            r"serial",
+            r"parallel(\s+loop)?",
+            r"kernels(\s+loop)?",
+          ])
+          + r")\b",
+          flags
+        )
+        self.acc_generic_directive = make_acc_directive_(
+          GENERIC_DIRECTIVE_KIND 
+        )
+        self.acc_end_directive = make_acc_directive_(
+          ACC_END_DIRECTIVE_KIND 
+        )
+        # directives with (optional) argument list
+        self.acc_wait = (
+          self.ACC_START
+          + self.acc_clause_wait # todo: support wait keyword arguments (devnum,queues)
+          + pyp.ZeroOrMore(acc_clause_async | acc_clause_if)
+        self.acc_cache = (
+          self.ACC_START 
+          + self.CACHE 
+          + self.LPAR # todo: consider readonly: prefix
+          + self.acc_var_list 
+          + self.RPAR 
+        )
         self.acc_routine = ( 
           self.ACC_START 
           + self.ROUTINE 
@@ -589,84 +695,15 @@ class Grammar:
           ) 
           + self.acc_clause_list
         )
-        self.acc_declare = self.ACC_START + self.DECLARE + self.acc_clause_list
-        self.acc_atomic = self.ACC_START + self.ATOMIC + self.acc_clause_list
-        self.acc_cache = self.ACC_START + self.CACHE + self.LPAR + self.acc_var_list + self.RPAR
-        self.acc_loop = self.ACC_START + self.LOOP + self.acc_clause_list
-        
-        # kernels / parallels
-        self.acc_serial = self.ACC_START + self.SERIAL   + self.acc_clause_list
-        self.acc_kernels = self.ACC_START + self.KERNELS  + ~self.LOOP + self.acc_clause_list
-        self.acc_parallel = self.ACC_START + self.PARALLEL + ~self.LOOP + self.acc_clause_list
-        self.acc_parallel_loop = self.ACC_START + self.PARALLEL + self.LOOP  + self.acc_clause_list
-        self.acc_kernels_loop = self.ACC_START + self.KERNELS  + self.LOOP  + self.acc_clause_list
-        
-        self.ACC_END_SERIAL = self.ACC_END + self.SERIAL
-        self.ACC_END_KERNELS = self.ACC_END + self.KERNELS  + ~self.LOOP
-        self.ACC_END_PARALLEL = self.ACC_END + self.PARALLEL + ~self.LOOP
-        self.ACC_END_PARALLEL_LOOP = self.ACC_END + self.PARALLEL + self.LOOP # copy() allows us to attach different parse action
-        self.ACC_END_KERNELS_LOOP = self.ACC_END + self.KERNELS  + self.LOOP
-        
-        # manual grouping
-        self.acc_simple_directive = (
-            self.acc_host_data 
-          | self.acc_data 
-          | self.acc_enter_data 
-          | self.acc_exit_data 
-          | self.acc_loop 
-          | self.acc_routine 
-          | self.acc_declare 
-          | self.ACC_END_DATA
-        ) # self.TBC
-        
-        self.acc_host_directive = (
-            self.acc_kernels_loop 
-          | self.acc_parallel_loop 
-          | self.acc_kernels 
-          | self.acc_parallel 
-          | self.acc_simple_directive 
-          | self.ACC_END_DATA 
-          | self.ACC_END_HOST_DATA
-        )
 
-    def __init__(self,
-        ignorecase=False,
-        unary_op_parse_action=None,
-        binary_op_parse_action=None,
-        no_logic_ops=False,
-        no_custom_ops=False
-      ):
-        """
-        :param bool ignorecase: Create case-insensitive parser for Fortran keywords.
-                                 Otherwise, assume lower case.
-        :param unary_op_parse_action: Pyparsing parse action (function or class) to run (or init) when parsing unary operator applications.
-                                      Look up pyparsing parse actions for more details.
-        :param binary_op_parse_action: Pyparsing parse action (function or class) to run (or init) when parsing binary operator applications.
-                                      Look up pyparsing parse actions for more details.
-        :param no_logic_ops: Include logic operations into the arithmetic expression grammar,
-                                     defaults to False. Has impact on performance.
-        :param no_custom_ops: Include custom operations into the arithmetic expression grammar,
-                                     defaults to False. Has impact on performance.
-        """
-        # basic
-        self._init_default_values()
-        self._init_basic_tokens()
-        self._init_keywords(ignorecase)
-        self._init_data_types(ignorecase)
-        self._init_arithmetic_expressions(
-          ignorecase,
-          unary_op_parse_action,
-          binary_op_parse_action,
-          no_logic_ops,
-          no_custom_ops
-        ) 
-        self._init_fortran_statements(ignorecase) 
-        self._init_gpufort_control_directives(ignorecase)
-        #
-        self._init_cuda_fortran_expressions(ignorecase)
-        #
-        self._init_openacc_keywords(ignorecase)
-        self._init_openacc_directives(ignorecase)
+        # combines all directives
+        self.acc_directive = (
+          self.acc_end_directive
+          | self.acc_generic_directive
+          | self.acc_wait
+          | self.acc_cache
+          | self.acc_routine
+        )
 
     # API
     def parse_arith_expr(self,expr,parse_all=True):

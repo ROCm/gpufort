@@ -39,7 +39,7 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
                                oder to determine if a variable is unused. 
     :return: The modified HIP C++ code.
     """
-    statements = code_to_modify.split(";") # TODO breaks for-loop
+    statements = code_to_modify.split(";") # TODO breaks for-loops apart
     condition = True
     while condition:
         condition = False
@@ -59,11 +59,12 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
                         other_count = code.count(varname)
                 for statement in list(statements):
                     if varname in statement:
+                        match = p_const_int_decl.search(statement)
                         if count == 1 and other_count == 0: # unused variable
-                            statements.remove(statement)
-                            condition = True
+                            if match:
+                                statements.remove(statement)
+                                condition = True
                         elif other_count == 0: # name not used in other files
-                            match = p_const_int_decl.search(statement)
                             if match:
                                 statements.remove(statement)
                                 replacements[varname] = match.group("rhs")
@@ -715,11 +716,13 @@ if ( {loop_entry_condition} ) {{
             self.body_epilog.replace("$idx$",self.index),
             indent
           ) + loop_close
-        print(loop_open)
+        #print(loop_open)
         if remove_unnecessary:
             loop_open = remove_unnecessary_helper_variables(
               loop_open,[loop_close]
             )
+            #print(loop_open) # todo: remove_unnecessary may remove too much code if for-loops are present
+            #need more robust data structures
         return (loop_open,
                 loop_close,
                 resource_filter,
@@ -861,7 +864,7 @@ class Loopnest:
         result = Loopnest(tile_loops[:] + element_loops[:])
         return result
 
-    def map_to_hip_cpp(self,remove_unnecessary=False):
+    def map_to_hip_cpp(self,remove_unnecessary=True):
         """
         :param bool remove_unnecessary: Experimental feature, can lead to erroneous results!
         """

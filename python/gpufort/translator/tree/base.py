@@ -42,7 +42,6 @@ class TTNode(object):
     def walk_preorder(self):
         yield self
         for child in self.child_nodes():
-            print(str(type(child))+" of "+str(type(self)))
             yield from child.walk_preorder()
     
     def walk_postorder(self):

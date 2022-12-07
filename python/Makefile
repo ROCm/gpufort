@@ -1,7 +1,7 @@
-GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES  := test.grammar_translator.acc test.grammar_translator.cuf \
-	test.grammar_translator.linemapper test.grammar_translator
-GRAMMAR_TEST_COLLECTIONS                      := $(addsuffix .grammar,$(GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
-TRANSLATOR_TEST_COLLECTIONS                   := $(addsuffix .translator,$(GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
+TRANSLATOR_TEST_COLLECTIONS_PREFIXES  := test.translator.acc test.translator.cuf \
+	test.translator.linemapper test.translator
+GRAMMAR_TEST_COLLECTIONS                      := $(addsuffix .grammar,$(TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
+TRANSLATOR_TEST_COLLECTIONS                   := $(addsuffix .translator,$(TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
 
 UTIL_TEST_COLLECTIONS = test.util
 

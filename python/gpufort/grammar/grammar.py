@@ -499,6 +499,7 @@ class Grammar:
         self.EXIT = literal_cls("exit").suppress()
         self.HOST_DATA = literal_cls("host_data").suppress()
         self.ATOMIC = literal_cls("atomic").suppress()
+        self.CACHE = literal_cls("cache").suppress()
         self.UPDATE = literal_cls("update").suppress()
         self.SERIAL = literal_cls("serial").suppress()
         self.cache = literal_cls("cache").suppress()
@@ -574,23 +575,37 @@ class Grammar:
           ))
         )
         self.acc_clause_if = self.IF + arith_expr_arg
+        self.acc_clause_self = self.SELF + arith_expr_arg
         
         self.acc_clause_default = self.DEFAULT + self.LPAR + pyp.Regex(r"none|present",flags) + self.RPAR # do not suppress
-        self.acc_clause_reduction = self.REDUCTION + self.LPAR + self.ACC_REDUCTION_OP + pyp.Suppress(":") + pyp.delimitedList(self.rvalue) + self.RPAR
+        self.acc_clause_reduction = self.REDUCTION + self.LPAR + self.ACC_REDUCTION_OP + pyp.Suppress(":") + pyp.delimitedList(self.lvalue) + self.RPAR
         self.acc_clause_collapse = self.COLLAPSE + arith_expr_arg 
-        self.acc_clause_self = self.SELF + arith_expr_arg # for compute constructs; not for update
+        self.acc_clause_update_device = (
+          self.DEVICE
+          + self.LPAR 
+          + pyp.delimitedList(self.lvalue)
+          + self.RPAR
+        ) # for compute constructs, semantic check must ensure there is only one argument
+        self.acc_clause_update_self = (
+          (self.SELF | self.HOST) 
+          + self.LPAR 
+          + pyp.delimitedList(self.lvalue)
+          + self.RPAR
+        )
         self.acc_clause_bind = self.BIND + self.LPAR + self.identifier + self.RPAR
         self.acc_clause_tile = self.TILE + self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR
         self.acc_clause_wait = self.WAIT + pyp.Optional(self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR)
-        self.acc_clause_async = self.ASYNC + pyp.Optional(self.LPAR + self.rvalue + self.RPAR, default = self.CLAUSE_VALUE_NOT_SPECIFIED) 
+        #self.acc_clause_async = self.ASYNC + pyp.Optional(self.LPAR + self.rvalue + self.RPAR, default = self.CLAUSE_VALUE_NOT_SPECIFIED)
+        self.acc_clause_async = self.ASYNC + pyp.Optional(self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR) 
         # copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link
-        MAPPING_CLAUSE_KIND = py.Regex(
+        MAPPING_CLAUSE_KIND = pyp.Regex(
           r"\b("
           +"|".join([
             "copy", "copyin", "copyout", "create", "no_create", "present", "deviceptr", "attach", "detach", 
             "use_device", "delete", "private", "first_private", "host", "device_resident", "link"
             ])
           + r")\b"
+        )
         self.acc_mapping_clause = MAPPING_CLAUSE_KIND + self.acc_var_list
         
         self.acc_clause = (
@@ -614,16 +629,46 @@ class Grammar:
           | self.acc_mapping_clause
           | self.acc_noarg_clause
         )
-        self.acc_clause_list = pyp.ZeroOrMore(self.acc_clause)
+        self.acc_generic_clause_list = pyp.ZeroOrMore(self.acc_clause)
+        self.acc_update_clause_list = pyp.ZeroOrMore(
+          self.acc_clause_async  
+          | self.acc_clause_wait
+          | self.acc_clause_device_type
+          | self.acc_clause_if
+          | self.acc_clause_update_self
+          | self.acc_clause_update_device  
+          | self.acc_noarg_clause # if_present
+        )
+        self.acc_artificial_clause_cache = ( # artificial clause for cache directive
+          self.CACHE 
+          + self.LPAR # todo: consider readonly: prefix
+          + self.acc_var_list 
+          + self.RPAR
+        ) 
+        self.acc_artificial_clause_routine = ( # articial clause for routine directive
+          self.ROUTINE 
+          + pyp.Optional(
+            self.LPAR 
+            + self.identifier_no_action 
+            + self.RPAR,
+            default = None
+          ) 
+        )
         
     def _init_acc_directives(self,ignorecase):
+        """:note: Groups as many directives as possible into
+                  'generic directive' and 'end directive kind' 
+                  to minimize work for pyparsing.
+                  Only where the structure of the directive differs
+                  due to an (optional) argument list (acc routine/cache/wait)
+                  or the meaning of a clause differs (acc update),
+                  separate nodes are introduced.
+        """
         literal_cls = self._literal_cls(ignorecase)
         flags = self._re_flags(ignorecase)
         
         self.ACC_START = self.PRAGMA + self.ACC 
         self.ACC_END = self.ACC_START.copy() + self.END
-        def make_acc_directive_(self,expr)
-            return self.ACC_START + expr + self.acc_clause_list
         #
         GENERIC_DIRECTIVE_KIND = pyp.Regex(
           r"\b("+
@@ -639,13 +684,11 @@ class Grammar:
             #r"routine", may have argument
             r"init",
             r"set",
-            r"update",
+            #r"update", different definition of 'self' clause
             # r"wait", may have argument
             r"serial",
-            r"parallel",
-            r"kernels",
-            r"parallel\s+loop",
-            r"kernels\s+loop",
+            r"parallel(\s+loop)?",
+            r"kernels(\s+loop)?",
             r"shutdown"
           ])
           + r")\b",
@@ -666,45 +709,38 @@ class Grammar:
           + r")\b",
           flags
         )
-        self.acc_generic_directive = make_acc_directive_(
-          GENERIC_DIRECTIVE_KIND 
+        self.acc_generic_directive = (
+          self.ACC_START
+          + GENERIC_DIRECTIVE_KIND
+          + self.acc_generic_clause_list
         )
-        self.acc_end_directive = make_acc_directive_(
-          ACC_END_DIRECTIVE_KIND 
-        )
-        # directives with (optional) argument list
+        self.acc_end_directive = self.END + END_DIRECTIVE_KIND 
+        # directives with (optional) argument list or conflicting clause names
         self.acc_wait = (
           self.ACC_START
           + self.acc_clause_wait # todo: support wait keyword arguments (devnum,queues)
-          + pyp.ZeroOrMore(acc_clause_async | acc_clause_if)
-        self.acc_artificial_clause_cache = (
-          + self.CACHE 
-          + self.LPAR # todo: consider readonly: prefix
-          + self.acc_var_list 
-          + self.RPAR
-        ) 
+          + pyp.ZeroOrMore(self.acc_clause_async | self.acc_clause_if)
+        )
         self.acc_cache = self.ACC_START + self.acc_artificial_clause_cache
-        self.acc_artificial_clause_routine = (
-          + self.ROUTINE 
-          + pyp.Optional(
-            self.LPAR 
-            + self.identifier_no_action 
-            + self.RPAR,
-            default = None
-        ) 
         self.acc_routine = ( 
           self.ACC_START 
           + self.acc_artificial_clause_routine
-          + self.acc_clause_list
+          + self.acc_generic_clause_list
         )
+        self.acc_update = (
+          self.ACC_START
+          + self.UPDATE
+          + self.acc_update_clause_list
+        ) 
 
         # combines all directives
         self.acc_directive = (
           self.acc_end_directive
-          | self.acc_generic_directive
           | self.acc_wait
           | self.acc_cache
           | self.acc_routine
+          | self.acc_update
+          | self.acc_generic_directive
         )
 
     # API

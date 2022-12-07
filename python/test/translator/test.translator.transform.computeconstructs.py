@@ -38,6 +38,11 @@ c(:) = b(1,1)+3
 !$acc end kernels
 """,
   """\
+!$acc parallel loop vector 
+c(:) = 1
+!$acc end parallel loop
+""",
+  """\
 !$acc parallel loop reduction(+:j)
 do i = 1, N
   j = j + 1
@@ -101,7 +106,7 @@ class TestTransformAcc(unittest.TestCase):
     def test_01_transform(self):
         device_type = "radeon"
         #for i,test in enumerate(testdata[-1:]):
-        for i,test in enumerate(testdata[0:]):
+        for i,test in enumerate(testdata[2:3]):
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
               statements,result_name=None,scope=scope

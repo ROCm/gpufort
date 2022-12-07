@@ -47,9 +47,9 @@ class Grammar:
         #
         self._init_cuda_fortran_expressions(ignorecase)
         #
-        self._init_openacc_keywords(ignorecase)
-        self._init_openacc_clauses(ignorecase)
-        self._init_openacc_directives(ignorecase)
+        self._init_acc_keywords(ignorecase)
+        self._init_acc_clauses(ignorecase)
+        self._init_acc_directives(ignorecase)
 
     def _re_flags(self,ignorecase):
         if ignorecase:
@@ -116,7 +116,7 @@ class Grammar:
     def _init_data_types(self,ignorecase):
         flags = self._re_flags(ignorecase)
         self.identifier = pyp.pyparsing_common.identifier.copy()
-        self.identifier_no_action = self.identifier.copy()
+        self.identifier_no_action = self.identifier.copy() # no pyparsing parse action is assigned to it
         self.number = pyp.Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
         self.logical = pyp.Regex(r"\.(true|false)\.?(_\w+)?", flags)
         self.character = pyp.QuotedString("'", escQuote="\\")
@@ -484,7 +484,7 @@ class Grammar:
         #
         self.gpufort_control = literal_cls("!$gpufort").suppress() + pyp.Regex(r"on|off",flags)
 
-    def _init_openacc_keywords(self,ignorecase):
+    def _init_acc_keywords(self,ignorecase):
         literal_cls = self._literal_cls(ignorecase)
         flags = self._re_flags(ignorecase)
         #
@@ -542,7 +542,7 @@ class Grammar:
         self.DEVICE_NUM = literal_cls("device_num").suppress() 
         self.acc_noarg_clause = pyp.Regex(r"\b(seq|auto|independent|read|write|capture|update|nohost|finalize|if_present)\b",flags)
 
-    def _init_openacc_clauses(self,ignorecase):
+    def _init_acc_clauses(self,ignorecase):
         """
         :note: Does not consider argument names as they can be used in
                the acc cache argument, the copyin clause or the wait clause.
@@ -569,14 +569,14 @@ class Grammar:
         self.acc_clause_device_type = (
           self.DEVICE_TYPE 
           + make_arg_(pyp.Group(
-              pyp.delimitedList(self.identifier) 
+              pyp.delimitedList(self.identifier_no_action) 
               | pyp.Literal("*")
           ))
         )
         self.acc_clause_if = self.IF + arith_expr_arg
         
         self.acc_clause_default = self.DEFAULT + self.LPAR + pyp.Regex(r"none|present",flags) + self.RPAR # do not suppress
-        self.acc_clause_reduction = self.REDUCTION + self.LPAR + self.ACC_REDUCTION_OP + pyp.Suppress(":") + pyp.Group(pyp.delimitedList(self.rvalue)) + self.RPAR
+        self.acc_clause_reduction = self.REDUCTION + self.LPAR + self.ACC_REDUCTION_OP + pyp.Suppress(":") + pyp.delimitedList(self.rvalue) + self.RPAR
         self.acc_clause_collapse = self.COLLAPSE + arith_expr_arg 
         self.acc_clause_self = self.SELF + arith_expr_arg # for compute constructs; not for update
         self.acc_clause_bind = self.BIND + self.LPAR + self.identifier + self.RPAR
@@ -616,7 +616,7 @@ class Grammar:
         )
         self.acc_clause_list = pyp.ZeroOrMore(self.acc_clause)
         
-    def _init_openacc_directives(self,ignorecase):
+    def _init_acc_directives(self,ignorecase):
         literal_cls = self._literal_cls(ignorecase)
         flags = self._re_flags(ignorecase)
         
@@ -677,22 +677,24 @@ class Grammar:
           self.ACC_START
           + self.acc_clause_wait # todo: support wait keyword arguments (devnum,queues)
           + pyp.ZeroOrMore(acc_clause_async | acc_clause_if)
-        self.acc_cache = (
-          self.ACC_START 
+        self.acc_artificial_clause_cache = (
           + self.CACHE 
           + self.LPAR # todo: consider readonly: prefix
           + self.acc_var_list 
-          + self.RPAR 
-        )
-        self.acc_routine = ( 
-          self.ACC_START 
+          + self.RPAR
+        ) 
+        self.acc_cache = self.ACC_START + self.acc_artificial_clause_cache
+        self.acc_artificial_clause_routine = (
           + self.ROUTINE 
           + pyp.Optional(
             self.LPAR 
-            + self.identifier 
+            + self.identifier_no_action 
             + self.RPAR,
             default = None
-          ) 
+        ) 
+        self.acc_routine = ( 
+          self.ACC_START 
+          + self.acc_artificial_clause_routine
           + self.acc_clause_list
         )
 

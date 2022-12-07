@@ -66,19 +66,19 @@ class TTAccClauseVectorLength(TTAccResourceLimitClause):
     kind = "vector_length"
 
 class TTAccClauseDeviceNum(TTAccClause):
+    kind = "device_num"
+
     def _assign_fields(self,tokens):
         self.arg = tokens[0]
+
     def child_nodes(self):
         yield self.arg
 
 class TTAccClauseDeviceType(TTAccClause):
+    kind = "device_type"
 
     def _assign_fields(self, tokens):
-        self.kind = "device_type"
         self.device_types = tokens
-    @property
-    def kind(self):
-        return "device_type"
 
 class TTAccConditionalClause(TTAccClause):
     """Base class."""   
@@ -102,7 +102,7 @@ class TTAccUpdateTargetClause(TTAccClause):
     def _assign_fields(self,tokens):
         self.args = tokens[0]
     def child_nodes(self):
-        yield self.args
+        yield from self.args
     @property
     def update_device(self):
         return not sef.update_host
@@ -129,14 +129,17 @@ class UnprocessedMappingClause(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.kind = tokens[0]
-        self.vars = tokens[1]
+        self.var_list = tokens[1]
 
 class TTAccMappingClause(TTAccClause):
     """Base clase of specialized mapping nodes.
     """
     def __init__(self,var_list):
         TTAccClause.__init__(self)
-        self.vars = var_list 
+        self.var_list = var_list 
+
+    def child_nodes(self):
+        yield from self.var_list
 
 # TODO treat separately because of readonly modifier
 class TTAccClauseCopyin(TTAccMappingClause):
@@ -168,6 +171,7 @@ class TTAccClauseDefault(TTAccClause):
     def _assign_fields(self, tokens):
         self.kind  ="default"
         self.arg = tokens[0]
+
     @property
     def kind(self):
         return "default"
@@ -183,10 +187,11 @@ class TTAccClauseDefault(TTAccClause):
 class TTAccClauseReduction(TTAccClause):
 
     def _assign_fields(self, tokens):
-        self.op, self.vars = tokens
+        self.op = tokens[0]
+        self.var_list = list(tokens[1:])
 
     def child_nodes(self):
-        yield from self.vars
+        yield from self.var_list
 
     @property
     def kind(self):
@@ -199,7 +204,7 @@ class TTAccClauseReduction(TTAccClause):
     #        # post-process
     #        op = conv.get_operator_name(op.lower())
     #        # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
-    #    result[op] = [traversals.make_fstr(var) for var in self.vars]
+    #    result[op] = [traversals.make_fstr(var) for var in self.var_list]
     #    return result
 
 class TTAccClauseBind(TTAccClause):
@@ -214,7 +219,7 @@ class TTAccClauseBind(TTAccClause):
 class TTAccClauseTile(TTAccClause):
 
     def _assign_fields(self, tokens):
-        self.args = tokens
+        self.args = list(tokens)
 
     def child_nodes(self):
         yield from self.args   
@@ -238,7 +243,17 @@ class TTAccClauseCollapse(TTAccClause):
 class TTAccClauseWait(TTAccClause):
 
     def _assign_fields(self, tokens):
-       self.args = tokens
+       if len(tokens):
+           self.args = list(tokens)
+       else:
+           self.args = []
+
+    @property
+    def args_specified(self):
+        return len(self.args)
+    
+    def child_nodes(self):
+        yield from self.args
     
     @property
     def kind(self):
@@ -261,6 +276,26 @@ class UnprocessedNoArgumentClause(base.TTNode):
     """
     def _assign_fields(self, tokens):
         self.kind=tokens[0]
+
+# artificial clauses for routine and cache
+class TTAccArtificialClauseRoutine(TTAccClause):
+    """Artificial routine clause for routine directive."""   
+ 
+    def _assign_fields(self,tokens):
+        if len(tokens):
+            self.name = tokens[0]
+        else:
+            self.name = None
+  
+    @property
+    def name_specified(self):
+        return self.name != None
+
+class TTAccArtificialClauseCache(TTAccClause):
+    """Artificial cache clause for cache directive."""   
+ 
+    def _assign_fields(self,tokens):
+        self.var_list = list(tokens)
 
 def acc_clause_parse_action(tokens):
     """:Returns specialized clause instance
@@ -292,7 +327,7 @@ def acc_clause_parse_action(tokens):
                     TTAccClauseFirstPrivate,
                     TTAccClauseUseDevice]:
             if cls.kind == clause.kind:
-                return cls(clause.vars) 
+                return cls(clause.var_list) 
     else:
         return clause
 
@@ -308,6 +343,7 @@ class TTAccDirective(base.TTNode)
     def _assign_fields(self,clauses):
         self.clauses = clauses
         self._check_clauses()
+        self._named_device_types = self._get_named_device_types()
 
     def child_nodes(self):
         """:note: might be overwritten, don't delete to walk_clauses."""
@@ -315,6 +351,51 @@ class TTAccDirective(base.TTNode)
 
     def walk_clauses(self):
         yield from self.clauses
+
+    def walk_matching_clauses(self,cls):
+        """:return: All clauses that are an instance of 'cls'.
+        :param str cls: The class or base class of the clause to lookup.
+        """
+        for clause in self.walk_clauses():
+            if isinstance(clause,cls):
+                yield cls
+      
+    def _get_named_device_types(self)
+        """:return: A list of device type identifiers found 
+                    in the device type clauses."""
+        named_device_types = []
+        for clause in self.walk_matching_clauses(self,TTAccClauseDeviceType):
+            for device_type in ttnode.device_types:
+                if device_type.isidentifier():
+                    dtype_lower = device_type.lower()
+                    if dtype_lower in named_device_types:
+                        return util.error.SyntaxError(
+                          "device type '{}' specified more than once in ".format(dtype_lower)
+                          + "'device_type' clauses"
+                        )
+                    named_device_types.append()
+        return named_device_types 
+
+    def walk_clauses_device_type(self,device_type):
+        """:return: Walk clauses that apply to the given device type.
+        :param str device_type: Device type such as 'nvidia', 'radeon', or None (default).
+        :param str cls: The class or base class of the clause to lookup.
+        """
+        result = []
+        current_device_types = [] 
+        def clause_applies_to_device_type_(device_type):
+            nonlocal current_device_types
+            return (
+              not len(current_device_types) # no device_type clause encountered yet
+              or device_type in current_device_types # device-type-specific clauses found
+              or (not device_type in _self.named_device_types and current_device_types[0] == "*")
+            )
+        for clause in self.walk_clauses():
+            if isinstance(clause,TTAccClauseDeviceType):
+                current_device_types = clause.device_types
+            elif isinstance(clause,cls):
+                if clause_applies_to_device_type_(device_type):
+                    yield clause
 
     def _is_legal_clause(self,clause):
         assert False, "must be implemented by subclass"
@@ -883,9 +964,98 @@ class TTAccUpdate(TTAccDirective):
      
 class TTAccWait(TTAccDirective):
     kind = "wait"
+    
+    def __init__(self,tokens):
+        assert isinstance(self.tokens[0],TTAccClauseWait)
+        TTAccDirective.__init__(self,tokens)
+   
+    def _is_legal_clause(self,clause):
+        return isinstance(clause,(
+            TTAccClauseWait,
+            TTAccClauseAsync,
+            TTAccClauseIf,
+          ))
+
+    def _is_unique_clause(self,clause):
+        return isinstance(clause,(
+            TTAccClauseWait,
+            TTAccClauseIf,
+          ))
+    def _is_unique_clause_per_device_type(self,clause):
+        return False
+    def _may_follow_device_type_clause(self,clause):
+        return self._is_unique_clause_per_device_type(clause)
+
+class TTAccRoutine(TTAccDirective):
+    kind = "routine"
+    
+    def __init__(self,tokens):
+        assert isinstance(self.tokens[0],TTAccArtificialClauseRoutine)
+        self._arg_clause = self.tokens[0]
+        TTAccDirective.__init__(self,tokens[1:])
+        self._check_has_at_least_one_of((
+          TTAccClauseGang,
+          TTAccClauseWorker,
+          TTAccClauseVector,
+          TTAccClauseSeq
+        ))
+
+    @property
+    def name_specified(self):
+        return self._arg_clause.name_specified
+    
+    @property
+    def name(self):
+        return self._arg_clause.name
+   
+    def _is_legal_clause(self,clause):
+        return isinstance(clause,(
+            TTAccClauseGang, # :todo: TTAccRoutineGang to support dim
+            TTAccClauseWorker,
+            TTAccClauseVector,
+            TTAccClauseSeq,
+            TTAccClauseBind, # :todo: identifier (as in language being compiled) vs string (unmodified)
+            TTAccClauseDeviceType,
+            TTAccClauseDeviceNoHost,
+          ))
+
+    def _is_unique_clause(self,clause):
+        return isinstance(clause,(
+            TTAccClauseBind,
+            TTAccClauseIf,
+          ))
+    def _is_unique_clause_per_device_type(self,clause):
+        return isinstance(clause,(
+            TTAccClauseGang, # :todo: TTAccRoutineGang to support dim
+            TTAccClauseWorker,
+            TTAccClauseVector,
+            TTAccClauseSeq,
+            TTAccClauseBind, # :todo: identifier (as in language being compiled) vs string (unmodified)
+          ))
+
+    def _may_follow_device_type_clause(self,clause):
+        return self._is_unique_clause_per_device_type(clause)
 
 class TTAccCache(TTAccDirective):
     kind = "cache"
+
+    def __init__(self,tokens):
+        assert isinstance(self.tokens[0],TTAccArtificialClauseCache)
+        self._arg_clause = self.tokens[0]
+        TTAccDirective.__init__(self,[]) # no clauses
+    
+    @property
+    def var_list(self):
+        return self._arg_clause.var_list
+        
+    def _is_legal_clause(self,clause):
+        return False
+    def _is_unique_clause(self,clause):
+        return False
+    def _is_unique_clause_per_device_type(self,clause):
+        return False
+    def _may_follow_device_type_clause(self,clause):
+        return self._is_unique_clause_per_device_type(clause)
 
 class UnprocessedGenericDirective(base.TTNode):
     """Dummy parse action that is re-translated
@@ -922,6 +1092,23 @@ def acc_directive_parse_action(tokens):
         pass
     
 def set_acc_parse_actions(grammar):
+    """Register parse actions for grammar nodes.
+    :note: Many clauses are initially parsed
+           and instantiated as generic 
+           `UnprocessedNoArgumentClause` or `UnprocessedMappingClause` objects.
+           Then, they are post-processed and converted into
+           a specialized class per clause via `acc_clause_parse_action`.
+           All parse actions are invoked by pyparsing in the correct order.
+           Notable exceptions are clauses with optional arguments. Those
+           are treated individually.
+    :note: Most directives are initially parsed and instantiated as 
+           generic `UnprocessedGenericDirective` or `UnprocessedEndDirective` objects.
+           Then,they are post-processed and converted into
+           a specialized class per directive.
+           The only exceptions are the classes TTAccWait, TTAccRoutine, and
+           TTAccCache as they have a unique structure (required or optional argument).
+           All parse actions are invoked by pyparsing in the correct order.
+    """
     grammar.acc_clause_gang.setParseAction(TTAccClauseGang)
     grammar.acc_clause_worker.setParseAction(TTAccClauseWorker)
     grammar.acc_clause_vector.setParseAction(TTAccClauseVector)
@@ -940,14 +1127,15 @@ def set_acc_parse_actions(grammar):
     grammar.acc_clause_async.setParseAction(TTAccClauseAsync)
     grammar.acc_mapping_clause.setParseAction(TTAccMappingClause)
     grammar.acc_noarg_clause.setParseAction(UnprocessedNoArgumentClause)
+    grammar.acc_artificial_clause_routine.setParseAction(
+    #
     grammar.acc_clause.setParseAction(acc_clause_parse_action)
     # 
     grammar.acc_generic_directive.setParseAction(UnprocessedGenericDirective)
     grammar.acc_end_directive.setParseAction(UnprocessedEndDirective)
-    grammar.acc_directive.setParseAction(acc_directive_parse_action)
     # directives with (optional) argument list
-    # todo:
-    #grammar.acc_wait.setParseAction(TTAccWait)
-    #grammar.acc_cache.setParseAction(TTAccCache)
-    #grammar.acc_routine.setParseAction(TTAccRoutine)
-    #grammar.acc_directive.setParseAction(acc_directive_parse_action)
+    grammar.acc_wait.setParseAction(TTAccWait)
+    grammar.acc_cache.setParseAction(TTAccCache)
+    grammar.acc_routine.setParseAction(TTAccRoutine)
+    #
+    grammar.acc_directive.setParseAction(acc_directive_parse_action)

@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-#from translator_base import *
 """
 
 Concepts:
@@ -40,13 +39,70 @@ from . import traversals
 import enum
 
 # literal expressions
-
-class Literal(base.TTNode):
+    
+class FortranType:
+    """Enum-like class containing constants 
+    for Fortran types."""
     LOGICAL = "logical"
     CHARACTER = "character"
     INTEGER = "integer"
     REAL = "real"
     COMPLEX = "complex"
+    TYPE = "type"
+
+class ArithExprNode(base.TTNode):
+    """Common base clase for the nodes that constitute
+    an arithmetic expression.
+    :note: Assumes that all subclasses have a 'type' property.
+    """
+    
+    @property
+    def yields_integer(self):
+        """:return: If the expression yields an 'integer' type.
+        """
+        return self.type == FortranType.INTEGER
+    
+    @property
+    def yields_real(self):
+        """:return: If the expression yields an 'real' type.
+        """
+        return self.type == FortranType.REAL
+    
+    @property
+    def yields_complex(self):
+        """:return: If the expression yields an 'complex' type.
+        """
+        return self.type == FortranType.COMPLEX
+    
+    @property
+    def yields_logical(self):
+        """:return: if the expression yields an 'logical' type.
+        """
+        return self.type == FortranType.LOGICAL
+
+    @property
+    def yields_character_type(self):
+        """:return: If the expression yields an 'character' type.
+        """
+        return self.type == FortranType.CHARACTER
+
+    @property
+    def yields_derived_type(self):
+        return self.type == FortranType.TYPE
+    
+    @property
+    def yields_numeric_type(self):
+        """:return: If the expression yields an 'integer','real', or 'complex' type.
+        :note: No kind information considered in this check.
+        """
+        return self.type in [
+          FortranType.INTEGER,
+          FortranType.REAL,
+          FortranType.COMPLEX,
+        ]
+        
+
+class Literal(ArithExprNode):
             
     def _assign_fields(self, tokens):
         """
@@ -113,7 +169,7 @@ class TTCharacter(Literal):
 
     @property
     def type(self):
-        return Literal.CHARACTER 
+        return FortranType.CHARACTER 
    
     @property
     def len(self):
@@ -126,7 +182,7 @@ class TTLogical(Literal):
 
     @property
     def type(self):
-        return Literal.LOGICAL
+        return FortranType.LOGICAL
 
     def cstr(self):
         if self.bytes_per_element == "1":
@@ -139,12 +195,12 @@ class TTNumber(Literal):
     def _assign_fields(self, tokens):
         Literal._assign_fields(self,tokens)
         if "." in self._value:
-            self._type = Literal.REAL 
+            self._type = FortranType.REAL 
             if self._kind == None:
                 if "d" in self._value:
                     self._kind = "c_double"
         else:
-            self._type = Literal.INTEGER
+            self._type = FortranType.INTEGER
     
     @property
     def type(self):
@@ -152,14 +208,14 @@ class TTNumber(Literal):
 
     def cstr(self):
         # todo: check kind parameter in new semantics part
-        if self._type == Literal.REAL:
+        if self._type == FortranType.REAL:
             if self.bytes_per_element == 4:
                 return self._value + "f"
             elif self.bytes_per_element == 8:
                 return self._value.replace("d", "e")
             else:
                 raise util.error.LimitationError("only single & double precision floats supported")
-        elif self._type == Literal.INTEGER:
+        elif self._type == FortranType.INTEGER:
             if self.bytes_per_element == 16:
                 return self._value + "LL"
             elif self.bytes_per_element == 8:
@@ -175,7 +231,7 @@ class TTNumber(Literal):
 
 # variable expressions
 
-class VarExpr(base.TTNode):
+class VarExpr(ArithExprNode):
 
     def _assign_fields(self, tokens):
         self._symbol_info = None
@@ -303,13 +359,13 @@ class TTFunctionCall(VarExpr):
     
     @property 
     def kind(self):
-        """
-        Checks for `kind` argument and returns expression.
+        """In case of function call, if result depends on `kind` argument, 
+        checks for `kind` argument and returns expression.
         If `kind` argument not found, returns `None` (default kind).
         :note: Assumes semantics have been analyzed before.
         """
-        if ( self.is_function_call 
-             and self.result_depends_on_kind ):
+        if (self.is_function_call 
+            and self.result_depends_on_kind):
             try:
                 arg = self.get_actual_argument("kind")
                 if isinstance(arg,TTKeywordArgument):
@@ -332,7 +388,7 @@ class TTFunctionCall(VarExpr):
                   max_rank = max(max_rank,arg.rank) 
               return max_rank
         elif self.is_array_expr:
-            return len([arg for arg in self.slice_args()])
+            return len([arg for arg in self.index_range_args()])
         else: 
             return self._get_type_defining_record().rank
 
@@ -340,12 +396,12 @@ class TTFunctionCall(VarExpr):
         for arg in self.args:
             yield arg
 
-    def slice_args(self):
+    def index_range_args(self):
         """Returns all range args in the order of their appeareance.
         """
         # todo: double check that this does not descend
         for arg in self.args:
-            if isinstance(arg,TTSlice):
+            if isinstance(arg,TTIndexRange):
                 yield arg
 
     @property
@@ -363,7 +419,7 @@ class TTFunctionCall(VarExpr):
         i.e. if it contains index ranges."""
         if self.is_array_expr:
             for arg in self.args:
-                if isinstance(arg,TTSlice):
+                if isinstance(arg,TTIndexRange):
                     return True
         return False
  
@@ -405,32 +461,32 @@ class TTFunctionCall(VarExpr):
                is specified and coincides with the array variable's lower bound.
         """
         if self.is_array_expr:
-            last_slice = -1 # must be initialized with -1
+            last_index_range = -1 # must be initialized with -1
                             # as then: i-last==1 at i=0
-            first_slice_with_ubound_or_lbound = 10**20
+            first_index_range_with_ubound_or_lbound = 10**20
             for i,arg in enumerate(self.args):
-                if isinstance(arg,TTSlice):
+                if isinstance(arg,TTIndexRange):
                     if (
                         arg.has_stride()
-                        or i - last_slice > 1 # distance between strides > 1
-                        or i > first_slice_with_ubound_or_lbound
+                        or i - last_index_range > 1 # distance between strides > 1
+                        or i > first_index_range_with_ubound_or_lbound
                       ):
                         return False
                     if (arg.has_lbound()
                        or arg.has_ubound()):
-                        first_slice_with_ubound_or_lbound = min(
-                          i,first_slice_with_ubound_or_lbound
+                        first_index_range_with_ubound_or_lbound = min(
+                          i,first_index_range_with_ubound_or_lbound
                         )
-                    last_slice = i
-            # no strides in any slice at this point
-            return last_slice >= 0
+                    last_index_range = i
+            # no strides in any index_range at this point
+            return last_index_range >= 0
         else:
             return False
 
     @property
     def is_full_array(self):
         for arg in self.args:
-            if (not isinstance(arg,TTSlice)
+            if (not isinstance(arg,TTIndexRange)
                or arg.has_lbound()
                or arg.has_ubound()
                or arg.has_stride()):
@@ -547,11 +603,13 @@ class TTFunctionCall(VarExpr):
     
     @property
     def is_intrinsic_call(self):
+        """This is a call to a Fortran intrinsic."""
         assert self.is_function_call
         return self.symbol_info.is_intrinsic
    
     @property
     def is_elemental_function_call(self):
+        """This is a call to an elemental function."""
         assert self.is_function_call
         return self.symbol_info.is_elemental
 
@@ -563,7 +621,7 @@ class TTFunctionCall(VarExpr):
     
     @property
     def result_depends_on_kind(self):
-        """:note: Conversions are always elemental."""
+        """Result of the function depends on a kind argument."""
         assert self.is_elemental_function_call
         return self.symbol_info.result_depends_on_kind
 
@@ -573,16 +631,12 @@ class TTFunctionCall(VarExpr):
         when all arguments are supplied as positional arguments.
         """
         assert self.is_function_call
-        return self.symbol_info["dummy_args"] 
+        return self.symbol_info.dummy_args
 
-    # todo: this should better go into a symbol_info
-    # that indexer.scope creates when you look up a variable
     def get_expected_argument(self,arg_name):
         assert self.is_function_call
         return self.symbol_info.get_argument(arg_name)
 
-    # todo: this should better go into a symbol_info
-    # that indexer.scope creates when you look up a variable
     def get_actual_argument(self,arg_name):
         """:note: Assumes semantics have been analyzed before.
         :throws: util.error.LookupError
@@ -631,7 +685,7 @@ class TTFunctionCall(VarExpr):
         return "TTFunctionCall(name:"+str(self.name)+",is_array_expr:"+str(self.is_array_expr)+")"
     __repr__ = __str__
 
-class TTSlice(base.TTNode):
+class TTIndexRange(ArithExprNode):
 
     def _assign_fields(self, tokens):
         self.lbound, self.ubound, self.stride =\
@@ -647,27 +701,36 @@ class TTSlice(base.TTNode):
             self.stride = tokens[2]
         else: # ::
             assert len(tokens) == 0
+        self._type = None
+        self._bytes_per_element = None
 
+    def child_nodes(self):
+        if self.lbound != None:
+            yield self.lbound
+        if self.ubound != None:
+            yield self.ubound
+        if self.stride != None:
+            yield self.stride
+    
     @property
     def type(self):
-        if self.ubound == None:
-            return Literal.INTEGER
-        else:
-            return self.ubound.type
-    @property
-    def kind(self):
-        if self.ubound == None:
-            return None
-        else:
-            return self.ubound.kind
+        assert self._type != None
+        return self._type
+    @type.setter
+    def type(self,typ):
+        self._type = typ
+ 
     @property
     def bytes_per_element(self):
-        assert self.ubound != None
-        # todo: consider in semantics
-        return self.ubound.bytes_per_element
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self._bytes_per_element = bytes_per_element
+
     @property
     def rank(self):
-        return 0
+        return 1
 
     def has_lbound(self):
         return self.lbound != None
@@ -728,7 +791,7 @@ class TTSlice(base.TTNode):
             result += ":" + traversals.make_fstr(self.stride)
         return result
 
-class TTDerivedTypePart(base.TTNode):
+class TTDerivedTypePart(ArithExprNode):
 
     def _assign_fields(self, tokens):
         self._derived_type, self._element = tokens
@@ -818,7 +881,7 @@ class TTDerivedTypePart(base.TTNode):
         return "TTDerivedTypePart(name:"+str(self._derived_type)+"member:"+str(self._element)+")"
     __repr__ = __str__
 
-class TTComplexConstructor(base.TTNode):
+class TTComplexConstructor(ArithExprNode):
 
     def _assign_fields(self, tokens):
         self.real, self.imag = tokens[0]
@@ -828,7 +891,7 @@ class TTComplexConstructor(base.TTNode):
 
     @property
     def type(self):
-        return Literal.COMPLEX
+        return FortranType.COMPLEX
 
     @property
     def kind(self):
@@ -876,14 +939,17 @@ class TTComplexConstructor(base.TTNode):
           - Else:
               the result is a 8-byte complex (2 floats)
         """
-        max_bytes_per_element = 4
+        max_bytes_per_element = 0
         for component in self.child_nodes():
-           if component.type == Literal.REAL:
+           if component.type == FortranType.REAL:
                max_bytes_per_element = max(
                  max_bytes_per_element,
                  component.bytes_per_element
                )
-        return max_bytes_per_element
+        if max_bytes_per_element == 0:
+            return 2*4
+        else:
+            return max_bytes_per_element*2
 
     def cstr(self):
         return "make_hip_complex({real},{imag})".format(\
@@ -895,7 +961,7 @@ class TTComplexConstructor(base.TTNode):
                 real=traversals.make_fstr(self.real),\
                 imag=traversals.make_fstr(self.imag))
 
-class TTArrayConstructor(base.TTNode):
+class TTArrayConstructor(ArithExprNode):
 
     def _assign_fields(self, tokens):
         self.entries = tokens
@@ -905,9 +971,15 @@ class TTArrayConstructor(base.TTNode):
 
     @property
     def type(self):
+        """:note: Assumes that semantics check has been performed,
+        which ensures that all elements have the same type and size in bytes.
+        """
         return self.entries[0].type
     @property
     def bytes_per_element(self):
+        """:note: Assumes that semantics check has been performed,
+        which ensures that all elements have the same type and size in bytes.
+        """
         return self.entries[0].bytes_per_element
     @property
     def rank(self):
@@ -946,7 +1018,7 @@ class TTArrayConstructor(base.TTNode):
           ",".join([traversals.make_fstr(e) for e in self.entries])
         )
 
-class TTValue(base.TTNode):
+class TTValue(ArithExprNode):
     
     def _assign_fields(self, tokens):
         self.value = tokens[0]
@@ -1130,13 +1202,13 @@ class TTValue(base.TTNode):
         else:
             return False
 
-    def slice_args(self):
+    def index_range_args(self):
         """:note: While multiple derived type member parts can have
         an argument list, only one can have index ranges as arguments.
         """
         rank_defining_node = self.rank_defining_node
         if isinstance(rank_defining_node,TTFunctionCall):
-            yield from rank_defining_node.slice_args()
+            yield from rank_defining_node.index_range_args()
         else:
             yield from ()
 
@@ -1155,12 +1227,12 @@ class TTValue(base.TTNode):
             yield self
 
     def loop_bounds_as_str(self,
-        only_consider_slices=False,
+        only_consider_index_ranges=False,
         converter=traversals.make_cstr
       ):
         """:return: triple of lower bounds, upper bounds, and strides as str.
-        :param bool only_consider_slices: Only extract lower bounds, upper bounds
-                                          and strides from TTSlice arguments.
+        :param bool only_consider_index_ranges: Only extract lower bounds, upper bounds
+                                          and strides from TTIndexRange arguments.
         :param converter: Routine to convert the expressions to strings, 
                           defaults to `traversals.make_cstr`. Other legal option
                           is `traversals.make_fstr`.
@@ -1176,7 +1248,7 @@ class TTValue(base.TTNode):
         ubounds = []
         steps = []
         for i,ttarg in enumerate(self.value.args,1):
-            if isinstance(ttarg,TTSlice):
+            if isinstance(ttarg,TTIndexRange):
                 if ttarg.has_lbound():
                     lbounds.append(converter(ttarg.lbound))
                 else:
@@ -1201,7 +1273,7 @@ class TTValue(base.TTNode):
                     steps.append(converter(ttarg.stride))
                 else:
                     steps.append(None)
-            elif not only_consider_slices:
+            elif not only_consider_index_ranges:
                 lbounds.append(converter(ttarg))
                 ubounds.append(converter(ttarg))
                 steps.append(None)
@@ -1260,8 +1332,16 @@ class OperatorType(enum.Enum):
     MUL = 3 # only applicable to number types (integer,real,complex)
     COMP = 4 # only applicable to number types (integer,real,complex)
     LOGIC = 5 # only applicable to logical types
+  
+    @property
+    def is_logical(self):
+        return self == OperatorType.LOGIC
+  
+    @property
+    def is_numeric(self):
+        return not self.is_logical
 
-class TTUnaryOp(base.TTNode):
+class TTUnaryOp(ArithExprNode):
     f2c = {
       ".not.": "!{r}",
       "+": "{r}",
@@ -1334,7 +1414,7 @@ class TTUnaryOp(base.TTNode):
         else:
             return self.op + self.opd.fstr()
 
-class TTBinaryOpChain(base.TTNode):
+class TTBinaryOpChain(ArithExprNode):
     """pyparsing's infixNotation flattens
     repeated applications of binary
     operator expressions that have the same precedence 
@@ -1567,7 +1647,7 @@ class TTBinaryOpChain(base.TTNode):
             )
         return result
 
-class TTArithExpr(base.TTNode):
+class TTArithExpr(ArithExprNode):
 
     def _assign_fields(self, tokens):
         self.expr = tokens[0] # either: rvalue,unary op,binary op
@@ -1614,7 +1694,7 @@ class TTArithExpr(base.TTNode):
                and child.is_function_call
                and not child.is_elemental):
                 for arg in child.args:
-                    if not isinstance(arg,TTSlice) and arg.yields_array:
+                    if not isinstance(arg,TTIndexRange) and arg.yields_array:
                         return True
         return False    
 
@@ -1637,8 +1717,8 @@ class TTArithExpr(base.TTNode):
             if (isinstance(child,TTFunctionCall)
                and child.is_array):
                 for arg in child.args:
-                    # treat slice without stride as contiguous array?
-                    if not isinstance(arg,TTSlice) and arg.yields_array:
+                    # treat index_range without stride as contiguous array?
+                    if not isinstance(arg,TTIndexRange) and arg.yields_array:
                         return True
         return False    
 
@@ -1653,7 +1733,7 @@ class TTArithExpr(base.TTNode):
         return self.expr.fstr()
 
 
-class TTKeywordArgument(base.TTNode):
+class TTKeywordArgument(ArithExprNode):
     def _assign_fields(self, tokens):
         self.key, self.value = tokens
 
@@ -1764,7 +1844,7 @@ def set_arith_expr_parse_actions(grammar):
     grammar.lvalue.setParseAction(TTLvalue)
     grammar.derived_type_elem.setParseAction(TTDerivedTypePart)
     grammar.function_call.setParseAction(TTFunctionCall)
-    grammar.tensor_slice.setParseAction(TTSlice)
+    grammar.index_range.setParseAction(TTIndexRange)
     grammar.arith_expr.setParseAction(TTArithExpr)
     grammar.complex_constructor.setParseAction(
         TTComplexConstructor)

@@ -218,11 +218,12 @@ def _resolve_dependencies(scope,
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _search_scope_for_type_or_procedure(scope,
-                                        entry_name,
-                                        entry_type,
-                                        empty_record,
-                                        ):
+def _search_scope_for_type_or_procedure(
+    scope,
+    entry_name,
+    entry_type,
+    empty_record,
+  ):
     """
     :param str entry_type: either 'types' or 'procedures'
     """

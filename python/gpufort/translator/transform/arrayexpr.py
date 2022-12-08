@@ -9,7 +9,7 @@ from . import loopmgr
 def _collect_ranges(function_call_args,include_none_values=False):
     ttranges = []
     for i,ttnode in enumerate(function_call_args):
-        if isinstance(ttnode, tree.TTSlice):
+        if isinstance(ttnode, tree.TTIndexRange):
             ttranges.append(ttnode)
         elif include_none_values:
             ttranges.append(None)

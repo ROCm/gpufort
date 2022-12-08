@@ -14,7 +14,7 @@ from . import loops
 def _collect_ranges(function_call_args,include_none_values=False):
     ttranges = []
     for i,ttnode in enumerate(function_call_args):
-        if isinstance(ttnode, tree.TTSlice):
+        if isinstance(ttnode, tree.TTIndexRange):
             ttranges.append(ttnode)
         elif include_none_values:
             ttranges.append(None)
@@ -170,11 +170,11 @@ def adjust_explicitly_mapped_arrays_in_rank(ttvalues,explicitly_mapped_vars):
             mapping_tag  = indexer.scope.create_index_search_tag(var_expr)
             if value_tag == mapping_tag:
                 var_ttvalue = tree.grammar.lvalue.parseString(var_expr,parseAll=True)[0] # todo: analyse usage and directly return as type?
-                if len(var_ttvalue.slice_args()) < len(var_ttvalue.args()): # implies there is a fixed dimension
+                if len(var_ttvalue.index_range_args()) < len(var_ttvalue.args()): # implies there is a fixed dimension
                     assert ttvalue.has_args()
                     if len(var_ttvalue.args()) > len(ttvalue.args()):
                         raise util.error.SyntaxError("Explicitly mapped expression has higher rank than actual variable")
-                    ttvalue.args().max_rank   = len(var_ttvalue.slice_args())
+                    ttvalue.args().max_rank   = len(var_ttvalue.index_range_args())
                     c_ranks[value_tag] = ttvalue.args().max_rank
     return c_ranks
 

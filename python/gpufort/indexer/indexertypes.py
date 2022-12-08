@@ -382,19 +382,28 @@ class IndexVariable(IndexRecordAccessorBase):
 
     def __init__(self,ivar):
         self.record = ivar
-        #self.rhs = None
-        #self.bounds = None
-        #self.kind = None
+    
     @property
     def type(self):
         return self.record["f_type"]
+    
+    @property
+    def kind(self):
+        return self.record["kind"]
+    
+    @property
+    def len(self):
+        """Length specifier of a character."""
+        return self.record["len"]
+
+    @property
+    def matches_any_type(self):
+        return self.type == "type" and self.kind == "*"
+
     def matches_type(self,typ):
-        thistype = self.type
-        thiskind = self.kind
-        if thistype == "type" and thiskind == "*":
-            return True
-        else:
-            return thistype == typ
+        return (self.matches_any_type
+                or self.type == typ)
+
     @property
     def bounds(self):
         return self.record["bounds"]
@@ -476,6 +485,23 @@ class IndexVariable(IndexRecordAccessorBase):
         """:return: Initial value as string.
         """
         return self.record["rhs"]
+    
+    @property
+    def full_type_as_str(self):
+        """:return: Fortran string expression for the full data type 
+        including kind specification.""" 
+        args = []
+        if self.kind not in [None,""]:
+            args.append("kind="+self.kind)
+        if self.len not in [None,""]:
+            args.append("len="+self.len)
+        if len(args):
+            return "{}({})".format(
+              self.type, ",".join(args)
+            )
+        else:
+            return self.type
+
     @property
     def module(self):
         return self.record["module"]

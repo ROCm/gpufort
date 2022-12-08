@@ -270,12 +270,12 @@ class Grammar:
         )
         COLON = pyp.Literal(":").suppress()
         opt_arith_expr = pyp.Optional(self.arith_expr,default=None)
-        self.tensor_slice = ( 
+        self.index_range = ( 
           ( opt_arith_expr + COLON + opt_arith_expr + COLON + self.arith_expr )
           | ( opt_arith_expr + COLON + opt_arith_expr )
         )
         # define forward declared tokens
-        self.function_call_arg <<= self.tensor_slice | self.keyword_argument | self.arith_expr
+        self.function_call_arg <<= self.index_range | self.keyword_argument | self.arith_expr
 
     def _init_fortran_statements(self,ignorecase):
         self.fortran_subroutine_call = self.CALL + self.function_call

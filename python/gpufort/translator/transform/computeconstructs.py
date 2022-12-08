@@ -412,7 +412,7 @@ class __HIPKernelBodyGenerator:
             len_cstr = "{}.size()".format(cname)
         else:
             lbounds, ubounds, steps = ttvalue.loop_bounds_as_str(
-              only_consider_slices=False,
+              only_consider_index_ranges=False,
               converter = tree.traversals.make_cstr
             ) 
             first_idx = self._render_linear_idx_offset(

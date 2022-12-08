@@ -82,8 +82,8 @@ class TestSemantics(unittest.TestCase):
     
     resolve_arith_expr_results = [
       ('integer', 4, 0, True),
-      ('complex', 4, 0, True),
-      ('complex', 8, 0, True),
+      ('complex', 2*4, 0, True),
+      ('complex', 2*8, 0, True),
       ('real', 4, 1, True),
       ('integer', 4, 1, True),
       ('integer', 4, 0, False),
@@ -106,6 +106,7 @@ class TestSemantics(unittest.TestCase):
     
     def test_03_resolve_arith_expr(self):
         for i,test in enumerate(TestSemantics.parse_arith_expr_testdata):
+            #print(test)
             ttarithexpr = TestSemantics.parse_arith_expr_parse_results[i]
             #print(ttarithexpr.fstr())
             semantics.resolve_arith_expr(ttarithexpr,scope)
@@ -267,6 +268,7 @@ class TestSemantics(unittest.TestCase):
         #print("# scalar|array|contiguous array|full array")
         for i,test in enumerate(TestSemantics.parse_function_call_testdata):
             ttrvalue = TestSemantics.parse_function_call_parse_results[i] 
+            #print(test)
             semantics.resolve_arith_expr(ttrvalue,scope)
             result_tuple = (
               ttrvalue.is_function_call,
@@ -279,7 +281,6 @@ class TestSemantics(unittest.TestCase):
               ttrvalue.yields_contiguous_array,
               ttrvalue.yields_full_array, 
             )
-            #print(test)
             #print(result_tuple)
             self.assertEqual(
               TestSemantics.resolve_function_call_results[i],

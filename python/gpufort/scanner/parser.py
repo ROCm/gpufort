@@ -503,7 +503,7 @@ def _parse_file(linemaps, index, **kwargs):
             
             if (in_acc_kernels_region_and_not_recording()
                and lhs_ivar["rank"] > 0 
-               and (lvalue.has_slice_args() 
+               and (lvalue.has_index_range_args() 
                    or not lvalue.has_args())):
                 new = tree.acc.STAccComputeConstruct(
                         current_acc_data_or_kernels_directive,

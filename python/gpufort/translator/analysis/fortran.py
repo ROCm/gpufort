@@ -78,7 +78,7 @@ class AssignmentInfo:
     def _collect_ranges(self,function_call_args,include_none_values=False):
         ttranges = []
         for i,ttnode in enumerate(function_call_args):
-            if isinstance(ttnode, tree.TTSlice):
+            if isinstance(ttnode, tree.TTIndexRange):
                 ttranges.append(ttnode)
             elif include_none_values:
                 ttranges.append(None)
@@ -190,16 +190,16 @@ class AssignmentInfo:
 #                        elif isinstance(child,pyparsing.ParseResults)
 #                            traverse_(child)                  
 #        return self._main_rvals_and_ops
-#    def _collect_slices(function_call_args,include_none_values=False):
+#    def _collect_index_ranges(function_call_args,include_none_values=False):
 #        ttranges = []
 #        for i,ttnode in enumerate(function_call_args):
-#            if isinstance(ttnode, tree.TTSlice):
+#            if isinstance(ttnode, tree.TTIndexRange):
 #                ttranges.append(ttnode)
 #            elif include_none_values:
 #                ttranges.append(None)
 #        return ttranges
 #    
-#    def _collect_slices_in_ttvalue(ttvalue,include_none_values=False):
+#    def _collect_index_ranges_in_ttvalue(ttvalue,include_none_values=False):
 #        """
 #        :return A list of range objects. If the list is empty, no function call
 #                or tensor access has been found. If the list contains a None element
@@ -208,14 +208,14 @@ class AssignmentInfo:
 #        """
 #        current = ttvalue._value
 #        if isinstance(current,tree.TTFunctionCall):
-#            return _collect_slices(current._args,include_none_values)
+#            return _collect_index_ranges(current._args,include_none_values)
 #        elif isinstance(current,tree.TTDerivedTypePart):
 #            result = []
 #            while isinstance(current,tree.TTDerivedTypePart):
 #                if isinstance(current._type,tree.TTFunctionCall):
-#                    result += _collect_slices(current._type._args,include_none_values)
+#                    result += _collect_index_ranges(current._type._args,include_none_values)
 #                if isinstance(current._element,tree.TTFunctionCall):
-#                    result += _collect_slices(current._element._args,include_none_values)
+#                    result += _collect_index_ranges(current._element._args,include_none_values)
 #                current = current._element
 #            return result
 #        else:
@@ -231,10 +231,10 @@ class AssignmentInfo:
 #        livar = indexer.scope.search_scope_for_var(scope,lvalue_fstr)
 #        loop_indices = [] 
 #        if livar["rank"] > 0:
-#            lvalue_slices_or_none = self._collect_slices_in_ttvalue(ttlvalue,include_none_values=True)
-#            lvalue_slices = [r for r in lvalue_slices_or_none if r != None]
-#            if len(lvalue_slices_or_none):
-#                num_implicit_loops_lhs = len(lvalue_slices)
+#            lvalue_index_ranges_or_none = self._collect_index_ranges_in_ttvalue(ttlvalue,include_none_values=True)
+#            lvalue_index_ranges = [r for r in lvalue_index_ranges_or_none if r != None]
+#            if len(lvalue_index_ranges_or_none):
+#                num_implicit_loops_lhs = len(lvalue_index_ranges)
 #            else:
 #                num_implicit_loops_lhs = livar["rank"]
 #        return num_implicit_loops_lhs > 0

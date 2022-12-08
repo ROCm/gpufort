@@ -29,6 +29,97 @@ module gpufortrt_api
     module procedure :: gpufortrt_present_nb
   end interface
 
+  interface gpufortrt_use_device
+    module procedure :: gpufortrt_use_device0_l1
+    module procedure :: gpufortrt_use_device0_l4
+    module procedure :: gpufortrt_use_device0_ch1
+    module procedure :: gpufortrt_use_device0_i1
+    module procedure :: gpufortrt_use_device0_i2
+    module procedure :: gpufortrt_use_device0_i4
+    module procedure :: gpufortrt_use_device0_i8
+    module procedure :: gpufortrt_use_device0_r4
+    module procedure :: gpufortrt_use_device0_r8
+    module procedure :: gpufortrt_use_device0_c4
+    module procedure :: gpufortrt_use_device0_c8
+    module procedure :: gpufortrt_use_device1_l1
+    module procedure :: gpufortrt_use_device1_l4
+    module procedure :: gpufortrt_use_device1_ch1
+    module procedure :: gpufortrt_use_device1_i1
+    module procedure :: gpufortrt_use_device1_i2
+    module procedure :: gpufortrt_use_device1_i4
+    module procedure :: gpufortrt_use_device1_i8
+    module procedure :: gpufortrt_use_device1_r4
+    module procedure :: gpufortrt_use_device1_r8
+    module procedure :: gpufortrt_use_device1_c4
+    module procedure :: gpufortrt_use_device1_c8
+    module procedure :: gpufortrt_use_device2_l1
+    module procedure :: gpufortrt_use_device2_l4
+    module procedure :: gpufortrt_use_device2_ch1
+    module procedure :: gpufortrt_use_device2_i1
+    module procedure :: gpufortrt_use_device2_i2
+    module procedure :: gpufortrt_use_device2_i4
+    module procedure :: gpufortrt_use_device2_i8
+    module procedure :: gpufortrt_use_device2_r4
+    module procedure :: gpufortrt_use_device2_r8
+    module procedure :: gpufortrt_use_device2_c4
+    module procedure :: gpufortrt_use_device2_c8
+    module procedure :: gpufortrt_use_device3_l1
+    module procedure :: gpufortrt_use_device3_l4
+    module procedure :: gpufortrt_use_device3_ch1
+    module procedure :: gpufortrt_use_device3_i1
+    module procedure :: gpufortrt_use_device3_i2
+    module procedure :: gpufortrt_use_device3_i4
+    module procedure :: gpufortrt_use_device3_i8
+    module procedure :: gpufortrt_use_device3_r4
+    module procedure :: gpufortrt_use_device3_r8
+    module procedure :: gpufortrt_use_device3_c4
+    module procedure :: gpufortrt_use_device3_c8
+    module procedure :: gpufortrt_use_device4_l1
+    module procedure :: gpufortrt_use_device4_l4
+    module procedure :: gpufortrt_use_device4_ch1
+    module procedure :: gpufortrt_use_device4_i1
+    module procedure :: gpufortrt_use_device4_i2
+    module procedure :: gpufortrt_use_device4_i4
+    module procedure :: gpufortrt_use_device4_i8
+    module procedure :: gpufortrt_use_device4_r4
+    module procedure :: gpufortrt_use_device4_r8
+    module procedure :: gpufortrt_use_device4_c4
+    module procedure :: gpufortrt_use_device4_c8
+    module procedure :: gpufortrt_use_device5_l1
+    module procedure :: gpufortrt_use_device5_l4
+    module procedure :: gpufortrt_use_device5_ch1
+    module procedure :: gpufortrt_use_device5_i1
+    module procedure :: gpufortrt_use_device5_i2
+    module procedure :: gpufortrt_use_device5_i4
+    module procedure :: gpufortrt_use_device5_i8
+    module procedure :: gpufortrt_use_device5_r4
+    module procedure :: gpufortrt_use_device5_r8
+    module procedure :: gpufortrt_use_device5_c4
+    module procedure :: gpufortrt_use_device5_c8
+    module procedure :: gpufortrt_use_device6_l1
+    module procedure :: gpufortrt_use_device6_l4
+    module procedure :: gpufortrt_use_device6_ch1
+    module procedure :: gpufortrt_use_device6_i1
+    module procedure :: gpufortrt_use_device6_i2
+    module procedure :: gpufortrt_use_device6_i4
+    module procedure :: gpufortrt_use_device6_i8
+    module procedure :: gpufortrt_use_device6_r4
+    module procedure :: gpufortrt_use_device6_r8
+    module procedure :: gpufortrt_use_device6_c4
+    module procedure :: gpufortrt_use_device6_c8
+    module procedure :: gpufortrt_use_device7_l1
+    module procedure :: gpufortrt_use_device7_l4
+    module procedure :: gpufortrt_use_device7_ch1
+    module procedure :: gpufortrt_use_device7_i1
+    module procedure :: gpufortrt_use_device7_i2
+    module procedure :: gpufortrt_use_device7_i4
+    module procedure :: gpufortrt_use_device7_i8
+    module procedure :: gpufortrt_use_device7_r4
+    module procedure :: gpufortrt_use_device7_r8
+    module procedure :: gpufortrt_use_device7_c4
+    module procedure :: gpufortrt_use_device7_c8
+  end interface
+
 contains
   
   type(c_ptr) function gpufortrt_deviceptr(hostptr) 
@@ -289,13 +380,13 @@ contains
   !> \param[in] if_present Only return device pointer if one could be found for the host pointer.
   !>                       otherwise host pointer is returned. Defaults to '.false.'.
   !> \note Returns a c_null_ptr if the host pointer is invalid, i.e. not C associated.
-  subroutine gpufortrt_use_device(resultptr, hostptr,sizes,lbounds,if_arg,if_present) 
+  function gpufortrt_use_device_b(hostptr,condition,if_present) result(resultptr)
     use iso_c_binding
     implicit none
-    type(*), dimension(..),target, intent(inout) :: resultptr
-    type(*), dimension(..),target,intent(in) :: hostptr
-    integer,intent(in),optional :: sizes, lbounds
-    logical,intent(in),optional :: if_arg, if_present
+    type(c_ptr),intent(in) :: hostptr
+    logical,intent(in),optional :: condition, if_present
+    !
+    type(c_ptr) :: resultptr
     !
     interface
       function gpufortrt_use_device_c_impl(hostptr,condition,if_present) &
@@ -309,22 +400,2171 @@ contains
       end function
     end interface
     !
-    integer :: opt_sizes, opt_lbounds
     logical(c_bool) :: opt_if_arg, opt_if_present_arg
-    type(c_ptr):: tmp_cptr
     !
-    opt_sizes = 1
-    opt_lbounds = 1
     opt_if_arg = .true._c_bool
     opt_if_present_arg = .false._c_bool
-    if ( present(sizes) ) opt_sizes = sizes
-    if ( present(lbounds) ) opt_lbounds = lbounds
-    if ( present(if_arg) ) opt_if_arg = logical(if_arg,kind=c_bool)
+    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
     if ( present(if_present) ) opt_if_present_arg = logical(if_present,kind=c_bool)
     !
-    tmp_cptr = gpufortrt_use_device_c_impl(c_loc(hostptr),opt_if_arg,opt_if_present_arg)
-    ! call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
-    ! Convert tmp_cptr to resultptr?
+    resultptr = gpufortrt_use_device_c_impl(hostptr,opt_if_arg,opt_if_present_arg)
+  end function
+
+  
+  subroutine gpufortrt_use_device0_l1(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_l1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_l1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_l1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_l1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_l1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_l1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_l1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical(c_bool),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical(c_bool),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_l4(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_l4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_l4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_l4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_l4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_l4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_l4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_l4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    logical,target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    logical,pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_ch1(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_ch1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_ch1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_ch1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_ch1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_ch1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_ch1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_ch1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    character(c_char),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    character(c_char),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_i1(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_i1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_i1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_i1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_i1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_i1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_i1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_i1(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int8_t),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int8_t),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_i2(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_i2(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_i2(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_i2(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_i2(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_i2(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_i2(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_i2(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_short),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_short),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_i4(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_i4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_i4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_i4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_i4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_i4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_i4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_i4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_int),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_int),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_i8(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_i8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_i8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_i8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_i8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_i8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_i8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_i8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    integer(c_long),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    integer(c_long),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_r4(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_r4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_r4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_r4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_r4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_r4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_r4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_r4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_float),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_float),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_r8(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_r8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_r8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_r8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_r8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_r8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_r8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_r8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    real(c_double),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    real(c_double),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_c4(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_c4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_c4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_c4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_c4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_c4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_c4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_c4(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_float_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_float_complex),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device0_c8(resultptr,hostptr,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr
+    !
+    type(c_ptr) :: tmp_cptr
+    !
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr)
+  end subroutine
+
+  subroutine gpufortrt_use_device1_c8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr(*)
+    integer,intent(in),optional :: sizes(1), lbounds(1)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr(:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(1), opt_lbounds(1)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device2_c8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr(1:1,*)
+    integer,intent(in),optional :: sizes(2), lbounds(2)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr(:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(2), opt_lbounds(2)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device3_c8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr(1:1,1:1,*)
+    integer,intent(in),optional :: sizes(3), lbounds(3)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr(:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(3), opt_lbounds(3)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device4_c8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(4), lbounds(4)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr(:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(4), opt_lbounds(4)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device5_c8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(5), lbounds(5)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr(:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(5), opt_lbounds(5)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device6_c8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(6), lbounds(6)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr(:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(6), opt_lbounds(6)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):)&
+        => resultptr
+  end subroutine
+
+  subroutine gpufortrt_use_device7_c8(resultptr,hostptr,sizes,lbounds,if_arg,if_present_arg)
+    use iso_c_binding
+    implicit none
+    complex(c_double_complex),target,intent(in) :: hostptr(1:1,1:1,1:1,1:1,1:1,1:1,*)
+    integer,intent(in),optional :: sizes(7), lbounds(7)
+    logical,intent(in),optional :: if_arg, if_present_arg
+    !
+    complex(c_double_complex),pointer,intent(inout) :: resultptr(:,:,:,:,:,:,:)
+    !
+    type(c_ptr) :: tmp_cptr
+    integer :: opt_sizes(7), opt_lbounds(7)
+    !
+    opt_sizes = 1
+    opt_lbounds = 1  
+    if ( present(sizes) ) opt_sizes = sizes
+    if ( present(lbounds) ) opt_lbounds = lbounds
+    tmp_cptr = gpufortrt_use_device_b(c_loc(hostptr),if_arg,if_present_arg)
+    call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+    resultptr(&
+      opt_lbounds(1):,&
+      opt_lbounds(2):,&
+      opt_lbounds(3):,&
+      opt_lbounds(4):,&
+      opt_lbounds(5):,&
+      opt_lbounds(6):,&
+      opt_lbounds(7):)&
+        => resultptr
   end subroutine
 
   logical function gpufortrt_is_present(data_arg, bytes) 

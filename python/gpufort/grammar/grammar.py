@@ -76,6 +76,7 @@ class Grammar:
         self.DOT = pyp.Suppress(".")
         self.UNDERSCORE = pyp.Suppress("_")
         self.PEQ = pyp.Suppress("=>")
+        self.COLON = pyp.Suppress(":")
         self.COLONS = pyp.Suppress("::")
         self.OPTCOMMA = pyp.Optional(self.COMMA)
         self.MATLPAR = pyp.Regex(r"\(\/|\[").suppress()
@@ -541,6 +542,8 @@ class Grammar:
         self.ACC_REDUCTION_OP = pyp.Regex(r"\+|\*|\b(max|min|iand|ior|ieor)\b|\.(and|or|eqv|neqv)\.",flags)
         self.DEVICE_TYPE = pyp.Regex(r"\b(dtype|device_type)\b",flags).suppress()
         self.DEVICE_NUM = literal_cls("device_num").suppress() 
+        self.DEVNUM = literal_cls("devnum").suppress() 
+        self.QUEUES = literal_cls("queues").suppress() 
         self.acc_noarg_clause = pyp.Regex(r"\b(seq|auto|independent|read|write|capture|update|nohost|finalize|if_present)\b",flags)
 
     def _init_acc_clauses(self,ignorecase):
@@ -579,34 +582,58 @@ class Grammar:
         
         self.acc_clause_default = self.DEFAULT + self.LPAR + pyp.Regex(r"none|present",flags) + self.RPAR # do not suppress
         self.acc_clause_reduction = self.REDUCTION + self.LPAR + self.ACC_REDUCTION_OP + pyp.Suppress(":") + pyp.delimitedList(self.lvalue) + self.RPAR
-        self.acc_clause_collapse = self.COLLAPSE + arith_expr_arg 
-        self.acc_clause_update_device = (
-          self.DEVICE
-          + self.LPAR 
-          + pyp.delimitedList(self.lvalue)
-          + self.RPAR
-        ) # for compute constructs, semantic check must ensure there is only one argument
-        self.acc_clause_update_self = (
-          (self.SELF | self.HOST) 
-          + self.LPAR 
-          + pyp.delimitedList(self.lvalue)
-          + self.RPAR
+        self.acc_clause_collapse = self.COLLAPSE + make_arg_(
+          pyp.Optional(
+            literal_cls("force")
+            + self.COLON 
+          )
+          + self.arith_expr
+        )
+
+        arith_expr_arg 
+        self.acc_clause_update_device = self.DEVICE + make_arg_(
+          pyp.delimitedList(self.lvalue)
+        )
+        self.acc_clause_update_self = (self.SELF | self.HOST) + make_arg_(
+          pyp.delimitedList(self.lvalue)
         )
         self.acc_clause_bind = self.BIND + self.LPAR + self.identifier + self.RPAR
         self.acc_clause_tile = self.TILE + self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR
-        self.acc_clause_wait = self.WAIT + pyp.Optional(self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR)
+        self.acc_clause_wait_arg = (
+          pyp.Optional(
+            self.DEVNUM 
+            + self.COLON 
+            + self.arith_expr
+            + self.COLON
+          )
+          + pyp.Optional(
+            self.QUEUES
+            + self.COLON
+          )
+          + pyp.Group(pyp.delimitedList(self.arith_expr))
+        )
+        self.acc_clause_wait = self.WAIT + pyp.Optional(
+          make_arg_(self.acc_clause_wait_arg)
+        )
         #self.acc_clause_async = self.ASYNC + pyp.Optional(self.LPAR + self.rvalue + self.RPAR, default = self.CLAUSE_VALUE_NOT_SPECIFIED)
-        self.acc_clause_async = self.ASYNC + pyp.Optional(self.LPAR + pyp.delimitedList(self.arith_expr) + self.RPAR) 
+        self.acc_clause_async = self.ASYNC + pyp.Optional(
+          make_arg_(pyp.delimitedList(self.arith_expr))
+        ) 
         # copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link
         MAPPING_CLAUSE_KIND = pyp.Regex(
           r"\b("
           +"|".join([
-            "copy", "copyin", "copyout", "create", "no_create", "present", "deviceptr", "attach", "detach", 
+            "copy", "copyout", "create", "no_create", "present", "deviceptr", "attach", "detach", 
             "use_device", "delete", "private", "first_private", "host", "device_resident", "link"
             ])
           + r")\b"
         )
-        self.acc_mapping_clause = MAPPING_CLAUSE_KIND + self.acc_var_list
+        self.acc_generic_mapping_clause = MAPPING_CLAUSE_KIND + self.acc_var_list
+        modifier_readonly = pyp.Optional(literal_cls("readonly") + self.COLON)
+        self.acc_clause_copyin = self.COPYIN + make_arg_(
+          modifier_readonly 
+          + pyp.delimitedList(self.rvalue)
+        )
         
         self.acc_clause = (
           self.acc_clause_if
@@ -626,7 +653,8 @@ class Grammar:
           | self.acc_clause_gang
           | self.acc_clause_worker
           | self.acc_clause_vector
-          | self.acc_mapping_clause
+          | self.acc_clause_copyin
+          | self.acc_generic_mapping_clause
           | self.acc_noarg_clause
         )
         self.acc_generic_clause_list = pyp.ZeroOrMore(self.acc_clause)
@@ -641,7 +669,8 @@ class Grammar:
         )
         self.acc_artificial_clause_cache = ( # artificial clause for cache directive
           self.CACHE 
-          + self.LPAR # todo: consider readonly: prefix
+          + self.LPAR
+          + modifier_readonly
           + self.acc_var_list 
           + self.RPAR
         ) 

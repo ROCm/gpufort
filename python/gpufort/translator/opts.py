@@ -131,8 +131,8 @@ bytes_2_c_type = {
      1: "char",
   },
   "complex": {
-     8: "hipDoubleComplex",
-     4: "hipFloatComplex",
+     2*8: "hipDoubleComplex",
+     2*4: "hipFloatComplex",
   },
   "real": {
      16: "long double",
@@ -214,6 +214,7 @@ fortran_type_2_bytes_map = { # x86_64
         "c_intmax_t": 8,
         "c_intptr_t": 8,
         "c_ptrdiff_t": 8,
+        "acc_handle_kind": 4,
     },
     "logical": {
         None: 4,

@@ -691,7 +691,7 @@ def set_acc_parse_actions(grammar):
     grammar.acc_clause_tile.setParseAction(TTAccClauseTile)
     grammar.acc_clause_wait.setParseAction(TTAccClauseWait)
     grammar.acc_clause_async.setParseAction(TTAccClauseAsync)
-    grammar.acc_mapping_clause.setParseAction(TTAccMappingClause)
+    grammar.acc_generic_mapping_clause.setParseAction(TTAccMappingClause)
     grammar.acc_noarg_clause.setParseAction(TTAccNoArgumentClause)
     # directive action
     grammar.acc_update.setParseAction(TTAccUpdate)

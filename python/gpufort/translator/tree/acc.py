@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from gpufort import util
 
@@ -84,20 +84,44 @@ class TTAccClauseDeviceType(TTAccClause):
     def _assign_fields(self, tokens):
         self.device_types = tokens
 
+    def named_device_types(self,lower_case=True):
+        """:return: All arguments that are identifiers, i.e. not '*'.
+        :param lower_case: Convert to lower case, defaults to True.
+        :see: has_named_device_types
+        """ 
+        result = []
+        for device_type in ttnode.device_types:
+            if device_type.isidentifier():
+                if lower_case:
+                    result.append(device_type.lower())
+                else:
+                    result.append(device_type)
+        return device_type
+
+    @property
+    def has_named_device_types(self):
+        """:return: If some arguments are identifiers, i.e. not '*'.
+        """
+        for device_type in ttnode.device_types:
+            if device_type.isidentifier():
+                return True
+        return False
+
 class TTAccClauseIf(TTAccClause):
-    
+    kind = "if"    
+
     def _assign_fields(self, tokens):
-        self.condition = tokens[0]
+        self.arg = tokens[0]
     def child_nodes(self):
-        yield self.condition
+        yield self.arg
 
 class TTAccClauseSelf(TTAccClause):
     kind = "self"
     
     def _assign_fields(self, tokens):
-        self.condition = tokens[0]
+        self.arg = tokens[0]
     def child_nodes(self):
-        yield self.condition
+        yield self.arg
 
 # Update clause
 
@@ -120,7 +144,7 @@ class TTAccClauseUpdateDevice(TTAccClause):
         yield from self.args
 
 # mapping clauses
-class UnprocessedMappingClause(base.TTNode):
+class UnprocessedGenericMappingClause(base.TTNode):
     """Dummy parse action that is re-translated
     into specialized nodes.
     """
@@ -138,10 +162,6 @@ class TTAccMappingClause(TTAccClause):
 
     def child_nodes(self):
         yield from self.var_list
-
-# TODO treat separately because of readonly modifier
-class TTAccClauseCopyin(TTAccMappingClause):
-    kind = "copyin"
 
 class TTAccClauseCopy(TTAccMappingClause):
     kind = "copy"
@@ -163,6 +183,18 @@ class TTAccClauseFirstPrivate(TTAccMappingClause):
     kind = "first_private"
 class TTAccClauseUseDevice(TTAccMappingClause):
     kind = "use_device"
+
+class TTAccClauseCopyin(TTAccMappingClause):
+    """:note: Handled separately because of readonly modifier."""
+    kind = "copyin"
+
+    def __init__(self,tokens):
+        TTAccMappingClause.__init__(self,tokens[-1])
+        if len(tokens) == 2:
+            assert tokens[0].lower() == "readonly"
+            self.readonly = True
+        else:
+            self.readonly = False
 
 class TTAccClauseDefault(TTAccClause):
     kind = "default"
@@ -217,7 +249,12 @@ class TTAccClauseCollapse(TTAccClause):
     kind = "collapse"
 
     def _assign_fields(self, tokens):
-        self.arg = tokens[0]
+        self.arg = tokens[-1]
+        if len(tokens) == 2:
+            assert tokens[0].lower() == "force"
+            self.force = True
+        else:
+            self.force = False
 
     def child_nodes(self):
         yield self.arg
@@ -226,17 +263,26 @@ class TTAccClauseWait(TTAccClause):
     kind = "wait"
 
     def _assign_fields(self, tokens):
-       if len(tokens):
-           self.args = list(tokens)
+       if len(tokens) == 1:
+            self.devnum = None
+            self.queues = list(tokens[0])
+       elif len(tokens) == 2:
+            self.devnum = tokens[0]
+            self.queues = list(tokens[1])
        else:
-           self.args = []
+           self.devnum = None
+           self.queues = []
 
     @property
-    def args_specified(self):
-        return len(self.args)
+    def devnum_specified(self):
+        return self.devnum != None
+    
+    @property
+    def queues_specified(self):
+        return len(self.queues)
     
     def child_nodes(self):
-        yield from self.args
+        yield from self.queues
 
 #    def expressions(self):
 #        return [traversals.make_fstr(expr) for expr in self.expressions]
@@ -276,7 +322,12 @@ class TTAccArtificialClauseCache(TTAccClause):
     """Artificial cache clause for cache directive."""   
  
     def _assign_fields(self,tokens):
-        self.var_list = list(tokens)
+        self.var_list = list(tokens[-1])
+        if len(tokens) == 2:
+            assert tokens[0].lower() == "readonly"
+            self.readonly = True
+        else:
+            self.readonly = False
 
 def acc_clause_parse_action(tokens):
     """:Returns specialized clause instance
@@ -296,9 +347,9 @@ def acc_clause_parse_action(tokens):
             if cls.kind == clause.kind:
                 return cls([]) 
         assert False, "clause could not be classified"
-    if isinstance(clause,UnprocessedMappingClause):
+    if isinstance(clause,UnprocessedGenericMappingClause):
         for cls in [TTAccClauseCopy,
-                    TTAccClauseCopyin,
+                    #TTAccClauseCopyin, handled separately because of readonly modifier
                     TTAccClauseCopyout,
                     TTAccClauseCreate,
                     TTAccClauseNoCreate,
@@ -338,21 +389,27 @@ class TTAccDirective(base.TTNode):
         for clause in self.walk_clauses():
             if isinstance(clause,cls):
                 yield cls
-      
+ 
     def _get_named_device_types(self):
         """:return: A list of device type identifiers found 
-                    in the device type clauses."""
+                    in the device type clauses.
+        :note: Converts all identifiers to lower case.
+        """
         named_device_types = []
+
+        def already_detected_(device_type):
+            nonlocal named_device_types
+                    
         for clause in self.walk_matching_clauses(TTAccClauseDeviceType):
-            for device_type in ttnode.device_types:
-                if device_type.isidentifier():
-                    dtype_lower = device_type.lower()
-                    if dtype_lower in named_device_types:
-                        return util.error.SyntaxError(
-                          "device type '{}' specified more than once in ".format(dtype_lower)
-                          + "'device_type' clauses"
-                        )
-                    named_device_types.append()
+            if clause.has_named_device_types:
+                for device_type in clause.named_device_types:
+                    for other in named_device_types:
+                        if other.lower() == device_type.lower():
+                            return util.error.SyntaxError(
+                              "device type '{}' specified more than once in ".format(device_type)
+                              + "'device_type' clauses"
+                            )
+                    named_device_types.append(device_type.lower())
         return named_device_types 
 
     def walk_clauses_device_type(self,device_type):
@@ -367,7 +424,7 @@ class TTAccDirective(base.TTNode):
             return (
               not len(current_device_types) # no device_type clause encountered yet
               or device_type in current_device_types # device-type-specific clauses found
-              or (not device_type in _self.named_device_types and current_device_types[0] == "*")
+              or current_device_types[0] == "*"
             )
         for clause in self.walk_clauses():
             if isinstance(clause,TTAccClauseDeviceType):
@@ -397,6 +454,7 @@ class TTAccDirective(base.TTNode):
         i_device_type_clause = -1
         current_device_type_clause_types = []
         for i,clause in enumerate(self.clauses):
+            assert isinstance(clause,TTAccClause), "clause "+str(i)+" is not of type TTAccClause, is of type "+str(type(clause))
             if not self._is_legal_clause(clause):
                 raise util.error.SyntaxError(
                  "clause '{0}' cannot be specified for directive '{1}'".format(
@@ -404,6 +462,7 @@ class TTAccDirective(base.TTNode):
                     self.kind
                   )
                 )
+            #
             if self._is_unique_clause(clause):    
                 for prev_clause in self.clauses[:i]:
                     if type(clause) == type(prev_clause):
@@ -1082,7 +1141,7 @@ def set_acc_parse_actions(grammar):
     """Register parse actions for grammar nodes.
     :note: Many clauses are initially parsed
            and instantiated as generic 
-           `UnprocessedNoArgumentClause` or `UnprocessedMappingClause` objects.
+           `UnprocessedNoArgumentClause` or `UnprocessedGenericMappingClause` objects.
            Then, they are post-processed and converted into
            a specialized class per clause via `acc_clause_parse_action`.
            All parse actions are invoked by pyparsing in the correct order.
@@ -1114,7 +1173,8 @@ def set_acc_parse_actions(grammar):
     grammar.acc_clause_tile.setParseAction(TTAccClauseTile)
     grammar.acc_clause_wait.setParseAction(TTAccClauseWait)
     grammar.acc_clause_async.setParseAction(TTAccClauseAsync)
-    grammar.acc_mapping_clause.setParseAction(UnprocessedMappingClause)
+    grammar.acc_clause_copyin.setParseAction(TTAccClauseCopyin)
+    grammar.acc_generic_mapping_clause.setParseAction(UnprocessedGenericMappingClause)
     grammar.acc_noarg_clause.setParseAction(UnprocessedNoArgumentClause)
     grammar.acc_artificial_clause_routine.setParseAction(TTAccArtificialClauseRoutine)
     grammar.acc_artificial_clause_cache.setParseAction(TTAccArtificialClauseCache)

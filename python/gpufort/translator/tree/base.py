@@ -40,14 +40,31 @@ class TTNode(object):
         yield from ()
     
     def walk_preorder(self):
+        """Pre-order tree walk iterator, i.e. yields
+        the current node before its children.
+        """
         yield self
         for child in self.child_nodes():
             yield from child.walk_preorder()
     
     def walk_postorder(self):
+        """Post-order tree walk iterator, i.e. yields
+        the current node after its children.
+        """
         for child in self.child_nodes():
             yield from child.walk_postorder()
         yield self
+
+    def enter_and_leave(self):
+        """Iterator that yields a tuple consisting of the current node 
+        and a flag if the node was entered (False) or left (True).
+        The flag thus indicates if the iterator is going up the tree again with respect
+        to that node.
+        """
+        yield (self,False) # yield at enter
+        for child in self.child_nodes():
+            yield from child.walk_up_and_down()
+        yield (self,True) # yield at leave
 
     def fstr(self):
         """:return: Fortran representation."""

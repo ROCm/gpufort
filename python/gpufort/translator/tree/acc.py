@@ -367,7 +367,7 @@ def acc_clause_parse_action(tokens):
 # Directives
 #
 
-class TTAccDirective(base.TTNode):
+class TTAccDirective(base.TTStatement):
 
     def __init__(self,clauses):
         base.TTNode._init(self)
@@ -544,7 +544,13 @@ class TTAccEndKernelsLoop(TTAccEndDirective):
 
 # directives
 
-class TTAccComputeConstruct(TTAccDirective):
+class TTAccConstruct(TTAccDirective,base.TTContainer):
+    
+    def __init__(self,clauses):
+        base.TTContainer._init(self)
+        TTAccDirective.__init__(self,clauses)
+
+class TTAccComputeConstruct(TTAccConstruct):
     
     def _is_legal_clause(self,clause):
         """Default implementation matches that
@@ -653,8 +659,19 @@ class TTAccKernels(TTAccComputeConstruct):
                     TTAccClauseVectorLength))
         return True
 
+    def _contains_single_assignment_statement(self):
+        if len(self.body) == 1:
+            return isinstance(self.body[0],tree.TTAssignment)
+        return False
+
+    @property
+    def is_device_to_device_copy(self):
+        if self._contains_single_assignment_statement():
+            return self.body[0]
+        return False 
+
 # within compute and combined construct
-class TTAccLoop(TTAccDirective):
+class TTAccLoop(TTAccConstruct):
     kind = "loop"   
  
     def _is_legal_clause(self,clause):

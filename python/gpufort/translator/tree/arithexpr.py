@@ -655,6 +655,17 @@ class TTFunctionCall(VarExpr):
           )
         )
 
+    def is_argument_specified(self,arg_name):
+        """:return: If the given argument is specified."""
+        assert self.is_function_call
+        arg_name = arg_name.lower()
+        assert arg_name in self.symbol_info.dummy_args
+        try:
+            self.get_actual_argument(arg_name)
+            return True
+        except util.error.LookupError:
+            return False
+
     def _args_as_str(self,converter):
         """Assumes Fortran style () operators are used in any case.
         :note: This is the default implementation."""
@@ -1725,6 +1736,13 @@ class TTArithExpr(ArithExprNode):
     @property
     def is_unprefixed_single_value(self):
         return isinstance(self.expr,TTValue)
+    
+    @property
+    def is_prefixed_single_value(self):
+        return (
+                 isinstance(self.expr,TTUnaryOp)
+                 and isinstance(self.expr.opd,TTValue)
+               )
 
     def cstr(self):
         return self.expr.cstr()
@@ -1794,7 +1812,7 @@ class TTAssignment(base.TTStatement):
     def is_copy(self):
         """:return: if this assignment is a copy operation"""
         return (
-          self.lhs.is_unprefixed_single_value
+          self.rhs.is_unprefixed_single_value
           and (
             (self.lhs.is_scalar
             and self.rhs.is_scalar)
@@ -1808,10 +1826,39 @@ class TTAssignment(base.TTStatement):
     def is_setval(self):
         """:return: if this assignment is a copy operation"""
         return (
-          self.lhs.is_unprefixed_single_value
-          and self.lhs.is_scalar
-          and self.rhs.yields_contiguous_array
+          self.lhs.yields_contiguous_array
+          and self.rhs.is_unprefixed_single_value
+          and self.rhs.is_scalar
         )
+    
+    def is_simple_array_intrinsic_call(self):
+        """Checks if this is an expression of the form 
+        <scalar> = [+-] <intrinsic>(<array|subarray>)
+        where the intrinsic is one of minval,maxval,sum.
+        No DIM or MASK argument is allowed.
+        """
+        if (self.lhs.is_scalar and self.rhs.is_scalar):
+            if self.rhs.is_unprefixed_single_value:
+                candidate = self.rhs.expr
+            elif self.rhs.is_prefixed_single_value:
+                candidate = self.rhs.expr.opd
+            else:
+                return False
+            if (
+                candidate.value.is_function_call 
+                and candidate.value.is_intrinsic_call
+              ):
+                if (
+                  candidate.symbol_info.name in ["minval","maxval","sum"]
+                  and len(candidate.args) == 1
+                  and candidate.is_argument_specified("array")
+                ):
+                  array_arg = candidate.get_argument("array")
+                  return (
+                    array_arg.is_unprefixed_single_value
+                    and array_arg.expr.is_array
+                  )
+        return False 
 
     #todo: Detect (hip-)BLAS routines too?
 

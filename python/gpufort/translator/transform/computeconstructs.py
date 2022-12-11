@@ -177,7 +177,7 @@ class __HIPKernelBodyGenerator:
         """
         previous_indent = self._indent
         if indent != None:
-            self._indent += ""
+            self._indent += indent
         else:
             self._indent += ttcontainer.indent
         for child in ttcontainer:
@@ -604,14 +604,19 @@ class __HIPKernelBodyGenerator:
         #        acc_loop_info.collapse = len(loops)
 
     def _traverse(self,ttnode):
-        #todo: detach loop annotation from do loop
         if isinstance(ttnode,(tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
             self._traverse_acc_compute_construct(ttnode)
             self._traverse_acc_loop_directive(ttnode)
+            self._traverse_container_body(ttnode,indent=""):
         elif isinstance(ttnode,(tree.TTAccParallel,tree.TTAccKernels)):
+            if (isinstance(ttnode,tree.TTAccKernels) 
+               and ttnode.is_device_to_device_copy):
+                pass
             self._traverse_acc_compute_construct(ttnode)
+            self._traverse_container_body(ttnode,indent=""):
         elif isinstance(ttnode,tree.TTCufKernelDo):
             self._traverse_cuf_kernel_do_construct(ttnode)
+            self._traverse_container_body(ttnode,indent=""):
         elif isinstance(ttnode,tree.TTAccLoop):
             if self._loopnest_mgr == None:
                 self._traverse_acc_loop_directive(ttnode)
@@ -622,7 +627,9 @@ class __HIPKernelBodyGenerator:
         elif isinstance(ttnode,tree.TTAssignment):
             if ttnode.lhs.is_array:
                 if ttnode.rhs.applies_transformational_functions_to_arrays:
-                    raise util.error.LimitationError("found transformational function in array assignment expression")
+                    raise util.error.LimitationError(
+                      "found transformational function in array assignment expression"
+                    )
                 else:
                     self._traverse_array_assignment(ttnode)
             else: # result is a scalar

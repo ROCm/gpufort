@@ -9,7 +9,8 @@ from .. import opts
 import pyparsing
 
 class TTNode(object):
-    
+    # TODO move labeling to TTStatement    
+
     def compare_label(self,label1,label2):
         """:return: If this bel equals argument, case is ignored.
         """
@@ -63,7 +64,7 @@ class TTNode(object):
         """
         yield (self,False) # yield at enter
         for child in self.child_nodes():
-            yield from child.walk_up_and_down()
+            yield from child.enter_and_leave()
         yield (self,True) # yield at leave
 
     def fstr(self):
@@ -108,7 +109,36 @@ class TTNone(TTNode):
         return ""
 
 class TTStatement(TTNode):
-    pass
+
+    def child_statements(self):
+        yield from ()
+
+    def walk_statements_preorder(self):
+        """Pre-order tree walk iterator, i.e. yields
+        the current statement before its children.
+        """
+        yield self
+        for child in self.child_statements():
+            yield from child.walk_statements_preorder()
+    
+    def walk_statements_postorder(self):
+        """Post-order tree walk iterator, i.e. yields
+        the current statement after its children.
+        """
+        for child in self.child_statements():
+            yield from child.walk_statements_postorder()
+        yield self
+
+    def enter_and_leave_statements(self):
+        """Iterator that yields a tuple consisting of the current statement 
+        and a flag if the statement was entered (False) or left (True).
+        The flag thus indicates if the iterator is going up the tree again with respect
+        to that statement.
+        """
+        yield (self,False) # yield at enter
+        for child in self.child_statements():
+            yield from child.enter_and_leave_statements()
+        yield (self,True) # yield at leave
 
 class TTContainer(TTStatement):
     """Container node for manual parser construction.
@@ -122,6 +152,9 @@ class TTContainer(TTStatement):
         self.body = []
         self.named_label = None
         self.indent = indent 
+
+    def child_statements(self):
+        yield from self.body
 
     def __len__(self):
         return len(self.body)

@@ -34,6 +34,7 @@ def _is_ignored_fortran_directive(tokens):
            or util.parsing.compare_ignore_case(tokens[1:4],["acc","end","loop"])
            or util.parsing.compare_ignore_case(tokens[1:3],["acc","routine"]))
 
+# todo resolve all at the end?
 def _parse_arith_expr(expr_as_str,scope):
     parse_result = parse_arith_expr(expr_as_str)
     if scope != None:
@@ -44,6 +45,12 @@ def _parse_assignment(expr_as_str,scope):
     parse_result = parse_assignment(expr_as_str)
     if scope != None:
         semantics_checker.resolve_assignment(parse_result,scope)
+    return parse_result
+
+def _parse_acc_directive(expr_as_str,scope):
+    parse_result = parse_acc_directive(expr_as_str)
+    if scope != None:
+        semantics_checker.resolve_acc_directive(parse_result,scope)
     return parse_result
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -217,47 +224,26 @@ def parse_fortran_code(code,result_name=None,scope=None):
                 append_(tree.TTCommentedOut([stmt]), "comment")
                 if _is_ignored_fortran_directive(tokens):
                     ignore_("directive")
-                elif util.parsing.compare_ignore_case(tokens[1:4],["acc","kernels","loop"]):
-                    append_(
-                      tree.grammar.acc_parallel_loop.parseString(
-                        stmt, parseAll=True)[0],
-                      "acc parallel loop construct"
+                elif (
+                    util.parsing.compare_ignore_case(tokens[1:4],["acc","kernels","loop"])
+                    or util.parsing.compare_ignore_case(tokens[1:4],["acc","parallel","loop"])
+                    or util.parsing.compare_ignore_case(tokens[1:4],["cuf","kernel","do"]) # TODO no acc directive
+                    or util.parsing.compare_ignore_case(tokens[1:3],["acc","kernels"])
+                    or util.parsing.compare_ignore_case(tokens[1:3],["acc","parallel"])
+                    or util.parsing.compare_ignore_case(tokens[1:3],["acc","serial"])
+                  ):
+                    directive = _parse_acc_directive(stmt,scope)
+                    descend_(
+                      directive,
+                      directive.kind 
                     )
-                elif util.parsing.compare_ignore_case(tokens[1:3],["acc","kernels"]):
+                elif (
+                    util.parsing.compare_ignore_case(tokens[1:3],["acc","loop"])
+                  ):
+                    directive = _parse_acc_directive(stmt,scope)
                     append_(
-                      tree.grammar.acc_kernels.parseString(
-                        stmt, parseAll=True)[0],
-                      "acc kernels construct"
-                    )
-                elif util.parsing.compare_ignore_case(tokens[1:4],["acc","parallel","loop"]):
-                    append_(
-                      tree.grammar.acc_parallel_loop.parseString(
-                        stmt, parseAll=True)[0],
-                      "acc parallel loop construct"
-                    )
-                elif util.parsing.compare_ignore_case(tokens[1:3],["acc","parallel"]):
-                    append_(
-                      tree.grammar.acc_parallel.parseString(
-                        stmt, parseAll=True)[0],
-                      "acc parallel construct"
-                    )
-                elif util.parsing.compare_ignore_case(tokens[1:3],["acc","serial"]):
-                    append_(
-                      tree.grammar.acc_serial.parseString(
-                        stmt, parseAll=True)[0],
-                      "acc serial construct"
-                    )
-                elif util.parsing.compare_ignore_case(tokens[1:3],["acc","loop"]):
-                    append_(
-                      tree.grammar.acc_loop.parseString(
-                        stmt, parseAll=True)[0],
-                      "acc loop directive"
-                    )
-                elif util.parsing.compare_ignore_case(tokens[1:4],["cuf","kernel","do"]):
-                    append_(
-                      tree.grammar.cuf_kernel_do.parseString(
-                        stmt, parseAll=True)[0],
-                      "cuf kernel do construct"
+                      directive,
+                      directive.kind 
                     )
                 else:
                     warn_("directive")

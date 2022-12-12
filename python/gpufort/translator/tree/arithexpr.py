@@ -111,7 +111,6 @@ class ArithExprNode(base.TTNode):
           FortranType.COMPLEX,
         ]
         
-
 class Literal(ArithExprNode):
             
     def _assign_fields(self, tokens):
@@ -1423,13 +1422,14 @@ class TTUnaryOp(ArithExprNode):
         self.op, self.opd = tokens[0]
         self._op_type = None
     
+    @property
     def operator_type(self):
         """:return: a characteristic operator for 
         the binary operators aggregated in this chain
         of binary operations.
         """
         if self._op_type == None:
-            op = self.operators[0].lower()
+            op = self.op.lower()
             if op in ["+","-"]:
                 self._op_type = OperatorType.ADD
             else:

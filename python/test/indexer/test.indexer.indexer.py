@@ -12,7 +12,7 @@ from gpufort import linemapper
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "debug"
-util.logging.opts.verbose   = False
+util.logging.opts.verbose   = True
 #util.logging.opts.log_filter = "acc"
 util.logging.opts.traceback = False
 util.logging.init_logging("log.log",log_format,log_level)

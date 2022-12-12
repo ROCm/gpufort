@@ -187,6 +187,9 @@ class IndexRecordAccessorBase:
     def __getitem__(self,key):
         """:deprecated: Rather use the explicitly defined properties."""
         return self.record[key] 
+    def __setitem__(self, key, value):
+        """:deprecated:"""
+        self.record[key] = value
     def __eq__(self, other):
         if isinstance(other,IndexRecordAccessorBase):
             return self.record == other.record

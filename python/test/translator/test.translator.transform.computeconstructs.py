@@ -12,6 +12,14 @@ PROFILING_ENABLE = False
 
 from gpufort import translator
 from gpufort import indexer
+from gpufort import util
+
+log_format = "[%(levelname)s]\tgpufort:%(message)s"
+log_level                   = "debug2"
+util.logging.opts.verbose   = True
+util.logging.opts.log_filter = "translator"
+util.logging.opts.traceback = False
+util.logging.init_logging("log.log",log_format,log_level)
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -77,7 +85,7 @@ do k = 1, N
   end do
 end do
 
-!$acc loop gang worker vector dtype(radeon) tile(64) device_type(nvidia) tile(32) private(u)
+!$acc loop gang worker vector private(u) dtype(radeon) tile(64) device_type(nvidia) tile(32)
 do k = 1, M
   a(0,0,k) = 3
 end do
@@ -106,7 +114,7 @@ class TestTransformAcc(unittest.TestCase):
     def test_01_transform(self):
         device_type = "radeon"
         #for i,test in enumerate(testdata[-1:]):
-        for i,test in enumerate(testdata[2:3]):
+        for i,test in enumerate(testdata[:]):
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
               statements,result_name=None,scope=scope

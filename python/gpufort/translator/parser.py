@@ -73,7 +73,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
   
     behavior:
     - treat do, do while, if, elseif, else, select and end statements explicitly
-    - parse other statements via pyparsing tree.grammar
+    - parse other statements via pyparsing tree grammar
     - consider comments
     - every call returns a subtree
     """
@@ -132,17 +132,17 @@ def parse_fortran_code(code,result_name=None,scope=None):
                                 "{}: ignored {} '{}'".format(stmt_info.loc_str(),expr, stmt))
     
     # tree creation ops
-    def append_(node, kind=None):
+    def append_(node, kind=None, quiet=False):
         nonlocal stmt_info
         nonlocal curr
         nonlocal level
         if isinstance(node, tree.TTNode):
             node.parent = curr
         curr.body.append(node)
-        if kind != None:
+        if kind != None and not quiet:
             util.logging.log_debug2(
                 opts.log_prefix, "parse_fortran_code.append_",
-                "{}: found {} in statement '{}'".format(
+                "{0}: '{2}' -- found: {1}".format(
                   stmt_info.loc_str(),
                   kind, stmt))
 
@@ -167,7 +167,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             level += 1
         util.logging.log_debug2(
             opts.log_prefix, "parse_fortran_code.append_",
-            "{}: enter {} in statement '{}'".format(
+            "{0}: '{2}' -- enter: {1}".format(
               stmt_info.loc_str(),
               kind, stmt))
 
@@ -190,14 +190,16 @@ def parse_fortran_code(code,result_name=None,scope=None):
         level = min(level - 1, 0)
         util.logging.log_debug2(
             opts.log_prefix, "parse_fortran_code.append_",
-            "{}: leave {} in statement '{}'".format(
+            "{0}: '{2}' -- leave: {1}".format(
               stmt_info.loc_str(),
               kind, stmt))
 
     def ascend_from_do_loop_(kind,named_label=None):
+        nonlocal curr
+        saved = curr
         ascend_(kind, named_label)
-        if isinstance(curr.parent,tree.TTAccLoop):
-            ascend_(curr.parent.kind)
+        if isinstance(saved.parent,tree.TTAccLoop):
+            ascend_("acc " + saved.parent.kind)
 
     # parser loop
     ttree = tree.TTRoot()
@@ -226,7 +228,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             ignore_("statement")
         elif statement_classifier.is_fortran_directive(stmt,modern_fortran):
             try:
-                append_(tree.TTCommentedOut([stmt]), "comment")
+                append_(tree.TTCommentedOut([stmt]), "comment", quiet=True)
                 if _is_ignored_fortran_directive(tokens):
                     ignore_("directive")
                 elif (
@@ -241,7 +243,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
                     directive = _parse_acc_directive(stmt,scope)
                     descend_(
                       directive,
-                      directive.kind 
+                      "acc " + directive.kind 
                     )
                 else:
                     warn_("directive")
@@ -259,10 +261,8 @@ def parse_fortran_code(code,result_name=None,scope=None):
               named_label=named_label
             )
         elif statement_classifier.is_do(tokens):
-            result = statement_classifier.parse_result
-            named_label, numeric_do_label,cond,\
-            var, lbound_str, ubound_str, stride_str\
-              = result
+            (named_label, numeric_do_label, cond, var, 
+            lbound_str, ubound_str, stride_str) = statement_classifier.parse_result
             if cond != None:
                 do_loop = tree.TTDoWhile([
                   _parse_arith_expr(cond,scope),
@@ -295,7 +295,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
                 append_(do_loop_body_label)
         # if-then-else
         elif statement_classifier.is_if_then(tokens):
-            named_label, cond = statement_classifier.parse_result
+            (named_label, cond) = statement_classifier.parse_result
             descend_(
               tree.TTIfElseBlock(), "if block", 
               named_label=named_label,
@@ -339,7 +339,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             )
         # select-case
         elif statement_classifier.is_select_case(tokens):
-            named_label, argument = statement_classifier.parse_result
+            (named_label, argument) = statement_classifier.parse_result
             try:
                 descend_(
                   tree.TTSelectCase([
@@ -376,7 +376,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             if stmt_label != None and stmt_label.isnumeric():
                 while ( isinstance(curr,tree.TTDo)
                         and curr.compare_dolabel(stmt_label) ):
-                    ascend_from_do_loop_(tokens[1], named_label=named_label)
+                    ascend_from_do_loop_(tokens[0], named_label=named_label)
         elif statement_classifier.is_cycle(tokens):
             # todo: might have label arg
             ttcycle = tree.TTCycle([statement_classifier.parse_result])
@@ -401,7 +401,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             named_label = statement_classifier.parse_result
             ascend_("executable block", named_label=named_label)
         elif statement_classifier.is_end(tokens,"do"):
-            assert isinstance(curr,tree.TTDo)
+            assert isinstance(curr,tree.TTDo), type(curr)
             named_label = statement_classifier.parse_result
             ascend_from_do_loop_("do", named_label=named_label)
         elif statement_classifier.is_end(tokens, "if"):

@@ -163,10 +163,10 @@ def analyze_directive(ttaccdirective,device_type):
         if isinstance(ttnode,tree.TTAccMappingClause):
             clause_kind = ttnode.kind
             var_list = ttnode.var_list
-            if not isinstance(ttnode,(tree.TTAccClausePrivate)):
+            if isinstance(ttnode,(tree.TTAccClausePrivate)):
                 for var in var_list:
                     result.private_vars.value.append(var)
-            elif not isinstance(ttnode,(tree.TTAccClauseFirstprivate)):
+            elif isinstance(ttnode,(tree.TTAccClauseFirstprivate)):
                 for var in var_list:
                     result.firstprivate_vars.value.append(var)
             else:
@@ -175,30 +175,30 @@ def analyze_directive(ttaccdirective,device_type):
                     result.mappings[clause_kind] = []
                 result.mappings.value[clause_kind] += var_list
         elif isinstance(ttnode,tree.TTAccClauseGang):
-            result.gang.value = ttnode.value
+            result.gang.value = ttnode.arg
         elif isinstance(ttnode,tree.TTAccClauseWorker):
-            result.worker.value = ttnode.value
+            result.worker.value = ttnode.arg
         elif isinstance(ttnode,tree.TTAccClauseVector):
-            result.vector.value = ttnode.value
-        elif isinstance(ttnode,tree.TTAccClauseNoHost):
+            result.vector.value = ttnode.arg
+        elif isinstance(ttnode,tree.TTAccClauseNohost):
             result.nohost.specified = True
         elif isinstance(ttnode,tree.TTAccClauseAuto):
             result.auto.specified = True
         elif isinstance(ttnode,tree.TTAccClauseIndependent):
             result.independent.specified = True
         elif isinstance(ttnode,tree.TTAccClauseNumGangs):
-            result.num_gangs.value = ttnode.value
+            result.num_gangs.value = ttnode.arg
         elif isinstance(ttnode,tree.TTAccClauseNumWorkers):
-            result.num_workers.value = ttnode.value
+            result.num_workers.value = ttnode.arg
         elif isinstance(ttnode,tree.TTAccClauseVectorLength):
-            result.vector_length.value = ttnode.value
+            result.vector_length.value = ttnode.arg
         elif isinstance(ttnode,tree.TTAccClauseCollapse):
-            result.collapse.value = ttnode._value
+            result.collapse.value = ttnode.arg
         elif isinstance(ttnode,tree.TTAccClauseTile):
-            result.tile.value = ttnode.tiles_per_dim 
+            result.tile.value = ttnode.args 
         elif isinstance(ttnode,tree.TTAccClauseReduction):
-            op = ttnode.operator
-            var_list = ttnode.vars
+            op = ttnode.op
+            var_list = ttnode.var_list
             if op not in result.reduction:
                 result.reduction.value[op] = []
             for var in var_list:
@@ -224,9 +224,9 @@ def find_rvalues_in_directive(ttaccdirective,rvalues):
     """
     lvalues = []
     for ttnode in ttaccdirective.walk_preorder():
-        if isinstance(expr,(
+        if isinstance(ttnode,(
             tree.TTAccClauseGang,
             tree.TTAccClauseTile,
             tree.TTAccClauseVector,
             tree.TTAccClauseWorker)):
-              fortran.find_lvalues_and_rvalues(expr,lvalues,rvalues)
+              fortran.find_lvalues_and_rvalues(ttnode,lvalues,rvalues)

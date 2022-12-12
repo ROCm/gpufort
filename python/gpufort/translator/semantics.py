@@ -607,7 +607,7 @@ class Semantics:
     def _check_unary_op(self,ttunaryop):
         """Checks that operator and operand type are compatible.
         """
-        self._compare_operand_and_operator(ttunaryop,opd)
+        self._compare_operand_and_operator(ttunaryop,ttunaryop.opd)
 
     def _resolve_binary_op_chain(self,ttbinaryop):
         """Resolve the type and rank of an binary operation.

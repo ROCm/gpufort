@@ -82,7 +82,7 @@ class TTAccClauseDeviceType(TTAccClause):
     kind = "device_type"
 
     def _assign_fields(self, tokens):
-        self.device_types = tokens
+        self.device_types = list(tokens)
 
     def named_device_types(self,lower_case=True):
         """:return: All arguments that are identifiers, i.e. not '*'.
@@ -90,19 +90,19 @@ class TTAccClauseDeviceType(TTAccClause):
         :see: has_named_device_types
         """ 
         result = []
-        for device_type in ttnode.device_types:
+        for device_type in self.device_types:
             if device_type.isidentifier():
                 if lower_case:
                     result.append(device_type.lower())
                 else:
                     result.append(device_type)
-        return device_type
+        return result
 
     @property
     def has_named_device_types(self):
         """:return: If some arguments are identifiers, i.e. not '*'.
         """
-        for device_type in ttnode.device_types:
+        for device_type in self.device_types:
             if device_type.isidentifier():
                 return True
         return False
@@ -356,6 +356,7 @@ def acc_clause_parse_action(tokens):
                     TTAccClausePresent,
                     TTAccClauseDeviceptr,
                     TTAccClauseAttach,
+                    TTAccClausePrivate,
                     TTAccClauseFirstprivate,
                     TTAccClauseUseDevice]:
             if cls.kind == clause.kind:
@@ -388,7 +389,7 @@ class TTAccDirective(base.TTStatement):
         """
         for clause in self.walk_clauses():
             if isinstance(clause,cls):
-                yield cls
+                yield clause
  
     def _get_named_device_types(self):
         """:return: A list of device type identifiers found 
@@ -402,7 +403,7 @@ class TTAccDirective(base.TTStatement):
                     
         for clause in self.walk_matching_clauses(TTAccClauseDeviceType):
             if clause.has_named_device_types:
-                for device_type in clause.named_device_types:
+                for device_type in clause.named_device_types(lower_case=False):
                     for other in named_device_types:
                         if other.lower() == device_type.lower():
                             return util.error.SyntaxError(
@@ -415,7 +416,6 @@ class TTAccDirective(base.TTStatement):
     def walk_clauses_device_type(self,device_type):
         """:return: Walk clauses that apply to the given device type.
         :param str device_type: Device type such as 'nvidia', 'radeon', or None (default).
-        :param str cls: The class or base class of the clause to lookup.
         """
         result = []
         current_device_types = [] 
@@ -429,9 +429,8 @@ class TTAccDirective(base.TTStatement):
         for clause in self.walk_clauses():
             if isinstance(clause,TTAccClauseDeviceType):
                 current_device_types = clause.device_types
-            elif isinstance(clause,cls):
-                if clause_applies_to_device_type_(device_type):
-                    yield clause
+            elif clause_applies_to_device_type_(device_type):
+                yield clause
 
     def _is_legal_clause(self,clause):
         assert False, "must be implemented by subclass"
@@ -454,6 +453,8 @@ class TTAccDirective(base.TTStatement):
         i_device_type_clause = -1
         current_device_type_clause_types = []
         for i,clause in enumerate(self.clauses):
+            if isinstance(clause,UnprocessedGenericMappingClause):
+                print(clause.kind)
             assert isinstance(clause,TTAccClause), "clause "+str(i)+" is not of type TTAccClause, is of type "+str(type(clause))
             if not self._is_legal_clause(clause):
                 raise util.error.SyntaxError(

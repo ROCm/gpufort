@@ -572,10 +572,10 @@ class Grammar:
         self.acc_clause_device_num = self.DEVICE_NUM + arith_expr_arg
         self.acc_clause_device_type = (
           self.DEVICE_TYPE 
-          + make_arg_(pyp.Group(
+          + make_arg_(
               pyp.delimitedList(self.identifier_no_action) 
               | pyp.Literal("*")
-          ))
+          )
         )
         self.acc_clause_if = self.IF + arith_expr_arg
         self.acc_clause_self = self.SELF + arith_expr_arg

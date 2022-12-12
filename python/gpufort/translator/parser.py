@@ -194,6 +194,11 @@ def parse_fortran_code(code,result_name=None,scope=None):
               stmt_info.loc_str(),
               kind, stmt))
 
+    def ascend_from_do_loop_(kind,named_label=None):
+        ascend_(kind, named_label)
+        if isinstance(curr.parent,tree.TTAccLoop):
+            ascend_(curr.parent.kind)
+
     # parser loop
     ttree = tree.TTRoot()
     curr = ttree
@@ -231,17 +236,10 @@ def parse_fortran_code(code,result_name=None,scope=None):
                     or util.parsing.compare_ignore_case(tokens[1:3],["acc","kernels"])
                     or util.parsing.compare_ignore_case(tokens[1:3],["acc","parallel"])
                     or util.parsing.compare_ignore_case(tokens[1:3],["acc","serial"])
+                    or util.parsing.compare_ignore_case(tokens[1:3],["acc","loop"])
                   ):
                     directive = _parse_acc_directive(stmt,scope)
                     descend_(
-                      directive,
-                      directive.kind 
-                    )
-                elif (
-                    util.parsing.compare_ignore_case(tokens[1:3],["acc","loop"])
-                  ):
-                    directive = _parse_acc_directive(stmt,scope)
-                    append_(
                       directive,
                       directive.kind 
                     )
@@ -249,7 +247,6 @@ def parse_fortran_code(code,result_name=None,scope=None):
                     warn_("directive")
             except pyparsing.ParseException as e:
                 error_("directive", e)
-                pass
         elif statement_classifier.is_fortran_comment(stmt,modern_fortran):
             if type(curr) != tree.TTRoot:
                 comment = re.split("!|^[c*]", stmt1, 1, re.IGNORECASE)[1]
@@ -369,7 +366,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
                 error_("case", e)
         elif statement_classifier.is_case_default(tokens):
             if type(curr) is tree.TTCase:
-                ascend_("case-default")
+                ascend_("case")
             descend_(tree.TTCaseDefault([]), "case default")
         # end
         elif tokens[0] == "continue":
@@ -379,7 +376,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             if stmt_label != None and stmt_label.isnumeric():
                 while ( isinstance(curr,tree.TTDo)
                         and curr.compare_dolabel(stmt_label) ):
-                    ascend_(tokens[1], named_label=named_label)
+                    ascend_from_do_loop_(tokens[1], named_label=named_label)
         elif statement_classifier.is_cycle(tokens):
             # todo: might have label arg
             ttcycle = tree.TTCycle([statement_classifier.parse_result])
@@ -406,7 +403,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
         elif statement_classifier.is_end(tokens,"do"):
             assert isinstance(curr,tree.TTDo)
             named_label = statement_classifier.parse_result
-            ascend_("do", named_label=named_label)
+            ascend_from_do_loop_("do", named_label=named_label)
         elif statement_classifier.is_end(tokens, "if"):
             named_label = statement_classifier.parse_result
             assert isinstance(curr,(tree.TTElse,tree.TTIfElseIf))

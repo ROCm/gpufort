@@ -12,7 +12,9 @@ Aside from the operators,
 
 Generators:
 
-* walk_values_ignore_args: Certain nodes are equipped with this generator.
+* **walk_values_ignore_args**: 
+
+  Certain nodes are equipped with this generator.
   This generator can be used to analyze the operands of 
   Fortran array expressions. Unlike the `walk_preorder` and `walk_postorder`
   routines, the generator does not descend into function call arguments and array indices.
@@ -21,6 +23,14 @@ Generators:
   not yield the elemental function call expression itself.
   It further does not yield any unary and binary operators. 
   It exclusively yields TTValue instances.
+
+* **walk_variable_references**: 
+    
+  Walks across all nodes and yields those that are linked one-to-one 
+  to entries in the symbol table. For example, given an expression
+  `a%b%c(i)` this generator would yield the nodes (TTIdentifier,TTFunctionCall) 
+  representing `a`,`a%b`, and `a%b%c` and `i`.
+                            
 """
 
 import pyparsing
@@ -151,6 +161,9 @@ class Literal(ArithExprNode):
     def yields_contiguous_array(self): return self.is_contiguous_array
     @property
     def yields_full_array(self): return self.is_full_array
+    
+    def walk_variable_references(self):
+        yield from ()
 
     @property
     def resolved(self):
@@ -290,6 +303,9 @@ class TTIdentifier(VarExpr):
     def _assign_fields(self, tokens):
         self.name = tokens[0]
         VarExpr._assign_fields(self,tokens)
+    
+    def walk_variable_references(self):
+        yield self
 
     @property 
     def rank(self):
@@ -338,6 +354,15 @@ class TTIdentifier(VarExpr):
 
 
 class TTFunctionCall(VarExpr):
+    """Tree node for function call and array access expressions. In Fortran,
+    generally the lookup table need to be queried
+    in order to identify the actual type of an
+    expression that appears like a function call.
+
+    After the semantic analysis, one can 
+    use the properties 'is_function_call` and
+    `is_array_expr` to check what this node actually represents.
+    """ 
  
     def _assign_fields(self, tokens):
         self.name = tokens[0]
@@ -395,6 +420,14 @@ class TTFunctionCall(VarExpr):
     def child_nodes(self):
         for arg in self.args:
             yield arg
+
+    def walk_variable_references(self):
+        """Yields itself if self is a variable.
+        Then yields from arguments."""
+        if self.is_array_expr:
+            yield self
+        for arg in self.args:
+            yield from arg.walk_variable_references()
 
     def index_range_args(self):
         """Returns all range args in the order of their appeareance.
@@ -834,6 +867,12 @@ class TTDerivedTypePart(ArithExprNode):
         if isinstance(self._element,TTDerivedTypePart):
             yield from self._element.walk_derived_type_parts_postorder()
         yield self
+    
+    def walk_variable_references(self):
+        """Yields all variables referenced by this expression in preorder.
+        """
+        yield self._derived_type
+        yield from self._element.walk_variable_references()
 
     @property
     def innermost_part(self):
@@ -1051,6 +1090,27 @@ class TTValue(ArithExprNode):
             return self.value.rank_defining_node
         else:
             return self.value
+    
+    @property
+    def partially_resolved(self):
+        if isinstance(self.value,(TTDerivedTypePart)):
+            for ttpart in self.value.walk_derived_type_parts_preorder():
+                if not ttpart.derived_type.partially_resolved:
+                    return False
+            return ttpart.element.partially_resolved
+        else:
+            return self.value.partially_resolved
+
+    @property
+    def resolved(self):
+        if isinstance(self.value,(TTDerivedTypePart)):
+            for ttpart in self.value.walk_derived_type_parts_preorder():
+                if not ttpart.derived_type.resolved:
+                    return False
+            return ttpart.element.resolved
+        else:
+            return self.value.resolved
+    
 
     @property
     def type(self):
@@ -1555,8 +1615,7 @@ class TTBinaryOpChain(ArithExprNode):
         self._bytes_per_element = bytes_per_element
 
     def child_nodes(self):
-        for opd in self.operands:
-            yield opd
+        yield from self.operands
     
     @property
     def yields_array(self):

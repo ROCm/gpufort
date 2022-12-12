@@ -151,7 +151,7 @@ class UnprocessedGenericMappingClause(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.kind = tokens[0]
-        self.var_list = tokens[1]
+        self.var_list = tokens[1:]
 
 class TTAccMappingClause(TTAccClause):
     """Base clase of specialized mapping nodes.
@@ -179,7 +179,7 @@ class TTAccClauseAttach(TTAccMappingClause):
     kind = "attach"
 class TTAccClausePrivate(TTAccMappingClause):
     kind = "private"
-class TTAccClauseFirstPrivate(TTAccMappingClause):
+class TTAccClauseFirstprivate(TTAccMappingClause):
     kind = "first_private"
 class TTAccClauseUseDevice(TTAccMappingClause):
     kind = "use_device"
@@ -356,7 +356,7 @@ def acc_clause_parse_action(tokens):
                     TTAccClausePresent,
                     TTAccClauseDeviceptr,
                     TTAccClauseAttach,
-                    TTAccClauseFirstPrivate,
+                    TTAccClauseFirstprivate,
                     TTAccClauseUseDevice]:
             if cls.kind == clause.kind:
                 return cls(clause.var_list) 
@@ -376,7 +376,7 @@ class TTAccDirective(base.TTStatement):
         self._named_device_types = self._get_named_device_types()
 
     def child_nodes(self):
-        """:note: might be overwritten, don't delete to walk_clauses."""
+        """:note: might be overwritten, don't delete."""
         yield from self.clauses
 
     def walk_clauses(self):
@@ -549,6 +549,47 @@ class TTAccConstruct(TTAccDirective,base.TTContainer):
     def __init__(self,clauses):
         base.TTContainer._init(self)
         TTAccDirective.__init__(self,clauses)
+          
+    def walk_mapped_variables(self):
+        """Yields triples consisting of variable lvalue paired with mapping kind and a flag
+           if the readonly modifier was specified (only relevan to 'copyin' clause). .""" 
+        for clause in self.walk_clauses():
+            if isinstance(clause,(
+                TTAccClauseCopy,
+                TTAccClauseCopyin,
+                TTAccClauseCopyout,
+                TTAccClauseCreate,
+                TTAccClauseNoCreate,
+                TTAccClausePresent,
+                TTAccClauseDeviceptr,
+                TTAccClauseAttach,
+              )):
+                readonly = False
+                if isinstance(clause,TTAccClauseCopyin):
+                    readonly = clause.readonly
+                for var in clause.var_list:
+                    yield (var,clause.kind,readonly)
+
+    def walk_private_variables(self):
+        """Yields variable lvalues appearing in the 'private' clause.""" 
+        for clause in self.walk_clauses():
+            if isinstance(clause,TTAccClausePrivate):
+                for var in clause.var_list:
+                    yield var
+    
+    def walk_firstprivate_variables(self):
+        """Yields variable lvalues appearing in the 'first_private' clause.""" 
+        for clause in self.walk_clauses():
+            if isinstance(clause,TTAccClauseFirstprivate):
+                for var in clause.var_list:
+                    yield var
+    
+    def walk_reduction_variables(self):
+        """Yields tuples consisting of variable paired with reduction operation.""" 
+        for clause in self.walk_clauses():
+            if isinstance(clause,TTAccClauseReduction):
+                for var in clause.var_list:
+                    yield (var,clause.op)
 
 class TTAccComputeConstruct(TTAccConstruct):
     
@@ -574,7 +615,7 @@ class TTAccComputeConstruct(TTAccConstruct):
             TTAccClauseDeviceptr,
             TTAccClauseAttach,
             #TTAccClausePrivate, # only serial, parallel
-            #TTAccClauseFirstPrivate,
+            #TTAccClauseFirstprivate,
             TTAccClauseDefault,
           ))
 
@@ -605,7 +646,7 @@ class TTAccSerial(TTAccComputeConstruct):
             return isinstance(clause,(
               TTAccClauseReduction,
               TTAccClausePrivate,
-              TTAccClauseFirstPrivate,
+              TTAccClauseFirstprivate,
             ))
         return True
 
@@ -627,7 +668,7 @@ class TTAccParallel(TTAccComputeConstruct):
               TTAccClauseVectorLength,
               TTAccClauseReduction,
               TTAccClausePrivate,
-              TTAccClauseFirstPrivate
+              TTAccClauseFirstprivate
             ))
         return True
     

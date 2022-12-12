@@ -13,14 +13,16 @@ class Semantics:
    
     Configurable class members:
     
-    * **acc_supported_device_types**:
-      Supported ACC device types, defaults to ["host","nohost","nvidia","radeon","hip]
     * **allow_array_index_to_be_array**:
       Allow array indices to be arrays itself, defaults to False.
     * **allow_array_index_to_be_real**:
       Allow array indices to be real (legacy extension), defaults to False.
     * **allow_interface_calls = False**:
       Allow calls to Fortran interfaces, defaults to False.
+    * **acc_supported_device_types**:
+      Supported ACC device types, defaults to ["host","nohost","nvidia","radeon","hip]
+    * **acc_allow_unchecked_mapping_of_subarrays**:
+      Supported ACC device types, defaults to ["host","nohost","nvidia","radeon","hip]
     
     Concepts:
 
@@ -44,6 +46,7 @@ class Semantics:
         self.allow_array_index_to_be_array = False
         self.allow_array_index_to_be_real = False
         self.allow_interface_calls = False
+        self.acc_allow_unchecked_mapping_of_subarrays = True
         self.acc_supported_device_types = ["host","nohost","nvidia","radeon","hip"]
         #
         self.warnings = []
@@ -89,8 +92,8 @@ class Semantics:
         #actual_bytes = self._lookup_bytes_per_element1(actual_type,actual_kind)
         actual_bytes = ttnode.bytes_per_element 
         expected_bytes = self._lookup_bytes_per_element1(expected_type,expected_kind)
-        return (actual_type != expected_type 
-               or actual_bytes != expected_bytes)
+        return (actual_type == expected_type 
+               or actual_bytes == expected_bytes)
 
     def _yields_default_integer_type(self,ttnode):
         """:return: if the arithmetic expression node yields the default integer type."""
@@ -676,8 +679,8 @@ class Semantics:
         :param scope: Scope for looking up variables and procedures.
         Further ensure type and rank of LHS and RHS are compatible.
         """
-        self.resolve_arith_expr(ttnode.lhs)
-        self.resolve_arith_expr(ttnode.rhs)
+        self.resolve_arith_expr(ttnode.lhs,scope)
+        self.resolve_arith_expr(ttnode.rhs,scope)
         lhs_bytes_per_element = ttnode.lhs.bytes_per_element
         rhs_bytes_per_element = ttnode.rhs.bytes_per_element
         if ttnode.lhs.yields_numeric_type:
@@ -696,12 +699,38 @@ class Semantics:
                   "LHS is logical but RHS is not logical"
                 )
 
-    def resolve_acc_directive(self,ttnode,scope):
+    def _acc_check_var_is_not_mapped_twice(self,ttaccdir):
+        """Checks that no variable appears twice across
+        all OpenACC mapping clauses, private and first_private clauses,
+        and reduction clauses.
+        :note: Must be used after all clauses have been resolved.
+        :todo: Currently only symbol based and does not consider
+               that different subarrays of the same arrays may be mapped.
+        """
+        tags = set()
+        def add_tag_(tag):
+            nonlocal tags
+            if tag in tags:
+                raise util.error.SemanticError(
+                  "variable reference '{}' is subject to multiple mappings".format(tag)
+                )
+            tags.add(tag) 
+        for (ttvarexpr,mapping_kind,readonly) in ttaccdir.walk_mapped_variables():
+            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
+        for ttvarexpr in ttaccdir.walk_private_variables():
+            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
+        for ttvarexpr in ttaccdir.walk_firstprivate_variables():
+            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
+        for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables():
+            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
+
+    def _acc_resolve_clauses(self,ttaccdir,scope):
+
         """Resolve the clauses of an OpenACC directive.
-        :param ttnode: The directive tree node.
+        :param ttaccdir: The directive tree node.
         :param scope: Scope for looking up variables and procedures.
         """
-        for clause in ttnode.walk_clauses():
+        for clause in ttaccdir.walk_clauses():
             if isinstance(clause,(
                 tree.TTAccClauseSeq,
                 tree.TTAccClauseAuto,
@@ -722,20 +751,34 @@ class Semantics:
               )):
                 if clause.arg_specified:
                     self.resolve_arith_expr(clause.arg,scope)
-                    _check_yields_default_integer_type
-                    self._check_yields_default_integer_type(clause.arg,clause.kind)
+                    self._check_yields_default_integer_type(
+                      clause.arg,
+                      "argument to '{}' clause is not default integer kind".format(
+                        clause.kind
+                      )
+                    )
             if isinstance(clause,(
                 tree.TTAccClauseNumGangs,
                 tree.TTAccClauseNumWorkers,
                 tree.TTAccClauseVectorLength,
               )):
                  self.resolve_arith_expr(clause.arg,scope)
-                 self._check_yields_default_integer_type(clause.arg,clause.kind)
+                 self._check_yields_default_integer_type(
+                   clause.arg,
+                   "argument to '{}' clause is not default integer kind".format(
+                     clause.kind
+                   )
+                 )
             if isinstance(clause,(
                 tree.TTAccClauseDeviceNum
               )):
                  self.resolve_arith_expr(clause.arg,scope)
-                 self._check_yields_default_integer_type(clause.arg,clause.kind)
+                 self._check_yields_default_integer_type(
+                   clause.arg,
+                   "argument to '{}' clause is not default integer kind".format(
+                     clause.kind
+                   )
+                 )
             if isinstance(clause,(
                 tree.TTAccClauseDeviceType
               )):
@@ -772,7 +815,7 @@ class Semantics:
                 tree.TTAccClauseDeviceptr,
                 tree.TTAccClauseAttach,
                 tree.TTAccClausePrivate,
-                tree.TTAccClauseFirstPrivate,
+                tree.TTAccClauseFirstprivate,
                 tree.TTAccClauseUseDevice,
                 tree.TTAccClauseCopyin,
               )):
@@ -826,3 +869,9 @@ class Semantics:
                     self._check_yields_default_integer_type(
                       queue,"'async' clause queues must be integers of 'acc_handle_kind'"
                     )
+    
+    def resolve_acc_directive(self,ttaccdir,scope):
+        """Resolves the clauses appearing on the directive."""
+        self._acc_resolve_clauses(ttaccdir,scope)
+        if isinstance(ttaccdir,tree.TTAccConstruct):
+            self._acc_check_var_is_not_mapped_twice(ttaccdir)

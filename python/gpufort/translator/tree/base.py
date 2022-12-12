@@ -55,6 +55,11 @@ class TTNode(object):
         for child in self.child_nodes():
             yield from child.walk_postorder()
         yield self
+   
+    def walk_variable_references(self):
+        """Yields all variable references in pre-order."""
+        for child in self.child_nodes:
+            yield from child.walk_variable_references()
 
     def enter_and_leave(self):
         """Iterator that yields a tuple consisting of the current node 

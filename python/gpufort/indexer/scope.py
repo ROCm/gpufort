@@ -493,7 +493,7 @@ def search_scope_for_var(scope,
       "entry found for variable tag '{}'".format(variable_tag))
     util.logging.log_leave_function(opts.log_prefix,
                                     "search_scope_for_var")
-    return indexertypes.IndexVariable(result)
+    return indexertypes.IndexVariable(result,variable_tag)
 
 def search_scope_for_implicitly_declared_var(scope,var_expr):
     return indexertypes.IndexVariable(

@@ -607,19 +607,20 @@ class __HIPKernelBodyGenerator:
         if isinstance(ttnode,(tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
             self._traverse_acc_compute_construct(ttnode)
             self._traverse_acc_loop_directive(ttnode)
-            self._traverse_container_body(ttnode,indent=""):
+            self._traverse_container_body(ttnode,indent="")
         elif isinstance(ttnode,(tree.TTAccParallel,tree.TTAccKernels)):
             if (isinstance(ttnode,tree.TTAccKernels) 
                and ttnode.is_device_to_device_copy):
                 pass
             self._traverse_acc_compute_construct(ttnode)
-            self._traverse_container_body(ttnode,indent=""):
+            self._traverse_container_body(ttnode,indent="")
         elif isinstance(ttnode,tree.TTCufKernelDo):
             self._traverse_cuf_kernel_do_construct(ttnode)
-            self._traverse_container_body(ttnode,indent=""):
+            self._traverse_container_body(ttnode,indent="")
         elif isinstance(ttnode,tree.TTAccLoop):
             if self._loopnest_mgr == None:
                 self._traverse_acc_loop_directive(ttnode)
+            self._traverse_container_body(ttnode,indent="")
         elif isinstance(ttnode,tree.TTDo):
             self._traverse_do_loop(ttnode)
         elif isinstance(ttnode,tree.TTContainer):

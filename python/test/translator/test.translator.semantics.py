@@ -10,6 +10,7 @@ import cProfile,pstats,io
 
 from gpufort import translator
 from gpufort import indexer
+from gpufort import util
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -20,12 +21,14 @@ scope = None
 semantics = translator.semantics.Semantics()
 
 class TestSemantics(unittest.TestCase):
+    
     def setUp(self):
         global PROFILING_ENABLE
         self.started_at = time.time()
         if PROFILING_ENABLE:
             self.profiler = cProfile.Profile()
             self.profiler.enable()
+    
     def tearDown(self):
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
@@ -36,8 +39,10 @@ class TestSemantics(unittest.TestCase):
             stats = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
             stats.print_stats(10)
             print(s.getvalue())
+    
     def test_00_do_nothing(self):
         pass
+    
     def test_01_create_scope(self):
         global scope
         scope = indexer.scope.create_scope_from_declaration_list("""\
@@ -286,6 +291,63 @@ class TestSemantics(unittest.TestCase):
               TestSemantics.resolve_function_call_results[i],
               result_tuple
             )
+    
+    acc_directive_testdata = [
+      "!$acc kernels loop",
+      "!$acc kernels loop gang(10) worker vector",
+      "!$acc kernels loop gang(10) worker vector_length(32)",
+      "!$acc kernels loop gang(10) worker vector_length(32) reduction(min:x)",
+    ]
+
+    acc_directive_testdata_wrong_syntax = [
+      "!$acc kernels loop gang gang",
+      "!$acc kernels loop device_type(radeon) vector(1) vector(2)",
+    ]
+    
+    acc_directive_testdata_wrong_semantics = [
+      "!$acc kernels loop copy(a) copyout(a)",
+    ]
+    
+    acc_directive_parse_results = []
+    acc_directive_parse_results_wrong_semantics = []
+    
+    def _acc_assert_fails_to_parse(self,test):
+        passed = True
+        try:
+            translator.parser.parse_acc_directive(test)
+        except util.error.SyntaxError as e: 
+            passed = False
+            pass
+        self.assertFalse(passed)
+    
+    def _acc_assert_fails_to_resolve(self,ttaccdir):
+        passed = True
+        try:
+            semantics.resolve_acc_directive(ttaccdir,scope)
+        except util.error.SemanticError as e: 
+            #print(e)
+            passed = False
+            pass
+        self.assertFalse(passed)
+    
+    def test_08_parse_acc_directive(self):
+        for i,test in enumerate(TestSemantics.acc_directive_testdata_wrong_syntax):
+            self._acc_assert_fails_to_parse(test)
+        for i,test in enumerate(TestSemantics.acc_directive_testdata):
+            #print(test)
+            ttaccdir = translator.parser.parse_acc_directive(test)
+            TestSemantics.acc_directive_parse_results.append(ttaccdir)
+        for i,test in enumerate(TestSemantics.acc_directive_testdata_wrong_semantics):
+            #print(test)
+            ttaccdir = translator.parser.parse_acc_directive(test)
+            TestSemantics.acc_directive_parse_results_wrong_semantics.append(ttaccdir)
+    
+    def test_09_resolve_acc_directive(self):
+        for i,ttaccdir in enumerate(TestSemantics.acc_directive_parse_results_wrong_semantics):
+            self._acc_assert_fails_to_resolve(ttaccdir)
+        for i,ttaccdir in enumerate(TestSemantics.acc_directive_parse_results):
+            #print(ttaccdir)
+            semantics.resolve_acc_directive(ttaccdir,scope)
 
 if __name__ == '__main__':
     unittest.main() 

@@ -187,12 +187,19 @@ class IndexRecordAccessorBase:
     def __getitem__(self,key):
         """:deprecated: Rather use the explicitly defined properties."""
         return self.record[key] 
+    def __eq__(self, other):
+        if isinstance(other,IndexRecordAccessorBase):
+            return self.record == other.record
+        else:
+            return False
+    def __hash__(self, other):
+        return hash(self.record)
 
 class IndexFortranConstructBase(IndexRecordAccessorBase):
     @property
     def variables(self):
         for ivar in self.record["variables"]:
-            yield IndexVariable(ivar)
+            yield IndexVariable(ivar,ivar["name"])
     def get_variable(self,name):
         name = name.lower()
         for ivar in self.variables:
@@ -272,6 +279,7 @@ class IndexFortranConstructBase(IndexRecordAccessorBase):
         for var in self.types:
             if self.is_private_member(var.name):
                 yield var
+    
 
 class IndexModuleOrProgram(IndexFortranConstructBase):
     def __init__(self,record):
@@ -380,9 +388,17 @@ class IndexVariable(IndexRecordAccessorBase):
         OUT = 2
         INOUT = 3
 
-    def __init__(self,ivar):
+    def __init__(self,ivar,tag):
         self.record = ivar
-    
+        self._tag = tag
+   
+    @property
+    def tag(self):
+        """:return: A tag to better identify the variable, 
+                    e.g., if is a derived type member. 
+        """
+        return self._tag
+     
     @property
     def type(self):
         return self.record["f_type"]

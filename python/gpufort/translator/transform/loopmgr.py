@@ -181,36 +181,52 @@ class CufLoopnestManager(LoopnestManager):
 
 class AccLoopnestManager(LoopnestManager):
     """A loopnest manager is associated with
-    a single acc loop directive and might only contain
-    multiple loops if a tile or collapse clause
-    is specified.
+    a single acc loop directive (or combined construct) and might only handle
+    multiple loops if a tile or collapse clause is specified.
     """
-    def __init__(self,acc_loop_info=None):
-        self.acc_loop_info = acc_loop_info
-        self.collapse = 1
-        self.tile = []
-        self.private_vars = []
-        self.reduction = {}
-        if acc_loop_info != None:
-            if acc_loop_info.private_vars.specified:
-                self.private_vars = acc_loop_info.private_vars.value
-            if acc_loop_info.reduction.specified:
-                pass # todo: loop-wise reductions
-            if acc_loop_info.collapse.specified:
-                self.collapse = self._convert_collapse_expr_to_int(
-                  acc_loop_info.collapse.value
-                )
-            if acc_loop_info.tile.specified:
-                self.tile = [
-                  tree.traversals.make_cstr(e) 
-                  for e in acc_loop_info.tile.value
-                ]
+    def __init__(self,**kwargs):
+        r"""
+        :param \*\*kwargs: Keyword arguments.
+        
+        **Keyword arguments:**
+
+        * **private_vars (`list`)**: 
+            List of variable references tree nodes.
+        * **reduction (`list`)**: 
+            List of tuples. Each tuple stores a variable reference tree
+            node and the associated reduction operator.
+        * **collapse**: 
+            Arithmetic expression specifying the number of loops to collapse. 
+        * **tile (`list`)**: 
+            List of arithmetic expressions specifying the tiling to 
+            for the next `len(tile)` loops. 
+        * **gang (expr)**: 
+            Expression for the number of gangs to use, or None (auto).
+            Setting this keyword argument to any value implies that there is gang parallelism.
+        * **worker (expr)**: 
+            Expression for the number of workers to use, or None (auto).
+            Setting this keyword argument to any value implies that there is worker parallelism.
+        * **vector (expr)**: 
+            Expression for the number of vector lanes to use, or None (auto).
+            Setting this keyword argument to any value implies that there is vector lane parallelism.
+        """
+        util.kwargs.set_from_kwargs(self,"private_vars",[],**kwargs)
+        util.kwargs.set_from_kwargs(self,"reduction",[],**kwargs)
+        (collapse, _) = util.kwargs.get_value("collapse","1",**kwargs)
+        self.collapse = self._convert_collapse_expr_to_int(collapse)
+        (tile, found) = util.kwargs.get_value("tile",[],**kwargs)
+        self.tile = [tree.traversals.make_cstr(e) for e in tile]
+        (self.gang, self.gang_specified) = util.kwargs.get_value("gang",None,**kwargs)
+        (self.worker, self.worker_specified) = util.kwargs.get_value("worker",None,**kwargs)
+        (self.vector, self.vector_specified) = util.kwargs.get_value("vector",None,**kwargs)
         #
         self.loopnest = loops.Loopnest()
         self.loop_mgr_list = [] 
 
-    def iscomplete(self):
+    def is_complete(self):
         """:return: if this loopnest is complete, i.e. can be rendered."""
+        assert (self.collapse <= 1 
+                or len(self.tile) == 0), "cannot be specified both"
         if len(self.tile):
             assert self.collapse <= 1
             return len(self.tile) == len(self.loopnest)
@@ -218,65 +234,53 @@ class AccLoopnestManager(LoopnestManager):
             assert not len(self.tile)
             return self.collapse == len(self.loopnest)
 
-    def _create_loop(self,ttdo,acc_loop_info):
+    def _create_loop(self,ttdo):
         loop = create_simple_loop(ttdo)
-        if acc_loop_info != None:
-            if acc_loop_info.gang.value != None:
-                loop.num_gangs = tree.traversals.make_cstr(acc_loop_info.gang.value)
-            if acc_loop_info.worker.value != None:
-                loop.num_workers = tree.traversals.make_cstr(acc_loop_info.worker.value)
-            if acc_loop_info.vector.value != None:
-                loop.vector_length = tree.traversals.make_cstr(acc_loop_info.vector.value)
-            loop.gang_partitioned = acc_loop_info.gang.specified
-            loop.worker_partitioned = acc_loop_info.worker.specified
-            loop.vector_partitioned = acc_loop_info.vector.specified
+        if self.gang != None:
+            loop.num_gangs = tree.traversals.make_cstr(self.gang)
+        if self.worker != None:
+            loop.num_workers = tree.traversals.make_cstr(self.worker)
+        if self.vector != None:
+            loop.vector_length = tree.traversals.make_cstr(self.vector)
+        loop.gang_partitioned = self.gang_specified
+        loop.worker_partitioned = self.worker_specified
+        loop.vector_partitioned = self.vector_specified
         return loop         
  
-    def _create_loop_manager(self,ttdo,acc_loop_info):
+    def _create_loop_manager(self,ttdo):
         loop_mgr = create_simple_loop_manager(ttdo)
-        if acc_loop_info != None:
-            if acc_loop_info.gang.specified:
-                loop_mgr.gang.value = acc_loop_info.gang.value 
-            if acc_loop_info.worker.specified:
-                loop_mgr.worker.value = acc_loop_info.worker.value 
-            if acc_loop_info.vector.specified:
-                loop_mgr.vector.value = acc_loop_info.vector.value 
+        if self.gang_specified:
+            loop_mgr.gang.value = self.gang 
+        if self.worker_specified:
+            loop_mgr.worker.value = self.worker 
+        if self.vector_specified:
+            loop_mgr.vector.value = self.vector 
         return loop_mgr
     
     def append_do_loop(self,ttdo):
-        assert not self.iscomplete()
+        assert not self.is_complete()
         # use loop information only for first loop
         if not len(self.loop_mgr_list):
-            acc_loop_info = self.acc_loop_info
+            self.loopnest.append(self._create_loop(ttdo))
+            self.loop_mgr_list.append(self._create_loop_manager(ttdo))
         else:
-            acc_loop_info = None
-        self.loopnest.append(
-          self._create_loop(ttdo,self.acc_loop_info)
-        )
-        self.loop_mgr_list.append(
-          self._create_loop_manager(ttdo,self.acc_loop_info)
-        )
+            self.loopnest.append(create_simple_loop(ttdo))
+            self.loop_mgr_list.append(create_simple_loop_manager(ttdo))
 
     def _map_loopnest_to_hip_cpp(self,loopnest,
                          num_collapse, # type: int
                          tile_sizes): # type: list[Union[TTNode,str,int]]
-        assert num_collapse <= 1 or len(tile_sizes) == 0,\
-         "cannot be specified both"
-        assert num_collapse <= 1 or num_collapse == len(loopnest)
-        assert len(tile_sizes) == 0 or len(tile_sizes) == len(loopnest)
-        if num_collapse > 1 and len(loopnest) == num_collapse:
+        assert self.is_complete()
+        if self.collapse > 1:
             return loopnest.collapse().map_to_hip_cpp()
-        elif len(tile_sizes) >= 1 and len(loopnest) == len(tile_sizes):
-            return loopnest.tile(tile_sizes).map_to_hip_cpp()
+        elif len(self.tile) >= 1:
+            return loopnest.tile(self.tile).map_to_hip_cpp()
         else:
             return loopnest.map_to_hip_cpp()
 
     def map_loopnest_to_hip_cpp(self,scope):
-        loopnest_open,\
-        loopnest_close,\
-        loopnest_resource_filter,\
-        loopnest_indent =\
-          self._map_loopnest_to_hip_cpp(
+        (loopnest_open,loopnest_close,loopnest_resource_filter,
+        loopnest_indent) = self._map_loopnest_to_hip_cpp(
             self.loopnest,
             self.collapse,
             self.tile
@@ -287,7 +291,7 @@ class AccLoopnestManager(LoopnestManager):
               loopnest_indent
             )
         if len(self.reduction):
-            first_loop_mgr = self.loopnest.loop_mgr_list[0]
+            first_loop_mgr = self.loop_mgr_list[0]
             # todo: render reduction variables
             # 1. create unique index var with value = loopnest.index()
             #parallelism = [first_loop_mgr.gang.specified,

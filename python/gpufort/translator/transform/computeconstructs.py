@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+"""
+"""
+
+
 import textwrap
 
 from gpufort import util
@@ -12,7 +16,7 @@ from .. import optvals
 from . import loops
 from . import loopmgr
 from . import resulttypes
-from . import arrayexpr
+from . import render
 
 #class HipKernelArgument:
 #   def __init__(
@@ -34,30 +38,6 @@ from . import arrayexpr
 #   @property
 #   def kernel_arg_as_str(self):
 #       pass
-
-class MaskedCode:
-    """This class associates C code with a mask that enables it.
-    """
-
-    def __init__(self,code,mask,indent=""):
-        """
-        :param str code: C/C++ code.
-        :param str mask: condition that enables the code, or None. None is treated as `true`.
-        """
-        self.mask = mask
-        self.code = code
-        self.indent = indent
-    def mask_matches(self,other):
-        if self.mask == other.mask:
-            return True
-        elif not self.has_mask and not other.has_mask:
-            return True
-        return False
-    @property
-    def has_mask(self):
-        return self.mask not in [None,"true",""]
-    def str(self):
-        return textwrap.indent(self.code,self.indent)
 
 class MaskedDummyStatement(tree.TTDummy):
     pass
@@ -86,10 +66,10 @@ class __HIPKernelBodyGenerator:
         self.map_to_flat_scalars = False
         self.reorder_statements_to_maximize_parallelism = False
         # traversal state:
-        self._masked_code_list = []
+        self._masked_code_list = render.MaskedCodeList()
         self._indent = ""
         self._scope = None
-        self._compute_construct_info = None
+        self._compute_construct = None
         self._resource_filter = None
         self._loopnest_mgr = None
         #
@@ -97,77 +77,43 @@ class __HIPKernelBodyGenerator:
         self._optional_args = None
    
     # Statement filtering
-    
     def _add_masked_code(self,code):
-        self._masked_code_list.append(
-          MaskedCode(
-            code,
-            self._resource_filter.statement_selection_condition(),
-            self._indent
-          )
+        self._masked_code_list.add_masked_code(
+          code, 
+          self._resource_filter.statement_selection_condition(),
+          self._indent
         )
     
     def _add_unmasked_code(self,code):
-        self._masked_code_list.append(
-          MaskedCode(code,None,self._indent)
+        self._masked_code_list.add_unmasked_code(
+          code,
+          self._indent
         )
 
-    def _render_mask_open(self,mask,indent=""):
-        #return textwrap.indent(
-        #  "if ( {} ) {{\n".format(mask),
-        #  indent
-        #)
-        return textwrap.indent(
-          "GPUFORT_MASK_SET ( {} )\n".format(mask),
-          indent
-        )
-    
-    def _render_mask_close(self,mask,indent=""):
-        #return textwrap.indent(
-        #  "}} // {}\n".format(mask),
-        #  indent
-        #)
-        return textwrap.indent(
-          "GPUFORT_MASK_UNSET ( {} )\n".format(mask),
-          indent
-        )
-    
-    def _render_masked_code_list(self):
-        """:note:Detects contiguous blocks of statements with the same mask."""
-        result = "" 
-        last = MaskedCode(None,None)
-        for masked_code in self._masked_code_list:   
-            if not masked_code.mask_matches(last): 
-                if last.has_mask:
-                   result += self._render_mask_close(last.mask)
-                if masked_code.has_mask:
-                   result += self._render_mask_open(masked_code.mask)
-            result += masked_code.str().rstrip("\n") + "\n"
-            last = masked_code
-        if masked_code.has_mask:
-            result += self._render_mask_close(masked_code.mask)
-        return result
     # Traversal
 
     def _check_loop_parallelism(self,
         resource_filter,
-        acc_loop_info
+        ttaccdir
       ):
-        if acc_loop_info.gang.specified:
-            if resource_filter.gang_partitioned_mode():
-                raise util.eror.SyntaxError("already in gang-partitioned region")
-            elif resource_filter.worker_partitioned_mode():
-                raise util.eror.SyntaxError("no gang partitioning possible in worker-partitioned region")
-            elif resource_filter.vector_partitioned_mode():
-                raise util.eror.SyntaxError("no gang partitioning possible in vector-partitioned region")
-        if acc_loop_info.worker.specified:
-            if resource_filter.worker_partitioned_mode():
-                raise util.eror.SyntaxError("already in worker-partitioned region")
-            elif resource_filter.vector_partitioned_mode():
-                raise util.eror.SyntaxError("no worker partitioning possible in vector-partitioned region")
-        if acc_loop_info.vector.specified:
-            if resource_filter.vector_partitioned_mode():
-                raise util.eror.SyntaxError("already in vector-partitioned region")
+        for clause in ttaccdir.walk_clauses_device_type(
+              self._result.device_type
+          ):
+            if isinstance(clause,tree.TTAccClauseGang):
+                if resource_filter.gang_partitioned_mode():
+                    raise util.eror.SyntaxError("already in gang-partitioned region")
+                elif resource_filter.worker_partitioned_mode():
+                    raise util.eror.SyntaxError("no gang partitioning possible in worker-partitioned region")
+                elif resource_filter.vector_partitioned_mode():
+                    raise util.eror.SyntaxError("no gang partitioning possible in vector-partitioned region")
+            elif isinstance(clause,tree.TTAccClauseWorker):
+                if resource_filter.worker_partitioned_mode():
+                    raise util.eror.SyntaxError("already in worker-partitioned region")
+                elif resource_filter.vector_partitioned_mode():
+                    raise util.eror.SyntaxError("no worker partitioning possible in vector-partitioned region")
+            elif isinstance(clause,tree.TTAccClauseVector):
+                if resource_filter.vector_partitioned_mode():
+                    raise util.eror.SyntaxError("already in vector-partitioned region")
             
     def _traverse_container_body(self,ttcontainer,indent=None):
         """Traverses a container's children and 
@@ -184,28 +130,35 @@ class __HIPKernelBodyGenerator:
             self._traverse(child)
         self._indent = previous_indent
 
-    def _traverse_acc_compute_construct(self,ttnode):
-        acc_construct_info = analysis.acc.analyze_directive(ttnode,self._result.device_type)  
-        if acc_construct_info.is_serial:
+    def _traverse_acc_compute_construct(self,ttaccdir):
+        """:note: Syntax checks prevent that num_gangs, num_workers, and
+                  vector_length can be specified for TTAccSerial.
+        """
+        if isinstance(ttaccdir,tree.TTAccSerial):
             self._result.max_num_gangs = "1"    
             self._result.max_num_workers = "1"    
             self._result.max_vector_length = "1"    
-        else:
-            if acc_construct_info.num_gangs.specified:
-                self._result.max_num_gangs = acc_construct_info.num_gangs
-            if acc_construct_info.num_workers.specified:
-                self._result.max_num_workers = acc_construct_info.num_workers
-            if acc_construct_info.vector_length.specified:
-                self._result.max_vector_length = acc_construct_info.vector_length
-        if acc_construct_info.private_vars.specified: 
-            self._result.private_vars = acc_construct_info.private_vars
-            self._result.generated_code += render.render_private_vars_decl_list(
-              ttvalues,scope
-            )
+        for clause in ttaccdir.walk_clauses_device_type(
+            self._result.device_type
+          ):
+            if isinstance(clause,tree.TTAccClauseNumGangs):
+                if clause.arg_specified:
+                    self._result.max_num_gangs = clause.arg
+            elif isinstance(clause,tree.TTAccClauseNumWorkers):
+                if clause.arg_specified:
+                    self._result.max_num_workers = clause.arg
+            elif isinstance(clause,tree.TTAccClauseVectorLength):
+                if clause.arg_specified:
+                    self._result.max_vector_length = clause.arg
+            elif isinstance(clause,tree.TTAccClausePrivate):
+                self._result.private_vars = clause.var_list 
+                self._result.generated_code += render.render_private_vars_decl_list(
+                  ttvalues,scope
+                )
+            elif isinstance(clause,tree.TTAccClauseFirstprivate):
+                self._result.firstprivate_vars = clause.var_list
         self._result.generated_code += loops.render_hip_kernel_prolog_acc()
-        if acc_construct_info.firstprivate_vars.specified: 
-            self._result.firstprivate_vars = acc_construct_info.firstprivate_vars
-        self._compute_construct_info = acc_construct_info
+        self._compute_construct = ttaccdir 
 
     def _traverse_values(self,values):
         # overwrite: c_name for derived type members if appropriate
@@ -240,106 +193,133 @@ class __HIPKernelBodyGenerator:
 
     def _find_rvalues_in_directive(self,ttnode):
         rvalues = []
-        analysis.acc.find_rvalues_in_directive(
-          ttnode,
-          rvalues
-        )
+        for clause in ttnode.walk_clauses_device_type(
+            self._result.device_type
+          ):
+            if isinstance(clause,(
+                tree.TTAccClauseGang,
+                tree.TTAccClauseWorker,
+                tree.TTAccClauseVector,
+                tree.TTAccClauseTile,
+              )):
+                for child in clause.walk_preorder():
+                    if isinstance(child,tree.TTValue):
+                        rvalues.append(child)
         self._result.rvalues += rvalues
         self._traverse_values(rvalues)
     
     def _find_lvalues_rvalues_in_arith_expr(self,ttnode):
         lvalues = []
         rvalues = []
-        analysis.fortran.find_lvalues_and_rvalues(
-          ttnode,
-          lvalues,
-          rvalues
-        )
+        for child in ttnode.walk_preorder():
+            if isinstance(child,tree.TTRvalue):
+                rvalues.append(child)
+            elif isinstance(child,tree.TTLvalue):
+                lvalues.append(child)
         self._result.lvalues += lvalues
         self._result.rvalues += rvalues
         self._traverse_values(lvalues)
         self._traverse_values(rvalues)
    
-    def _traverse_acc_loop_directive(self,ttnode):  
+    def _traverse_acc_loop_directive(self,ttaccdir):  
         """Create new AccLoopnestManager instance. Append it to the result's list.
         Render it if no collapse or tile clause is specified.
         Search certain clauses for rvalues and lvalues.
         """
-        #
-        acc_loop_info = analysis.acc.analyze_directive(
-          ttnode,
-          self._result.device_type
-        ) 
         # loop directives might contain rvalues that need to be passed
-        self._find_rvalues_in_directive(ttnode)
+        self._find_rvalues_in_directive(ttaccdir)
         self._check_loop_parallelism(
           self._resource_filter,
-          acc_loop_info
+          ttaccdir
         )
         #
-        self._loopnest_mgr = loopmgr.AccLoopnestManager(acc_loop_info)
-    
+        self._loopnest_mgr = loopmgr.AccLoopnestManager()
+        for clause in ttaccdir.walk_clauses_device_type(
+            self._result.device_type
+          ):
+            if isinstance(clause,tree.TTAccClauseGang):
+                self._loopnest_mgr.gang_specified = True
+                self._loopnest_mgr.gang = clause.arg
+            elif isinstance(clause,tree.TTAccClauseWorker):
+                self._loopnest_mgr.worker_specified = True
+                self._loopnest_mgr.worker = clause.arg
+            elif isinstance(clause,tree.TTAccClauseVector):
+                self._loopnest_mgr.vector_specified = True
+                self._loopnest_mgr.vector = clause.arg
+            elif isinstance(clause,tree.TTAccClausePrivate):
+                self._loopnest_mgr.private = clause.var_list
+            elif isinstance(clause,tree.TTAccClauseReduction):
+                self._loopnest_mgr.reduction += [
+                  (var,clause.op) for var in clause.var_list
+                ]
+   
+    # TODO get rid of info object
     def _traverse_cuf_kernel_do_construct(self,ttnode):
-        cuf_construct_info = analysis.cuf.analyze_directive(ttnode)  
-        if cuf_construct_info.grid.specified:
-            self._result.grid = cuf_construct_info.grid
-        if cuf_construct_info.block.specified:
-            self._result.block = cuf_construct_info.block
-        if cuf_construct_info.sharedmem.specified:
-            self._result.sharedmem = cuf_construct_info.sharedmem
-        if cuf_construct_info.stream.specified:
-            self._result.stream = cuf_construct_info.stream
-        if cuf_construct_info.reduction.specified: 
-            self._result.reductions = cuf_construct_info.reduction
-    
-    def _traverse_cuf_kernel_do_loop_directive(self,ttdo):  
-        """Create new AccLoopnestManager instance. Append it to the result's list.
-        Render it if no number of loops is specified. 
-        Search certain clauses for rvalues and lvalues.
-        """
-        #todo: split annotation from loop, init AccLoopnestManager solely with acc_loop_info
-        cuf_loop_info = analysis.cuf.analyze_directive(
-          ttdo.annotation
-        ) 
-        acc_loop_info = analysis.acc.AccLoopInfo(None)
-        acc_loop_info.gang.specified = True
-        acc_loop_info.worker.specified = True
-        acc_loop_info.vector.specified = True
-        #
-        if cuf_loop_info.num_loops.value.specified:
-            acc_loop_info.collapse.value = cuf_loop_info.num_loops.value
-        self._init_loopnest_mgr(ttdo,acc_loop_info)
+        pass
+    #    cuf_construct_info = analysis.cuf.analyze_directive(ttnode)  
+    #    if cuf_construct_info.grid.specified:
+    #        self._result.grid = cuf_construct_info.grid
+    #    if cuf_construct_info.block.specified:
+    #        self._result.block = cuf_construct_info.block
+    #    if cuf_construct_info.sharedmem.specified:
+    #        self._result.sharedmem = cuf_construct_info.sharedmem
+    #    if cuf_construct_info.stream.specified:
+    #        self._result.stream = cuf_construct_info.stream
+    #    if cuf_construct_info.reduction.specified: 
+    #        self._result.reductions = cuf_construct_info.reduction
+   
+    # TODO get rid of info object
+    def _traverse_cuf_kernel_do_loop_directive(self,ttdo):
+        pass 
+    #    """Create new AccLoopnestManager instance. Append it to the result's list.
+    #    Render it if no number of loops is specified. 
+    #    Search certain clauses for rvalues and lvalues.
+    #    """
+    #    #todo: split annotation from loop, init AccLoopnestManager solely with acc_loop_info
+    #    cuf_loop_info = analysis.cuf.analyze_directive(
+    #      ttdo.annotation
+    #    ) 
+    #    acc_loop_info = analysis.acc.AccLoopInfo(None)
+    #    acc_loop_info.gang.specified = True
+    #    acc_loop_info.worker.specified = True
+    #    acc_loop_info.vector.specified = True
+    #    #
+    #    if cuf_loop_info.num_loops.value.specified:
+    #        acc_loop_info.collapse.value = cuf_loop_info.num_loops.value
+    #    self._init_loopnest_mgr(ttdo,acc_loop_info)
 
     def _traverse_container(self,ttnode):
-        """:note: Container statements are never subject to masks."""
+        """Add container header, increase indent, 
+        traverse statements in container body, 
+        decrease indent again, add container footer.
+        :note: Container statements are never subject to masks."""
         self._find_lvalues_rvalues_in_arith_expr(ttnode)
-        self._result.generated_code += textwrap.indent(
-          ttnode.header_cstr(),
-          self._indent
-        )
+        self._add_unmasked_code(ttnode.header_cstr())
         previous_indent = self._indent
         self._indent += ttnode.indent
-        #
+        # descend
         self._traverse_container_body(ttnode)
-        #
+        # ascend
         self._indent = previous_indent
-        self._result.generated_code += textwrap.indent(
-          ttnode.footer_cstr(),
-          self._indent
-        )
+        self._add_unmasked_code(ttnode.footer_cstr())
 
     def _unpack_render_result_and_descend(self,ttdo,render_result):
-        loopnest_open,loopnest_close,\
-        loopnest_resource_filter,loopnest_indent =\
-          render_result
+        """Unpack render result, update resource filter, increase indent,
+        traverse statements in container body,
+        restore previous resource filter, restore previous indent.
+        :note: Container statements are never subject to masks."""
+        (loopnest_open,
+         loopnest_close,
+         loopnest_resource_filter,
+         loopnest_indent) = render_result
         self._add_unmasked_code(loopnest_open)
 
         self._resource_filter += loopnest_resource_filter
         previous_indent = self._indent
         self._indent += loopnest_indent
-        #
+        # descend
         self._traverse_container_body(ttdo,indent="")
-        # 
+        # ascend
         self._resource_filter -= loopnest_resource_filter
         self._indent = previous_indent
         self._add_unmasked_code(loopnest_close)
@@ -361,9 +341,9 @@ class __HIPKernelBodyGenerator:
         # alternative interpretation of collapse user information -> we can reorder statements without error
         # self.reorder_statements_to_maximize_parallelism
         if self._loopnest_mgr != None:
-            if not self._loopnest_mgr.iscomplete():
+            if not self._loopnest_mgr.is_complete():
                 self._loopnest_mgr.append_do_loop(ttdo)
-                if self._loopnest_mgr.iscomplete():
+                if self._loopnest_mgr.is_complete():
                     self._render_loopnest_and_descend(ttdo)
                 else:
                     self._traverse_container_body(ttdo,"")
@@ -373,21 +353,16 @@ class __HIPKernelBodyGenerator:
             #:todo: fix statement filter
             self._unpack_render_result_and_descend(ttdo,render_result)
 
-    def _render_linear_idx_offset(self,
-        cname,
-        indices,
-        is_full_array
-      ):
-        if is_full_array:
-            return "0"
-        else:
-            return "{cname}.c_idx({args})".format(
-              cname = cname,
-              args = ",".join(indices)
-            )
+    def _render_linear_idx_offset(self,cname,indices):
+        """Computes index offset for a contiguous array.
+        """
+        return "{cname}.c_idx({args})".format(
+          cname = cname,
+          args = ",".join(indices)
+        )
 
     def _generate_loopnest_for_contiguous_array(self,ttvalue,yields_full_array):
-        """
+        """Generate a loopnest based on the 
         :return: A list with a single entry: 
                  A dummy TTDo that can be used to generate C++ code
                  and C++/Fortran problem size information.
@@ -415,22 +390,11 @@ class __HIPKernelBodyGenerator:
               only_consider_index_ranges=False,
               converter = tree.traversals.make_cstr
             ) 
-            first_idx = self._render_linear_idx_offset(
-              cname,
-              lbounds,
-              yields_full_array
-            )
-            last_idx  = self._render_linear_idx_offset(
-              cname,
-              ubounds,
-              yields_full_array
-            )
-            len_cstr = last_idx + " - " + first_idx
+            first_idx = self._render_linear_idx_offset(cname,lbounds)
+            last_idx  = self._render_linear_idx_offset(cname,ubounds)
+            len_cstr = last_idx + " - " + first_idx + " + 1"
         # create dummy do loop
-        first = MaskedDummyStatement(
-          fstr = "1",
-          cstr = "1"
-        )
+        first = MaskedDummyStatement(fstr = "1",cstr = "0")
         last = MaskedDummyStatement(
           fstr = "size({})".format(ttvalue.fstr()),
           cstr = len_cstr
@@ -449,20 +413,32 @@ class __HIPKernelBodyGenerator:
                  Fortran problem size information. 
         """
         loops = []
-        lbounds_as_cstr, ubounds_as_cstr, steps_as_cstr = ttvalue.loop_bounds_as_str(
-          True,
-          tree.traversals.make_cstr
+        (lbounds_as_cstr, 
+        ubounds_as_cstr, 
+        steps_as_cstr) = ttvalue.loop_bounds_as_str(
+          True,tree.traversals.make_cstr
         ) 
-        lbounds_as_fstr, ubounds_as_fstr, steps_as_fstr = ttvalue.loop_bounds_as_str(
-          True,
-          tree.traversals.make_fstr
+
+        (lbounds_as_fstr, 
+        ubounds_as_fstr, 
+        steps_as_fstr) = ttvalue.loop_bounds_as_str(
+          True,tree.traversals.make_fstr
         ) 
+
         # create dummy do-loop nest, go from inner to outer loop, left to right
-        
-        for (lbound_as_fstr,ubound_as_fstr,step_as_fstr,
-             lbound_as_cstr,ubound_as_cstr,step_as_cstr) in zip(
-                lbounds_as_fstr,ubounds_as_fstr,steps_as_fstr,
-                lbounds_as_cstr,ubounds_as_cstr,steps_as_cstr):
+        for (lbound_as_fstr,
+             ubound_as_fstr,
+             step_as_fstr,
+             lbound_as_cstr,
+             ubound_as_cstr,
+             step_as_cstr) in zip(
+               lbounds_as_fstr,
+               ubounds_as_fstr,
+               steps_as_fstr,
+               lbounds_as_cstr,
+               ubounds_as_cstr,
+               steps_as_cstr
+            ):
             first = MaskedDummyStatement(
               cstr = lbound_as_cstr,
               fstr = lbound_as_fstr
@@ -474,7 +450,10 @@ class __HIPKernelBodyGenerator:
             index = tree.TTIdentifier([loops.unique_label("idx")])
             begin = tree.TTAssignment([index,first])
             if step_as_fstr != None:
-                step = MaskedDummyStatement
+                step = MaskedDummyStatement(
+                  cstr = ubound_as_cstr,
+                  fstr = ubound_as_fstr
+                )
             body = []
             loops.append(tree.TTDo([begin,last,step,body]))
         return loops
@@ -503,16 +482,12 @@ class __HIPKernelBodyGenerator:
         for ttnode in ttassignment.walk_preorder():
             if isinstance(ttnode,tree.TTValue):
                 if ttnode.is_contiguous_array:
-                    lbounds, ubounds, steps = ttnode.loop_bounds_as_str(
-                      False,
-                      tree.traversals.make_cstr
+                    (lbounds,ubounds,
+                     steps) = ttnode.loop_bounds_as_str(
+                      False,tree.traversals.make_cstr
                     ) 
                     if not ttnode.is_full_array:
-                        rhs_offset_cstr  = self._render_linear_idx_offset(
-                          ttnode.cname,
-                          lbounds,
-                          ttnode.is_full_array
-                        )
+                        rhs_offset_cstr  = self._render_linear_idx_offset(ttnode.cname,lbounds)
                         index_arg_cstr += " + " + rhs_offset_cstr
                     ttnode.overwrite_c_repr(
                       ttnode.cname,
@@ -524,13 +499,12 @@ class __HIPKernelBodyGenerator:
         """default parallelism for mapping array operations.
            Per default, nothing is specified
         """
-        if isinstance(self._compute_construct_info,analysis.acc.AccConstructInfo):
-            if self._compute_construct_info.is_kernels:
-                acc_loop_info = analysis.acc.AccLoopInfo(self._result.device_type)
-                acc_loop_info.gang.specified = True
-                acc_loop_info.vector.specified = True
-                acc_loop_info.vector.num_collapse = 1
-                self._loopnest_mgr = loopmgr.AccLoopnestManager(acc_loop_info)
+        if type(self._compute_construct) == tree.TTAccKernels:
+            self._loopnest_mgr = loopmgr.AccLoopnestManager(
+              gang_specified = True,
+              vector_specified = True,
+              num_collapse = 1
+            )
 
     def _traverse_array_assignment(self,ttassignment):
         """
@@ -670,7 +644,7 @@ class __HIPKernelBodyGenerator:
         self._indent = ""
         self._loopnest_mgr = None
         self._traverse(ttcomputeconstruct)
-        self._result.generated_code = self._render_masked_code_list()
+        self._result.generated_code = self._masked_code_list.render()
         # add the prolog
         return self._result
 

@@ -579,18 +579,52 @@ class TTAccConstruct(TTAccDirective,base.TTContainer):
                     yield var
     
     def walk_firstprivate_variables(self):
-        """Yields variable lvalues appearing in the 'first_private' clause.""" 
+        """Yields variable lvalues appearing in the 'first_private' clause.
+        :note: Not applicable to TTAccLoop
+        """ 
         for clause in self.walk_clauses():
             if isinstance(clause,TTAccClauseFirstprivate):
                 for var in clause.var_list:
                     yield var
     
     def walk_reduction_variables(self):
-        """Yields tuples consisting of variable paired with reduction operation.""" 
+        """Yields tuples consisting of variable paired with reduction operation. 
+        :note: Not applicable to TTAccKernels
+        """
         for clause in self.walk_clauses():
             if isinstance(clause,TTAccClauseReduction):
                 for var in clause.var_list:
                     yield (var,clause.op)
+    
+    def num_gangs(self,device_type):
+        """:return: A tuple consisting of (in that order): 
+                    a flag if the clause is specified
+                    and the argument or None. 
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseGang):
+                return (True,clause.arg)
+        return (False,None)
+ 
+    def num_workers(self,device_type):
+        """:return: A tuple consisting of (in that order): 
+                    a flag if the clause is specified
+                    and the argument or None. 
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseWorker):
+                return (True,clause.arg)
+        return (False,None)
+                 
+    def vector_length(self,device_type):
+        """:return: A tuple consisting of (in that order): 
+                    a flag if the clause is specified
+                    and the argument or None. 
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseVector):
+                return (True,clause.arg)
+        return (False,None)
 
 class TTAccComputeConstruct(TTAccConstruct):
     
@@ -746,6 +780,58 @@ class TTAccLoop(TTAccConstruct):
           TTAccClauseTile,
         ))
     
+    def gang(self,device_type):
+        """:return: A triple consisting of (in that order): 
+                    a flag if the clause is specified,
+                    a flag if an argument is specified,
+                    the argument or None. 
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseGang):
+                return (True,clause.arg_specified,clause.arg)
+        return (False,False,None)
+ 
+    def worker(self,device_type):
+        """:return: A triple consisting of (in that order): 
+                    a flag if the clause is specified,
+                    a flag if an argument is specified,
+                    the argument or None. 
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseWorker):
+                return (True,clause.arg_specified,clause.arg)
+        return (False,False,None)
+                 
+    def vector(self,device_type):
+        """:return: A triple consisting of (in that order): 
+                    a flag if the clause is specified,
+                    a flag if an argument is specified,
+                    the argument or None. 
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseVector):
+                return (True,clause.arg_specified,clause.arg)
+        return (False,False,None)
+    
+    def tile(self,device_type):
+        """:return: A tuple consisting of a flag if the
+                    clause was specified and the arguments of
+                    the clause or None.
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseTile):
+                return (True,clause.args)
+        return (False,None)
+ 
+    def collapse(self,device_type):
+        """:return: A tuple consisting of a flag if the
+                    clause was specified, if the force modifier was
+                    specified and the argument of the clause or None.
+        """
+        for clause in self.walk_clauses_device_type(device_type):
+            if isinstance(clause,TTAccClauseCollapse):
+                return (True,clause.force,clause.arg)
+        return (False,False,None)
 
 class TTAccAtomic(TTAccDirective):
     kind = "atomic"

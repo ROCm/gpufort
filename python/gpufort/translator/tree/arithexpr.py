@@ -1365,7 +1365,7 @@ class TTValue(ArithExprNode):
         """
         self._c_repr_name = name
         self._c_repr_args = args
-        self._c_repr_use_square_brackets = False 
+        self._c_repr_use_square_brackets = use_square_brackets
 
     def cstr(self):
         if self._c_repr_name != None:

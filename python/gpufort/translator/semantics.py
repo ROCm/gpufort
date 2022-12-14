@@ -534,8 +534,14 @@ class Semantics:
                 "handling of conversion '{}' is not implemented".format(ttfunccall.name)
               )
    
-    def _resolve_array_expr(self,ttnode,name):
+    def _resolve_array_expr(self,ttnode):
         ttnode.bytes_per_element = self._lookup_bytes_per_element(ttnode)
+        if ttnode.symbol_info.rank != len(ttnode.args):
+            raise util.error.SemanticError(
+              "'{}': rank mismatch in array reference, expected only {} indices".format(
+                ttnode.name,ttnode.symbol_info.rank
+              )
+            )
         self._check_array_indices(ttnode)
  
     def _resolve_function_call_or_array_expr(self,ttnode,scope,name=None):
@@ -555,7 +561,7 @@ class Semantics:
         symbol_info = indexer.scope.search_scope_for_value_expr(scope,name)
         if isinstance(symbol_info,indexer.indexertypes.IndexVariable):
             ttnode.symbol_info = symbol_info
-            self._resolve_array_expr(ttnode,name)
+            self._resolve_array_expr(ttnode)
         else:
             ttnode.symbol_info = symbol_info # todo
             # :todo: support checking multiple candidates, think interfaces

@@ -39,7 +39,7 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
                                oder to determine if a variable is unused. 
     :return: The modified HIP C++ code.
     """
-    statements = code_to_modify.split(";") # TODO breaks for-loops apart
+    statements = code_to_modify.split(";")
     condition = True
     while condition:
         condition = False
@@ -59,7 +59,7 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
                         other_count = code.count(varname)
                 for statement in list(statements):
                     if varname in statement:
-                        match = p_const_int_decl.search(statement)
+                        match = p_const_int_decl.search(statement) # only remove such expressions
                         if count == 1 and other_count == 0: # unused variable
                             if match:
                                 statements.remove(statement)
@@ -136,7 +136,34 @@ def _render_tile_size_var_decl(tile_size_var,loop_len,num_tiles):
               num_tiles=num_tiles)
     return render_const_int_decl(tile_size_var,rhs)
 
-def _render_for_loop_open(index,incl_lbound,excl_ubound,step=None):
+def _render_for_loop_open(
+  index,
+  incl_lbound,
+  excl_ubound,
+  step=None,
+  single_bound_eval=False
+):
+  """
+  :param bool single_bound_eval: If the excl_ubound and step should
+                                 be evaluated once before the loop
+                                 and not during every loop iteration.
+  """
+  if single_bound_eval:
+      excl_ubound_var = unique_label("excl_ubound")
+      preamble += render_const_int_decl(
+        excl_ubound_var,
+        excl_ubound
+      )
+      excl_ubound = excl_ubound_var
+      if step != None:
+          step_var = unique_label("step")
+          preamble += render_const_int_decl(
+            step_var,
+            step
+          )
+          step = step_var
+  else:
+      preamble = "" 
   if step == None:
       template = """\
 for ({0} = {1}; 
@@ -147,7 +174,7 @@ for ({0} = {1};
 for ({0} = {1};
      {0} < {2}; {0} += {3}) {{
 """
-  return template.format(index,incl_lbound,excl_ubound,step)
+  return preamble + template.format(index,incl_lbound,excl_ubound,step)
 
 class AccResourceFilter:
     def __init__(self,num_gangs=[],
@@ -291,23 +318,46 @@ class Loop:
                or self._excl_ubound != None), "one of self._length, self._last, self._excl_ubound must not be None"
     
     def __init__(self,
-          index,
-          first,
-          last = None,
-          length = None,
-          excl_ubound = None,
-          step = None,
-          gang_partitioned = False,
-          worker_partitioned = False,
-          vector_partitioned = False,
-          num_gangs = None,
-          num_workers = None,
-          vector_length = None,
-          grid_dim = None, # one of ["x","y","z",None]
-          prolog = None,
-          body_prolog = None,
-          body_epilog = None,
-          body_extra_indent = ""):
+        index,
+        first,
+        last = None,
+        length = None,
+        excl_ubound = None,
+        step = None,
+        gang_partitioned = False,
+        worker_partitioned = False,
+        vector_partitioned = False,
+        num_gangs = None,
+        num_workers = None,
+        vector_length = None,
+        grid_dim = None, # one of ["x","y","z",None]
+        single_bound_eval = False,
+        prolog = None,
+        body_prolog = None,
+        body_epilog = None,
+        body_extra_indent = ""
+      ):
+        """Constructor.
+        :param str index: Loop index expression.
+        :param str first: Expression for inclusive loop lower bound.
+        :param str last: Expression for inclusive loop upper bound.
+        :param str length: Length of the loop.
+        :param str excl_ubound: Expression for exclusive loop upper bound.
+        :param str step: Expression for step width of the loop.
+        :param bool gang_partitioned: If the loop shall be partitioned among OpenACC gangs.
+        :param bool worker_partitioned: If the loop shall be partitioned among OpenACC workers.
+        :param bool vector_partitioned: If the loop shall be partitioned among OpenACC vector lanes.
+        :param str num_gangs: Expression for the number of gangs.
+        :param str num_workers: Expression for the number of workers.
+        :param str vector_length: Expression for the number of vector lanes.
+        :param str grid_dim: Expression for one of the HIP/CUDA grid dimensions
+                             ("x","y","z") or None.
+        :param bool single_bound_eval: Evalute the upper bound and step size of the loop
+                                       only once.
+        :param str prolog: A prolog to put in front of the loop.
+        :param str prolog: A prolog to put in front of the statements in the loop's body.
+        :param str epilog: A epilog to put behind the statements in the loop's body.
+        """
         self.index = index.strip()
         self.first = first.strip()
         self._last = last
@@ -318,6 +368,7 @@ class Loop:
         self.worker_partitioned = worker_partitioned
         self.vector_partitioned = vector_partitioned
         self.grid_dim = grid_dim
+        self.single_bound_eval = single_bound_eval
         self.num_workers = num_workers
         self.num_gangs = num_gangs
         self.vector_length = vector_length
@@ -698,7 +749,8 @@ if ( {loop_entry_condition} ) {{
               self.index,
               self.first,
               self.excl_ubound(),
-              self.step
+              self.step,
+              self.single_bound_eval,
             )
             loop_close = "}} // {}\n".format(
               self.index

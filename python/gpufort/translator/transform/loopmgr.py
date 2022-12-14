@@ -221,6 +221,7 @@ class AccLoopnestManager(LoopnestManager):
         (self.vector, self.vector_specified) = util.kwargs.get_value("vector",None,**kwargs)
         #
         self.loopnest = loops.Loopnest()
+        self.transformed_loopnest = None
         self.loop_mgr_list = [] 
 
     def is_complete(self):
@@ -267,25 +268,29 @@ class AccLoopnestManager(LoopnestManager):
             self.loopnest.append(create_simple_loop(ttdo))
             self.loop_mgr_list.append(create_simple_loop_manager(ttdo))
 
-    def _map_loopnest_to_hip_cpp(self,loopnest,
-                         num_collapse, # type: int
-                         tile_sizes): # type: list[Union[TTNode,str,int]]
+    def apply_loop_transformations(self):
+        """Apply specified loop transformations (tiling,collapsing)
+        to the loopnest and return the result, which is a loops.Loopnest."""
         assert self.is_complete()
+        assert self.transformed_loopnest == None
         if self.collapse > 1:
-            return loopnest.collapse().map_to_hip_cpp()
+            self.transformed_loopnest = loops.Loopnest([    
+              self.loopnest.collapse()
+            ])
         elif len(self.tile) >= 1:
-            return loopnest.tile(self.tile).map_to_hip_cpp()
+            self.transformed_loopnest = self.loopnest.tile(self.tile)
         else:
-            return loopnest.map_to_hip_cpp()
+            self.transformed_loopnest = self.loopnest
+        return self.transformed_loopnest
 
     def map_loopnest_to_hip_cpp(self,scope):
-        (loopnest_open,loopnest_close,loopnest_resource_filter,
-        loopnest_indent) = self._map_loopnest_to_hip_cpp(
-            self.loopnest,
-            self.collapse,
-            self.tile
-          )
-        if len(self.private_vars):
+        assert self.transformed_loopnest != None
+        (loopnest_open,
+        loopnest_close,
+        loopnest_resource_filter,
+        loopnest_indent) = self.transformed_loopnest.map_to_hip_cpp()
+        
+        if len(self.private_vars): # todo pass the symbols directly in
             loopnest_open += textwrap.indent(
               render.render_private_vars_decl_list(self.private_vars,scope),
               loopnest_indent

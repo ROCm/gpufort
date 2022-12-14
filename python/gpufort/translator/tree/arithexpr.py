@@ -1312,6 +1312,7 @@ class TTValue(ArithExprNode):
             var_name = self.cname
             bound_template = "{var}.{bound}({i})"
         else:
+            var_name = self.name
             assert converter == traversals.make_fstr
             bound_template = "{bound}({var},{i})"
         lbounds = []

@@ -37,7 +37,7 @@ real :: x,y,z,u
 testdata = [
   """\
 !$acc kernels
-c(:) = b(:,1)
+c(i) = 1
 !$acc end kernels
 """,
   """\
@@ -46,9 +46,34 @@ c(:) = b(1,1)+3
 !$acc end kernels
 """,
   """\
-!$acc parallel loop vector 
-c(:) = 1
-!$acc end parallel loop
+!$acc kernels
+c(:) = b(:,1)
+!$acc end kernels
+""",
+  """\
+!$acc kernels
+b(:,1) = c(1:) + b(:,2)
+!$acc end kernels
+""",
+  """\
+!$acc kernels
+b(:,1:2) = b(:,2:3) + b(:,4:5)
+!$acc end kernels
+""",
+  """\
+!$acc kernels
+b(:,2:3) = b(4:5,:) + a(:,:,1)
+!$acc end kernels
+""",
+  """\
+!$acc kernels
+b(:,3) = c(:) + b(5,:)
+!$acc end kernels
+""",
+  """\
+!$acc kernels
+b(3,:) = c(:) + b(:,5)
+!$acc end kernels
 """,
   """\
 !$acc parallel loop reduction(+:j)
@@ -57,7 +82,6 @@ do i = 1, N
 end do
 !$acc end parallel
 """,
-
   """\
 !$acc parallel
 !$acc loop gang(2)
@@ -114,7 +138,8 @@ class TestTransformAcc(unittest.TestCase):
     def test_01_transform(self):
         device_type = "radeon"
         #for i,test in enumerate(testdata[-1:]):
-        for i,test in enumerate(testdata[:]):
+        for i,test in enumerate(testdata[0:8]):
+            print(">>>>>>>\n"+test+"<<<<<<<\n")
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
               statements,result_name=None,scope=scope

@@ -42,7 +42,7 @@ from . import render
 class MaskedDummyStatement(tree.TTDummy):
     pass
 
-class __HIPKernelBodyGenerator:
+class HIPKernelBodyGenerator:
 
     """
     Used:
@@ -356,16 +356,73 @@ class __HIPKernelBodyGenerator:
             #:todo: fix statement filter
             self._unpack_render_result_and_descend(ttdo,render_result)
 
-    def _create_default_loopnest_mgr_for_array_operation(self,num_collapse=1):
+    def _create_default_loopnest_mgr_for_array_operation(self,num_collapse):
         """default parallelism for mapping array operations.
-           Per default, nothing is specified
+           Per default, gang-vector-parallelism is specified.
         """
         if type(self._compute_construct) == tree.TTAccKernels:
             self._loopnest_mgr = loopmgr.AccLoopnestManager(
-              gang_specified = True,
-              vector_specified = True,
-              num_collapse = 1
+              gang = None,
+              vector = None,
+              collapse = num_collapse
             )
+
+
+    def _traverse_mixed_array_assignment(self,ttassignment):
+        """Traverse an assignment with a contiguous array LHS
+        and generic subarray RHS, or vice versa.
+        """
+        if ttassignment.lhs.is_contiguous_array:
+            contiguous_part = ttassignment.lhs
+            generic_part = ttassignment.rhs
+        else:
+            contiguous_part = ttassignment.rhs
+            generic_part = ttassignment.lhs
+        #
+        loop_list = assignments.generate_loopnest_for_generic_subarray(
+          ttassignment.lhs
+        )
+        self._create_default_loopnest_mgr_for_array_operation(len(loop_list))
+        for loop in loop_list:
+            self._loopnest_mgr.append_do_loop(loop)
+        collapsed_loop = self._loopnest_mgr.apply_loop_transformations()[0]
+        # modify contiguous array part values
+        for offset_decl_as_cstr in assignments.modify_c_repr_of_contiguous_array_expr(
+              contiguous_part,collapsed_loop.index
+            ):
+              self._add_unmasked_code(offset_decl_as_cstr)
+        # modify generic subarray part values
+        assignments.modify_c_repr_of_generic_array_expr(
+          generic_part,[l.index for l in loop_list]
+        )
+        dummy = MaskedDummyStatement(
+          cstr = ttassignment.cstr(),
+          fstr = ttassignment.fstr()
+        )
+        dummy_container = tree.TTContainer()
+        dummy_container.body.append(dummy)
+        self._render_loopnest_and_descend(dummy_container)
+    
+    def _traverse_generic_array_assignment(self,ttassignment):
+        """Traverse an assignment with a contiguous array LHS
+        and generic subarray RHS, or vice versa.
+        """
+        loop_list = assignments.generate_loopnest_for_generic_subarray(
+          ttassignment.lhs
+        )
+        self._create_default_loopnest_mgr_for_array_operation(len(loop_list))
+        for loop in loop_list:
+            self._loopnest_mgr.append_do_loop(loop)
+        assignments.modify_c_repr_of_generic_array_expr(
+          ttassignment,[l.index for l in loop_list]
+        )
+        dummy = MaskedDummyStatement(
+          cstr = ttassignment.cstr(),
+          fstr = ttassignment.fstr()
+        )
+        first_loop = assignments.nest_loop_list(loop_list,[dummy]) # there is only one
+        self._loopnest_mgr.apply_loop_transformations()
+        self._render_loopnest_and_descend(first_loop)
 
     def _traverse_array_assignment(self,ttassignment):
         """
@@ -376,67 +433,38 @@ class __HIPKernelBodyGenerator:
         - generate 
         :note: Currently, contiguous arrays
         """
-        # TODO transform before entering
-        # TODO transformation is 
-        # need to construct loop/loopnest, need to know collapsed index
         assert not ttassignment.rhs.applies_transformational_functions_to_arrays
-        if ttassignment.lhs.is_contiguous_array:
-            use_single_loop_and_offsets = (
-              ttassignment.rhs.yields_contiguous_array
-              or ttassignment.rhs.yields_scalar
+        if (
+            ttassignment.lhs.is_contiguous_array
+            and (ttassignment.rhs.yields_contiguous_array
+                or ttassignment.rhs.yields_scalar)
+          ):
+            loop_list = assignments.generate_loopnest_for_contiguous_array(
+              ttassignment.lhs,
+              ttassignment.lhs.is_full_array
             )
-            if use_single_loop_and_offsets:
-                loops = assignments.generate_loopnest_for_contiguous_array(
-                  ttassignment.lhs,
-                  ttassignment.lhs.is_full_array
-                )
-                for (offset_decl_as_cstr 
-                    in assignments.modify_c_repr_of_contiguous_array_assignment(
-                      ttassignment,loops[0].index.cstr())):
-                      self._add_unmasked_code(offset_decl_as_cstr)
-                dummy = MaskedDummyStatement(
-                  cstr = ttassignment.cstr(),
-                  fstr = ttassignment.fstr()
-                )
-                # reduction?
-                self._create_default_loopnest_mgr_for_array_operation(len(loops))
-                first_loop = assignments.nest_list_of_loops(loops,[dummy]) # there is only one
-                # define and pass down acc information
-                self._traverse_do_loop(first_loop)
+            for offset_decl_as_cstr in assignments.modify_c_repr_of_contiguous_array_expr(
+                  ttassignment,loop_list[0].index.cstr()
+                ):
+                  self._add_unmasked_code(offset_decl_as_cstr)
         else:
-            raise util.error.LimitationError("Not implemented yet!")
-        #    else:
-        #        # work with collapsed loopnest
-        #        # assign collapsed index as carg to lhs
-        #        assert ttassignment.rhs.yields_array
-        #        loops = assignments.generate_loopnest_for_generic_subarray(
-        #          ttassignment.lhs
-        #        )
-        #        acc_loop_info.collapse = len(loops)
-        #        if ttassignment.lhs.yields_full_array:
-        #            pass
-        #        else:
-        #            pass
-        #        pass
-        #else: # ttassignment is generic subarray
-        #    if (ttassignment.rhs.yields_contiguous_array
-        #       or ttassignment.rhs.yields_scalar)
-        #        # work with collapsed loopnest
-        #        # assign collapsed index as bracket carg to rhs
-        #        assert ttassignment.rhs.yields_array
-        #        loops = assignments.generate_loopnest_for_generic_subarray(
-        #          ttassignment.lhs
-        #        )
-        #        acc_loop_info.collapse = len(loops)
-        #        pass
-        #    elif ttassignment.rhs.yields_array:
-        #        # collapsed loopnest
-        #        # assign un-collapsed indices to rhs and lhs, no carg
-        #        assert ttassignment.rhs.yields_array
-        #        loops = assignments.generate_loopnest_for_generic_subarray(
-        #          ttassignment.lhs
-        #        )
-        #        acc_loop_info.collapse = len(loops)
+            loop_list = assignments.generate_loopnest_for_generic_subarray(
+              ttassignment.lhs
+            )
+            assignments.modify_c_repr_of_generic_array_expr(
+              ttassignment,[l.index for l in loop_list]
+            )
+        # 
+        dummy = MaskedDummyStatement(
+          cstr = ttassignment.cstr(),
+          fstr = ttassignment.fstr()
+        )
+        self._create_default_loopnest_mgr_for_array_operation(len(loop_list))
+        for loop in loop_list:
+            self._loopnest_mgr.append_do_loop(loop)
+        first_loop = assignments.nest_loop_list(loop_list,[dummy]) # there is only one
+        self._loopnest_mgr.apply_loop_transformations()
+        self._render_loopnest_and_descend(first_loop)
 
     def _traverse(self,ttnode):
         if isinstance(ttnode,(tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
@@ -509,8 +537,6 @@ class __HIPKernelBodyGenerator:
         # add the prolog
         return self._result
 
-__instance = __HIPKernelBodyGenerator()
-
 def map_to_hip_cpp(
     ttcomputeconstruct,
     scope,
@@ -521,10 +547,11 @@ def map_to_hip_cpp(
     :param str device_type: The device type (`nvidia`, `radeon` or None).
      """
     loops.single_level_indent = opts.single_level_indent
-    __instance.single_level_indent = opts.single_level_indent
-    __instance.map_to_flat_arrays = opts.map_to_flat_arrays
-    __instance.map_to_flat_scalars = opts.map_to_flat_scalars
-    return __instance.map_to_hip_cpp(
+    codegen = HIPKernelBodyGenerator()
+    codegen.single_level_indent = opts.single_level_indent
+    codegen.map_to_flat_arrays = opts.map_to_flat_arrays
+    codegen.map_to_flat_scalars = opts.map_to_flat_scalars
+    return codegen.map_to_hip_cpp(
       ttcomputeconstruct,
       scope,
       device_type

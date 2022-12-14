@@ -23,9 +23,11 @@ Concepts:
        routine to render int constant declarations.
 """
 
+from .. import tree
+
 from . import loops
   
-def _render_linear_idx_offset(self,cname,indices):
+def _render_c_idx_offset(cname,indices):
     """Computes index offset for a contiguous array.
     """
     return "{cname}.c_idx({args})".format(
@@ -33,7 +35,7 @@ def _render_linear_idx_offset(self,cname,indices):
       args = ",".join(indices)
     )
 
-def generate_loopnest_for_contiguous_array(self,ttvalue,yields_full_array):
+def generate_loopnest_for_contiguous_array(ttvalue,yields_full_array):
     """Generate a loopnest based on the 
     :return: A list with a single entry: 
              A dummy TTDo that can be used to generate C++ code
@@ -56,20 +58,23 @@ def generate_loopnest_for_contiguous_array(self,ttvalue,yields_full_array):
     """
     cname = ttvalue.cname
     if yields_full_array:
-        len_cstr = "{}.size()".format(cname)
+        last_cstr = "{}.size() - 1".format(cname)
     else:
-        lbounds, ubounds, steps = ttvalue.loop_bounds_as_str(
+        (lbounds, ubounds, steps) = ttvalue.loop_bounds_as_str(
           only_consider_index_ranges=False,
           converter = tree.traversals.make_cstr
         ) 
-        first_idx = self._render_linear_idx_offset(cname,lbounds)
-        last_idx  = self._render_linear_idx_offset(cname,ubounds)
-        len_cstr = last_idx + " - " + first_idx + " + 1"
+        first_cidx = _render_c_idx_offset(cname,lbounds)
+        last_cidx  = _render_c_idx_offset(cname,ubounds)
+        last_cstr = last_cidx + " - " + first_cidx + " + 1"
     # create dummy do loop
-    first = tree.TTDummy(fstr = "1",cstr = "0")
+    first = tree.TTDummy(
+      fstr = "1",
+      cstr = "0" 
+    )
     last = tree.TTDummy(
       fstr = "size({})".format(ttvalue.fstr()),
-      cstr = len_cstr
+      cstr = last_cstr 
     )
     index = tree.TTIdentifier([loops.unique_label("idx")])
     begin = tree.TTAssignment([index,first])
@@ -79,12 +84,12 @@ def generate_loopnest_for_contiguous_array(self,ttvalue,yields_full_array):
       tree.TTDo([begin,last,step,body])
     ]
 
-def generate_loopnest_for_generic_subarray(self,ttvalue):
+def generate_loopnest_for_generic_subarray(ttvalue):
     """Loopnest generator generic subarray expressions.
     :return: A nest of dummy TTDos that can be used to generate C++ code
              Fortran problem size information. 
     """
-    loops = []
+    loop_list = []
     (lbounds_as_cstr, 
     ubounds_as_cstr, 
     steps_as_cstr) = ttvalue.loop_bounds_as_str(
@@ -126,11 +131,13 @@ def generate_loopnest_for_generic_subarray(self,ttvalue):
               cstr = ubound_as_cstr,
               fstr = ubound_as_fstr
             )
+        else:
+            step = None
         body = []
-        loops.append(tree.TTDo([begin,last,step,body]))
-    return loops
+        loop_list.append(tree.TTDo([begin,last,step,body]))
+    return loop_list
 
-def nest_list_of_loops(self,loops,innermost_loop_body):
+def nest_loop_list(loops,innermost_loop_body):
     """Nests a linear list of loops so that the do-loop traversal algorithm can be used.
     :param list loops: A list of loops.
     :param list innermost_loop_body: A list of statement nodes to put into
@@ -146,7 +153,7 @@ def nest_list_of_loops(self,loops,innermost_loop_body):
     last.body += innermost_loop_body
     return first  
 
-def modify_c_repr_of_contiguous_array_assignment(self,ttassignment,index_arg_cstr):
+def modify_c_repr_of_contiguous_array_expr(ttassignment,loop_index_cstr):
     """Overwrite TTValue nodes that have originally a Fortran-style () index operator to use
     a C-style [] index operator for accessing the array elements.
     For contiguous subarrays that do not cover the full array, an
@@ -154,28 +161,58 @@ def modify_c_repr_of_contiguous_array_assignment(self,ttassignment,index_arg_cst
     :return: A list of const int declarations per offsets
              of discovered contiguous subarrays.
     """
-    assert (ttassignment.rhs.yields_contiguous_array
-           or ttassignment.rhs.yields_scalar)
-    assert not ttassignment.rhs.applies_transformational_functions_to_arrays
-    assert not ttassignment.rhs.contains_array_access_with_index_array
-    offset_var_decls_ = [] 
+    # TODO
+    #assert (ttassignment.rhs.yields_contiguous_array
+    #       or ttassignment.rhs.yields_scalar)
+    #assert not ttassignment.rhs.applies_transformational_functions_to_arrays
+    #assert not ttassignment.rhs.contains_array_access_with_index_array
+    offset_var_decls = [] 
     for ttnode in ttassignment.walk_preorder():
         if isinstance(ttnode,tree.TTValue):
             if ttnode.is_contiguous_array:
-                (lbounds,ubounds,
-                 steps) = ttnode.loop_bounds_as_str(
-                  False,tree.traversals.make_cstr
-                ) 
-                if not ttnode.is_full_array:
+                if ttnode.is_full_array:
+                    array_index_cstr = loop_index_cstr
+                else: 
+                    (lbounds,ubounds,steps) = ttnode.loop_bounds_as_str(
+                      False,tree.traversals.make_cstr
+                    ) 
                     offset_var = loops.unique_label("offset") 
-                    offset_cstr = self._render_linear_idx_offset(ttnode.cname,lbounds)
+                    offset_cstr = _render_c_idx_offset(ttnode.cname,lbounds)
                     offset_var_decls.append(loops.render_const_int_decl(
                       offset_var,offset_cstr)
                     )
-                    index_arg_cstr += " + " + offset_var
+                    array_index_cstr = loop_index_cstr + " + " + offset_var
                 ttnode.overwrite_c_repr(
                   ttnode.cname,
-                  [index_arg_cstr],
+                  [array_index_cstr],
                   True # square brackets
                 )
     return offset_var_decls
+
+def modify_c_repr_of_generic_array_expr(ttassignment,loop_indices):
+    """Overwrite TTValue nodes that
+    """
+    # TODO
+    #assert (ttassignment.rhs.yields_contiguous_array
+    #       or ttassignment.rhs.yields_scalar)
+    #assert not ttassignment.rhs.applies_transformational_functions_to_arrays
+    #assert not ttassignment.rhs.contains_array_access_with_index_array
+    for ttnode in ttassignment.walk_preorder():
+        if isinstance(ttnode,tree.TTValue):
+            rank_defining_node = ttnode.rank_defining_node
+            if rank_defining_node.is_array:
+                loop_indices_copy = list(loop_indices)
+                cargs = []
+                for arg in rank_defining_node.args:
+                    (lbounds,ubounds,steps) = ttnode.loop_bounds_as_str(
+                      True,tree.traversals.make_cstr
+                    )
+                    if isinstance(arg,tree.TTIndexRange):
+                        cargs.append(loop_indices_copy.pop(0))
+                    else:
+                        cargs.append(arg.cstr())
+                ttnode.overwrite_c_repr(
+                  ttnode.cname,
+                  cargs,
+                  False # no square brackets
+                )

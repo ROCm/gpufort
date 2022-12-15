@@ -36,6 +36,8 @@ Generators:
 import pyparsing
 import ast
 
+import operator
+
 from gpufort import util
 from gpufort import indexer
 
@@ -65,6 +67,12 @@ class ArithExprNode(base.TTNode):
     an arithmetic expression.
     :note: Assumes that all subclasses have a 'type' property.
     """
+  
+    def walk_variable_references(self):
+        """Yields all variable references in pre-order.
+        """
+        for child in self.child_nodes():
+            yield from child.walk_variable_references()
     
     @property
     def yields_integer(self):
@@ -151,7 +159,7 @@ class Literal(ArithExprNode):
     def is_contiguous_array(self): return False
     @property
     def is_full_array(self): return False
-    
+   
     @property
     def yields_scalar(self): return self.is_scalar
     @property
@@ -160,7 +168,16 @@ class Literal(ArithExprNode):
     def yields_contiguous_array(self): return self.is_contiguous_array
     @property
     def yields_full_array(self): return self.is_full_array
-    
+   
+    @property
+    def is_parameter(self): return True
+    @property
+    def yields_parameter(self): return self.is_parameter
+    @property
+    def is_literal(self): return True
+    @property
+    def yields_literal(self): return self.is_literal
+ 
     def walk_variable_references(self):
         yield from ()
 
@@ -241,9 +258,10 @@ class TTNumber(Literal):
         return "TTNumber(val:"+str(self._value)+",kind:"+kind+")"
     __repr__ = __str__
 
-# variable expressions
 
-class VarExpr(ArithExprNode):
+class Reference(ArithExprNode):
+    """Base class for TTIdentifier and TTFunctionCall,
+    which may be variable or function references."""
 
     def _assign_fields(self, tokens):
         self._symbol_info = None
@@ -277,10 +295,6 @@ class VarExpr(ArithExprNode):
     @property 
     def type(self):
         return self._get_type_defining_record().type
-    
-    @property 
-    def is_parameter(self):
-        return self._get_type_defining_record().is_parameter
 
     @property
     def bytes_per_element(self):
@@ -290,6 +304,9 @@ class VarExpr(ArithExprNode):
     @bytes_per_element.setter
     def bytes_per_element(self,bytes_per_element):
         self._bytes_per_element = bytes_per_element 
+    
+    @property
+    def yields_literal(self): return False
 
     @property
     def ctype(self):
@@ -297,11 +314,11 @@ class VarExpr(ArithExprNode):
         return opts.bytes_2_c_type[
           self.type][self.bytes_per_element] 
 
-class TTIdentifier(VarExpr):
+class TTIdentifier(Reference):
         
     def _assign_fields(self, tokens):
         self.name = tokens[0]
-        VarExpr._assign_fields(self,tokens)
+        Reference._assign_fields(self,tokens)
     
     def walk_variable_references(self):
         yield self
@@ -313,33 +330,34 @@ class TTIdentifier(VarExpr):
     
     @property 
     def kind(self):
-        return self._get_type_defining_record().kind
+        assert self.partially_resolved
+        return self.symbol_info.kind
     
     @property
-    def is_array(self):
-        return self.rank > 0
+    def is_array(self): return self.rank > 0
     @property
-    def is_contiguous_array(self):
-        return self.is_array
+    def is_contiguous_array(self): return self.is_array
     @property
-    def is_full_array(self):
-        return self.is_array
+    def is_full_array(self): return self.is_array
     @property
-    def is_scalar(self):
-        return not self.is_array
+    def is_scalar(self): return not self.is_array
 
     @property
-    def yields_array(self):
-        return self.rank > 0
+    def yields_array(self): return self.is_array
     @property
-    def yields_contiguous_array(self):
-        return self.yields_array
+    def yields_contiguous_array(self): return self.yields_array
     @property
-    def yields_full_array(self):
-        return self.yields_array
+    def yields_full_array(self): return self.yields_array
     @property
-    def yields_scalar(self):
-        return not self.yields_array
+    def yields_scalar(self): return not self.yields_array
+   
+    @property 
+    def is_parameter(self):
+        assert self.partially_resolved
+        return self.symbol_info.is_parameter
+    @property
+    def yields_parameter(self):
+        return self.is_parameter
   
     def fstr(self):
         return self.name
@@ -352,9 +370,9 @@ class TTIdentifier(VarExpr):
     __repr__ = __str__
 
 
-class TTFunctionCall(VarExpr):
-    """Tree node for function call and array access expressions. In Fortran,
-    generally the lookup table need to be queried
+class TTFunctionCall(Reference):
+    """Tree node for function call and array access expressions.
+    In Fortran, generally the lookup table needs to be queried
     in order to identify the actual type of an
     expression that appears like a function call.
 
@@ -369,7 +387,7 @@ class TTFunctionCall(VarExpr):
             self.args = tokens[1:]
         else:
             self.args = []
-        VarExpr._assign_fields(self,tokens)
+        Reference._assign_fields(self,tokens)
     
     # override
     def _get_type_defining_record(self):
@@ -415,14 +433,45 @@ class TTFunctionCall(VarExpr):
             return len([arg for arg in self.index_range_args()])
         else: 
             return self._get_type_defining_record().rank
+    
+    @property
+    def yields_parameter(self):
+        """If the function call or array expression yields a parameter again.
+        :return: False if the node does not represent
+                 an array parameter expression or an intrinsic call.
+                 Otherwise checks if all arguments yield 
+                 parameters themselves.
+        :note: Special care is taken for TTIndexRange arguments.
+               Here it is checked that either no bound is specified
+               at all or the bounds are parameters themselves.
+        """
+        if self.is_array_expr:
+            if not self.symbol_info.is_parameter:
+                return False
+            for arg in self.args:
+                if isinstance(arg,tree.TTIndexRange):
+                    for bound in arg.child_nodes():
+                        if not bound.yields_parameter:
+                            return False
+                elif not arg.yields_parameter:
+                    return False
+            return True
+        elif self.is_intrinsic_call:
+            for arg in self.args:
+                if not arg.yields_parameter:
+                    return False
+            return True
+        else: 
+            return False
+        
 
     def child_nodes(self):
         for arg in self.args:
             yield arg
 
     def walk_variable_references(self):
-        """Yields itself if self is a variable.
-        Then yields from arguments."""
+        """Yields itself if self is a array variable reference.
+        Then yields from arguments, in any case."""
         if self.is_array_expr:
             yield self
         for arg in self.args:
@@ -443,7 +492,6 @@ class TTFunctionCall(VarExpr):
         :see: is_subarray.
         :see: is_full_aray"""
         return isinstance(self.symbol_info,indexer.indexertypes.IndexVariable)
- 
    
     @property
     def is_subarray(self):
@@ -835,43 +883,40 @@ class TTIndexRange(ArithExprNode):
         return result
 
 class TTDerivedTypePart(ArithExprNode):
+    """Class for recursively constructing
+    Fortran derived type expressions.
+    Most variable properties such as rank, type, etc
+    mus be queried via a TTValue parent.
+    """
 
     def _assign_fields(self, tokens):
-        self._derived_type, self._element = tokens
+        self.derived_type, self.element = tokens
         #print(self._type)
         self._cstr = None
 
-    @property
-    def derived_type(self):
-        return self._derived_type
-    
-    @property
-    def element(self):
-        return self._element
-
     def child_nodes(self):
-        yield self._derived_type
-        yield self._element
+        yield self.derived_type
+        yield self.element
 
     def walk_derived_type_parts_preorder(self):
         """Yields all TTDerivedTypePart instances.
         """
         yield self
-        if isinstance(self._element,TTDerivedTypePart):
-            yield from self._element.walk_derived_type_parts_preorder()
+        if isinstance(self.element,TTDerivedTypePart):
+            yield from self.element.walk_derived_type_parts_preorder()
     
     def walk_derived_type_parts_postorder(self):
         """Yields all TTDerivedTypePart instances.
         """
-        if isinstance(self._element,TTDerivedTypePart):
-            yield from self._element.walk_derived_type_parts_postorder()
+        if isinstance(self.element,TTDerivedTypePart):
+            yield from self.element.walk_derived_type_parts_postorder()
         yield self
     
     def walk_variable_references(self):
         """Yields all variables referenced by this expression in preorder.
         """
-        yield self._derived_type
-        yield from self._element.walk_variable_references()
+        yield self.derived_type
+        yield from self.element.walk_variable_references()
 
     @property
     def innermost_part(self):
@@ -975,6 +1020,24 @@ class TTComplexConstructor(ArithExprNode):
     @property
     def yields_full_array(self): return self.is_full_array
     
+    @property
+    def yields_parameter(self):
+        """:return: If all entries are parameters. 
+        """ 
+        for component in self.child_nodes():
+            if not component.yields_parameter:
+                return False
+        return True
+    
+    @property
+    def yields_literal(self):
+        """:return: If all entries are literals. 
+        """ 
+        for component in self.child_nodes():
+            if not component.yields_literal:
+                return False
+        return True
+    
     def walk_values_ignore_args(self):
         yield from self.real.walk_values_ignore_args()
         yield from self.imag.walk_values_ignore_args()
@@ -1055,6 +1118,24 @@ class TTArrayConstructor(ArithExprNode):
     @property
     def yields_full_array(self): return self.is_full_array
     
+    @property
+    def yields_parameter(self):
+        """:return: If all entries are parameters. 
+        """ 
+        for entry in self.entries:
+            if not entry.yields_parameter:
+                return False
+        return True
+    
+    @property
+    def yields_literal(self):
+        """:return: if all entries are literals. 
+        """ 
+        for entry in self.entries:
+            if not entry.yields_literal:
+                return False
+        return True
+    
     def walk_values_ignore_args(self):
         yield self
 
@@ -1110,7 +1191,6 @@ class TTValue(ArithExprNode):
         else:
             return self.value.resolved
     
-
     @property
     def type(self):
         return self.type_defining_node.type
@@ -1225,6 +1305,7 @@ class TTValue(ArithExprNode):
                  hence we use the innermost, the type-defining, 
                  derived type part."""
         return self.type_defining_node.yields_contiguous_array
+
     @property
     def yields_full_array(self):
         """note: Only applicable to innermost element.
@@ -1232,6 +1313,30 @@ class TTValue(ArithExprNode):
                  derived type part."""
         return self.type_defining_node.yields_full_array
     
+    @property
+    def yields_parameter(self):
+        """:return: If any of the variable references
+        appearing in this value expression is not a parameter.
+        :note: A parameter array access via a non-parameter
+               index yields no parameter.
+        :note: In case of a derived type expression, all
+               references to parent types appearing in the expression
+               are checked too.
+        """
+        if isinstance(self.value,TTDerivedTypePart):
+            for part in self.value.walk_derived_type_parts_preorder():
+                 if not part.derived_type.yields_parameter:
+                     return False
+            if not part.element.yields_parameter:
+                return False
+            return True
+        else:
+            return self.value.yields_parameter
+    
+    @property
+    def yields_literal(self):
+        return self.value.yields_literal 
+ 
     @property
     def is_function_call(self):
         type_defining_node = self.type_defining_node
@@ -1418,6 +1523,12 @@ class TTUnaryOp(ArithExprNode):
       "+": "{r}",
       "-": "-{r}",
     }
+
+    f2py = {
+      ".not.": operator.add,
+      "+": operator.pos,
+      "-": operator.pos,
+    }
     
     def _assign_fields(self, tokens):
         self.op, self.opd = tokens[0]
@@ -1464,12 +1575,21 @@ class TTUnaryOp(ArithExprNode):
     @property
     def yields_full_array(self):
         return self.opd.yields_full_array
-
+    
+    @property
+    def yields_parameter(self):
+        return self.opd.yields_parameter
+    
+    @property
+    def yields_literal(self):
+        return self.opd.yields_literal
+    
     def walk_values_ignore_args(self):
         yield from walk_values_ignore_args(self.opd)
  
     def _op_c_template(self):
         return TTUnaryOp.f2c.get(self.op.lower())
+
     def cstr(self):
         if _need_to_add_brackets(self,self.opd):
             return self._op_c_template().format(
@@ -1530,6 +1650,31 @@ class TTBinaryOpChain(ArithExprNode):
       ".ne.": "{l} != {r}",
       ".neqv.": "{l} != {r}",
       ".xor.": "{l} ^ {r}",
+    }
+    
+    f2py = {
+      "**": operator.pow,
+      "*": operator.mul,
+      "/": operator.truediv,
+      "+": operator.add,
+      "-": operator.sub,
+      "<": operator.lt,
+      "<=": operator.le,
+      ">": operator.gt,
+      ">=": operator.ge,
+      ".lt.": operator.lt,
+      ".le.": operator.le,
+      ".gt.": operator.gt,
+      ".ge.": operator.ge,
+      "==": operator.eq,
+      "/=": operator.ne,
+      ".and.": operator.__and__,
+      ".or.":  operator.__or__,
+      ".eq.": operator.eq,
+      ".eqv.": operator.eq,
+      ".ne.": operator.ne,
+      ".neqv.": operator.ne,
+      ".xor.": operator.xor,
     }
     
     def _assign_fields(self, tokens):
@@ -1670,6 +1815,24 @@ class TTBinaryOpChain(ArithExprNode):
                 one_full_array_found = True
         return one_full_array_found
     
+    @property
+    def yields_parameter(self):
+        """:return: if all operands yield parameters.
+        """
+        for opd in self.operands:
+            if not opd.yields_parameter:
+                return False
+        return True
+    
+    @property
+    def yields_literal(self):
+        """:return: if all operands yield literals.
+        """
+        for opd in self.operands:
+            if not opd.yields_literal:
+                return False
+        return True
+    
     def walk_values_ignore_args(self):
         for opd in self.operands:
             yield from opd.walk_values_ignore_args()
@@ -1748,6 +1911,13 @@ class TTArithExpr(ArithExprNode):
     @property
     def yields_scalar(self):
         return self.expr.yields_scalar
+    
+    @property
+    def yields_parameter(self):
+        return self.expr.yields_parameter
+    @property
+    def yields_literal(self):
+        return self.expr.yields_literal
     
     def walk_values_ignore_args(self):
         yield from self.expr.walk_values_ignore_args()
@@ -1839,6 +2009,12 @@ class TTKeywordArgument(ArithExprNode):
     @property
     def yields_full_array(self):
         return self.value.yields_full_array
+
+    @property
+    def yields_parameter(self):
+        """:return: If the value node yields a parameter.
+        """
+        return self.lhs.yields_parameter
 
     def child_nodes(self):
         yield self.value

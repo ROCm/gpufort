@@ -585,9 +585,7 @@ class Semantics:
                 ttpart.derived_type.symbol_info = indexer.scope.search_scope_for_var(
                   scope,var_name
                 )
-                self._resolve_array_expr(
-                  ttpart.derived_type,var_name
-                ) 
+                self._resolve_array_expr(ttpart.derived_type) 
             else: #if isinstance(ttpart.derived_type,tree.TTIdentifier):
                 self._resolve_identifier(
                   ttpart.derived_type,scope,var_name

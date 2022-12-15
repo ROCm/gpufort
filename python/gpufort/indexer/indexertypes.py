@@ -4,6 +4,7 @@ import enum
 import copy
 
 from gpufort import util    
+from gpufort import translator
 
 statement_classifier = util.parsing.StatementClassifier()
 
@@ -282,7 +283,6 @@ class IndexFortranConstructBase(IndexRecordAccessorBase):
         for var in self.types:
             if self.is_private_member(var.name):
                 yield var
-    
 
 class IndexModuleOrProgram(IndexFortranConstructBase):
     def __init__(self,record):
@@ -394,7 +394,11 @@ class IndexVariable(IndexRecordAccessorBase):
     def __init__(self,ivar,tag):
         self.record = ivar
         self._tag = tag
-   
+        #
+        self._kind_parse_result = None
+        self._rhs_parse_result = None
+        self._bounds_parse_results = None
+         
     @property
     def tag(self):
         """:return: A tag to better identify the variable, 
@@ -414,6 +418,12 @@ class IndexVariable(IndexRecordAccessorBase):
     def len(self):
         """Length specifier of a character."""
         return self.record["len"]
+    
+    @property
+    def rhs(self):
+        """:return: Right-hand side as string.
+        """
+        return self.record["rhs"]
 
     @property
     def matches_any_type(self):
@@ -499,11 +509,73 @@ class IndexVariable(IndexRecordAccessorBase):
             return IndexVariable.Intent.INOUT # must be variable
         else: # None
             return IndexVariable.Intent.DEFAULT # can be literal
-    @property
-    def value_as_str(self):
-        """:return: Initial value as string.
+    
+    def resolve_kind(self,scope=None):
+        """Parse the 'kind' enytry of this record.
+        :param scope: a scope for looking up referenced variables or none.
+        :raise util.error.lookuperror: if a symbol could not be resolved.
+        :raise util.error.syntaxerror: if the expression's syntax is not correct. 
+        :raise util.error.semanticerror: if the expression's semantics are not correct. 
         """
-        return self.record["rhs"]
+        assert self._kind_parse_result == None, "already resolved"
+        kind = self.record["kind"]
+        self._kind_parse_result = translator.parser.parse_arith_expr(kind,scope)
+   
+    def resolve_rhs(self,scope=None):
+        """Parse the right-hand side of variable declaration.
+        :param scope: a scope for looking up referenced variables or none.
+        :raise util.error.lookuperror: if a symbol could not be resolved.
+        :raise util.error.syntaxerror: if the expression's syntax is not correct. 
+        :raise util.error.semanticerror: if the expression's semantics are not correct. 
+        """
+        assert self._rhs_parse_result == None, "already resolved"
+        assert self._rhs_parse_result != None
+        rhs = self.record["rhs"]
+        self._rhs_parse_result = translator.parser.parse_arith_expr(rhs,scope)
+
+    def resolve_bounds(self,scope=None):
+        """Parse the array bounds of the variable declaration.
+        :param scope: A scope for looking up referenced variables or None.
+        :raise util.error.LookupError: If a symbol could not be resolved.
+        :raise util.error.SyntaxError: If the expression's syntax is not correct. 
+        :raise util.error.SemanticError: If the expression's semantics are not correct. 
+        """
+        assert self._bounds_parse_results == None, "already resolved"
+        assert False, "not implemented"
+    
+    @property
+    def kind_is_resolved(self):
+        return self._is_kind_resolved != None
+    
+    @property
+    def bounds_are_resolved(self):
+        return self._bounds_parse_results != None
+
+    @property
+    def is_rhs_resolved(self):
+        return self._is_rhs_resolved != None
+
+    @property
+    def resolved_kind(self):
+        assert self._resolved_kind != None
+        return self._resolved_kind
+    
+    @property
+    def resolved_bounds(self):
+        assert self._bounds_parse_results != None
+        return self._bounds_parse_results
+
+    @property
+    def resolved_rhs(self):
+        assert self._resolved_rhs != None
+        return self._resolved_rhs
+
+    @property
+    def resolved_size(self):
+        """Resolved size in elements if this 
+        an array, otherwise return 1."""
+        assert self._bounds_parse_results != None
+        assert False, "not implemented"
     
     @property
     def full_type_as_str(self):

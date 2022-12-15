@@ -289,7 +289,7 @@ contains
     use iso_c_binding
     implicit none
     !
-    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: wait_arg
     !
     interface
       subroutine acc_wait_c_impl(wait_arg) &
@@ -302,16 +302,14 @@ contains
       end subroutine
     end interface
     !
-    if ( present(wait_arg) ) then
-        call acc_wait_c_impl(c_loc(wait_arg))
-      endif
+    call acc_wait_c_impl(c_loc(wait_arg))
   end subroutine
 
   subroutine acc_wait_async(wait_arg, async_arg)
     use iso_c_binding
     implicit none
     !
-    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg, async_arg
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: wait_arg, async_arg
     !
     interface
       subroutine acc_wait_async_c_impl(wait_arg, async_arg) &
@@ -324,11 +322,7 @@ contains
       end subroutine
     end interface
     !
-    if ( present(wait_arg) ) then
-      if ( present(async_arg) ) then
-        call acc_wait_async_c_impl(c_loc(wait_arg), c_loc(async_arg))
-      endif
-    endif
+    call acc_wait_async_c_impl(c_loc(wait_arg), c_loc(async_arg))
   end subroutine
 
   subroutine acc_wait_all()
@@ -351,7 +345,7 @@ contains
     use iso_c_binding
     implicit none
     !
-    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: async_arg
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
     !
     interface
       subroutine acc_wait_all_async_c_impl(async_arg) &
@@ -364,17 +358,15 @@ contains
       end subroutine
     end interface
     !
-    if ( present(async_arg) ) then
-      call acc_wait_all_async_c_impl(c_loc(async_arg))
-    endif
+    call acc_wait_all_async_c_impl(c_loc(async_arg))
   end subroutine
 
   subroutine acc_wait_device(wait_arg, dev_num)
     use iso_c_binding
     implicit none
     !
-    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg
-    integer(c_int), optional :: dev_num
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: wait_arg
+    integer(c_int):: dev_num
     !
     interface
       subroutine acc_wait_device_c_impl(wait_arg, dev_num) &
@@ -388,19 +380,15 @@ contains
       end subroutine
     end interface
     !
-    if ( present(wait_arg) ) then
-        if( present(dev_num) ) then
-          call acc_wait_device_c_impl(c_loc(wait_arg), dev_num)
-        endif
-    endif
+    call acc_wait_device_c_impl(c_loc(wait_arg), dev_num)
   end subroutine
 
   subroutine acc_wait_device_async(wait_arg, async_arg, dev_num)
     use iso_c_binding
     implicit none
     !
-    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: wait_arg, async_arg
-    integer(c_int), optional :: dev_num
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: wait_arg, async_arg
+    integer(c_int):: dev_num
     !
     interface
       subroutine acc_wait_device_async_c_impl(wait_arg, async_arg, dev_num) &
@@ -414,20 +402,14 @@ contains
       end subroutine
     end interface
     !
-    if ( present(wait_arg) ) then
-      if ( present(async_arg) ) then
-        if( present(dev_num) ) then
-          call acc_wait_device_async_c_impl(c_loc(wait_arg), c_loc(async_arg), dev_num)
-        endif
-      endif
-    endif
+    call acc_wait_device_async_c_impl(c_loc(wait_arg), c_loc(async_arg), dev_num)
   end subroutine
 
   subroutine acc_wait_all_device(dev_num)
     use iso_c_binding
     implicit none
     !
-    integer(c_int), optional :: dev_num
+    integer(c_int) :: dev_num
     !
     interface
       subroutine acc_wait_all_device_c_impl(dev_num) &
@@ -440,17 +422,15 @@ contains
       end subroutine
     end interface
     !
-    if( present(dev_num) ) then
-      call acc_wait_all_device_c_impl(dev_num)
-    endif
+    call acc_wait_all_device_c_impl(dev_num)
   end subroutine
 
   subroutine acc_wait_all_device_async(async_arg, dev_num)
     use iso_c_binding
     implicit none
     !
-    integer(acc_handle_kind),dimension(..),target,intent(in),optional :: async_arg
-    integer(c_int), optional :: dev_num
+    integer(acc_handle_kind),dimension(..),target,intent(in) :: async_arg
+    integer(c_int):: dev_num
     !
     interface
       subroutine acc_wait_all_device_async_c_impl(async_arg, dev_num) &
@@ -464,11 +444,7 @@ contains
       end subroutine
     end interface
     !
-    if ( present(async_arg) ) then
-      if( present(dev_num) ) then
-        call acc_wait_all_device_async_c_impl(c_loc(async_arg), dev_num)
-      endif
-    endif
+    call acc_wait_all_device_async_c_impl(c_loc(async_arg), dev_num)
   end subroutine
 
   logical function acc_async_test(wait_arg)
@@ -496,7 +472,7 @@ contains
     implicit none
     !
     integer(acc_handle_kind),dimension(..),target,intent(in) :: wait_arg
-    integer(c_int), optional :: dev_num
+    integer(c_int) :: dev_num
     !
     interface
       integer(c_int) function acc_async_test_device_c_impl(wait_arg, dev_num) &
@@ -505,7 +481,7 @@ contains
         implicit none
         !
         type(c_ptr),value,intent(in) :: wait_arg
-        integer(c_int), optional :: dev_num
+        integer(c_int) :: dev_num
         !
       end function
     end interface

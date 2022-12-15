@@ -629,6 +629,7 @@ def _parse_file(linemaps, index, **kwargs):
                     current_linemap["statements"]):
                 try:
                     expand_statement_functions_(current_statement)
+                    original_statement = current_statement["body"]
                     original_statement_lower = current_statement["body"].lower()
                     util.logging.log_debug4(opts.log_prefix,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(original_statement_lower.rstrip(),\
                         current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))

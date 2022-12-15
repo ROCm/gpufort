@@ -1942,7 +1942,6 @@ def is_declaration(tokens):
 def is_blank_line(statement):
     return not len(statement.strip())
 
-
 def is_fortran_directive(statement,modern_fortran):
     """If the statement is a directive."""
     return len(statement) > 2 and (modern_fortran and statement.lstrip()[0:2] == "!$" 

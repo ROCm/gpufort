@@ -18,11 +18,17 @@ void gpufortrt_set_default_async(int async_arg) {
   gpufortrt::internal::default_async_arg = async_arg;
 }
 
-void gpufortrt_set_device_num(int dev_num, gpufortrt_device_t dev_type) {
+void gpufortrt_set_device_num(int dev_num) {
   HIP_CHECK(hipSetDevice(dev_num)) // TODO backend specific, externalize
 }
 
-int gpufortrt_get_device_num(gpufortrt_device_t dev_type) {
+int gpufortrt_get_num_devices() {
+  int dev_num;
+  HIP_CHECK(hipGetDeviceCount(&dev_num))
+  return dev_num;
+}
+
+int gpufortrt_get_device_num() {
   int dev_num;
   HIP_CHECK(hipGetDevice(&dev_num))
   return dev_num;
@@ -30,16 +36,13 @@ int gpufortrt_get_device_num(gpufortrt_device_t dev_type) {
 
 size_t gpufortrt_get_property(int dev_num,
                               gpufortrt_device_property_t property) {
+  size_t free, total;
   switch ( property ) {
     case gpufortrt_property_memory:
-      size_t free;
-      size_t total;
       HIP_CHECK(hipMemGetInfo(&free, &total))
       return total;
       break;
-    case gpufortrt_free_memory:
-      size_t free;
-      size_t total;
+    case gpufortrt_property_free_memory:
       HIP_CHECK(hipMemGetInfo(&free, &total))
       return free;
       break;
@@ -60,13 +63,6 @@ char* gpufortrt_get_property_string(int dev_num,
       throw std::invalid_argument("gpufortrt_get_property_string: not implemented"); // TODO implement
 }
 
-// Explicit Fortran interfaces that assume device number starts from 1
-void gpufortrt_set_device_num_f(int dev_num, gpufortrt_device_t dev_type) {
-  gpufortrt_set_device_num(dev_num-1,dev_type);
-}
-int gpufortrt_get_device_num_f(gpufortrt_device_t dev_type) {
-  return gpufortrt_get_device_num(dev_type)+1;
-}
 size_t gpufortrt_get_property_f(int dev_num,
                                 gpufortrt_device_property_t property) {
   return gpufortrt_get_property(dev_num-1,property);
@@ -75,6 +71,14 @@ const
 char* gpufortrt_get_property_string_f(int dev_num,
                                       gpufortrt_device_property_t property) {
   return gpufortrt_get_property_string(dev_num-1,property);
+}
+
+// Explicit Fortran interfaces that assume device number starts from 1
+void gpufortrt_set_device_num_f(int dev_num) {
+  gpufortrt_set_device_num(dev_num-1);
+}
+int gpufortrt_get_device_num_f() {
+  return gpufortrt_get_device_num()+1;
 }
 
 void gpufortrt_mapping_init(
@@ -409,7 +413,17 @@ void* gpufortrt_create(void* hostptr,std::size_t num_bytes,bool never_deallocate
 }
 
 void gpufortrt_create_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
-  gpufortrt_create(hostptr,num_bytes,never_deallocate);
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
+  // gpufortrt_create(hostptr,num_bytes,never_deallocate);
+  ::create_increment_action(
+    gpufortrt_counter_dynamic,
+    hostptr,
+    num_bytes,
+    gpufortrt_map_kind_create,
+    never_deallocate,/*never_deallocate*/
+    blocking,/*blocking*/
+    async_val);
 }
 
 void gpufortrt_delete(void* hostptr,std::size_t num_bytes) {
@@ -634,26 +648,61 @@ void gpufortrt_wait_all_async(int* async_arg,int num_async,
     }
   }
 }
-  
+
+void gpufortrt_wait_device(int* wait_arg, int num_wait, int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait(wait_arg, num_wait, if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+void gpufortrt_wait_device_async(int* wait_arg, int num_wait, 
+                                 int* async_arg, int num_async, 
+                                 int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait_async(wait_arg, num_wait, async_arg, num_async, if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+void gpufortrt_wait_all_device(int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait_all(if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+void gpufortrt_wait_all_device_async(int* async_arg, int num_async, 
+                                 int dev_num, bool if_arg){
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_wait_all_async(async_arg, num_async, if_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
 int gpufortrt_async_test(int wait_arg) {
-  gpufortrt::internal::queue_record_list.synchronize(wait_arg);
+  return gpufortrt::internal::queue_record_list.test(wait_arg);
 }
 
 int gpufortrt_async_test_device(int wait_arg, int dev_num) {
   const int current_device_num = gpufortrt_get_device_num();
   gpufortrt_set_device_num(dev_num);
-  gpufortrt_async_test(wait_arg);
+  int result = gpufortrt_async_test(wait_arg);
   gpufortrt_set_device_num(current_device_num);
+  return result;
 }
 
 int gpufortrt_async_test_all() {
-  for (size_t i = 0; i < queue_record_list.size(); i++) {
+  for (size_t i = 0; i < gpufortrt::internal::queue_record_list.size(); i++) {
     auto& queue = gpufortrt::internal::queue_record_list[i].queue;
-    HIP_CHECK(hipStreamQuery(queue))// TODO backend specific, externalize
+    if(hipStreamQuery(queue) != hipSuccess) return 0;
+    // HIP_CHECK(hipStreamQuery(queue))// TODO backend specific, externalize
   } 
+  return 1;
 }
 
 int gpufortrt_async_test_all_device(int dev_num) {
+  const int current_device_num = gpufortrt_get_device_num();
   gpufortrt_set_device_num(dev_num);
   int result = gpufortrt_async_test(dev_num);
   gpufortrt_set_device_num(current_device_num);
@@ -733,5 +782,42 @@ void* gpufortrt_use_device(void* hostptr,bool if_arg,bool if_present_arg) {
   } else {
     LOG_INFO(2,"<use_device; return hostptr="<<hostptr<<"; if_arg: 0")
     return hostptr;
+  }
+}
+
+bool gpufortrt_is_present(void* hostptr,std::size_t num_bytes) {
+  if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_is_present: runtime not initialized")
+  if ( hostptr != nullptr ) { // nullptr means no-op
+    auto list_tuple/*success,loc,offset*/ = gpufortrt::internal::record_list.find_record(hostptr,num_bytes);
+    return std::get<0>(list_tuple);
+  } else{
+      return false;
+  }
+}
+
+void* gpufortrt_malloc(size_t bytes){
+  void* deviceptr = nullptr;
+  hipError_t ierr = hipMalloc(&deviceptr,bytes);      
+  if ( ierr == hipSuccess ) {
+    return deviceptr;
+  } else {
+    LOG_ERROR("gpufortrt_malloc: could not allocate memory on device")
+    return nullptr; /* terminates beforehand */
+  }
+}
+
+void gpufortrt_free(void* data_dev){
+  HIP_CHECK( hipFree(data_dev) );   
+}
+
+void gpufortrt_map_data(void* data_arg, void* data_dev,
+                  size_t bytes){
+  // TODO: Check wether data_arg is sub_section of host memory
+  if ( data_arg != nullptr ) {
+    HIP_CHECK(hipMemcpy(
+        data_arg,
+        data_dev,
+        bytes,
+        hipMemcpyDeviceToHost));
   }
 }

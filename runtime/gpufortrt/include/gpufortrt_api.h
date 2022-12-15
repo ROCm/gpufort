@@ -9,13 +9,18 @@ extern "C" {
   
   void gpufortrt_set_device_num(int dev_num);
   int gpufortrt_get_device_num();
-  
+  // Explicit Fortran interfaces that assume device number starts from 1
+  void gpufortrt_set_device_num_f(int dev_num);
+  int gpufortrt_get_device_num_f();
+
   size_t gpufortrt_get_property(int dev_num,
                                 gpufortrt_device_property_t property);
   const 
   char* gpufortrt_get_property_string(int dev_num,
                                       gpufortrt_device_property_t property);
-  
+  size_t gpufortrt_get_property_f(int dev_num, gpufortrt_device_property_t property);
+  const char* gpufortrt_get_property_string_f(int dev_num, gpufortrt_device_property_t property);
+
   void gpufortrt_init();
   void gpufortrt_shutdown();
 
@@ -84,6 +89,10 @@ extern "C" {
   void* gpufortrt_present(
           void* hostptr,
           std::size_t num_bytes);
+
+  bool gpufortrt_is_present(
+          void* hostptr,
+          std::size_t num_bytes);
   
   void* gpufortrt_create(
           void* hostptr,
@@ -140,13 +149,24 @@ extern "C" {
                             bool if_arg);
   void gpufortrt_wait_all_async(int* async_arg,int num_async,
                                 bool if_arg);
-  
+  void gpufortrt_wait_device(int* wait_arg, int num_wait, 
+                             int dev_num, bool if_arg);
+  void gpufortrt_wait_device_async(int* wait_arg, int num_wait, 
+                                   int* async_arg, int num_async, 
+                                   int dev_num, bool if_arg);
+  void gpufortrt_wait_all_device(int dev_num, bool if_arg);
+  void gpufortrt_wait_all_device_async(int* async_arg, int num_async, 
+                                 int dev_num, bool if_arg);
   int gpufortrt_async_test(int wait_arg);
   int gpufortrt_async_test_device(int wait_arg, int dev_num);
   int gpufortrt_async_test_all(void);
   int gpufortrt_async_test_all_device(int dev_num);
 
   gpufortrt_queue_t gpufortrt_get_stream(int async_arg);
+  void* gpufortrt_malloc(size_t bytes);
+  void gpufortrt_free(void* data_dev);
+  void gpufortrt_map_data(void* data_arg, void* data_dev,
+                        size_t bytes);
  
   /** \return device pointer associated with `hostptr`, or nullptr.
    *  First searches through the structured region stack and then

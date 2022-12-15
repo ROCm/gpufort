@@ -31,8 +31,8 @@ $(CXX_OBJ): %.cpp.o: %.cpp
 $(F_OBJ): %.o: %.f90
 	$(FC) -c $< $(FCFLAGS)
 
-codegen:
-	python3 codegen.py src/gpufortrt_api.template.f90 -d 7
+# codegen:
+# 	python3 codegen.py src/gpufortrt_api.template.f90 -d 7
 
 clean_all:
 	rm -f *.o *.mod *.a

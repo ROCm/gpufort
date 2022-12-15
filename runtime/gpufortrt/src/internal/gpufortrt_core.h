@@ -353,6 +353,7 @@ namespace gpufortrt {
       queue_record_t& operator[](const int i);
       const queue_record_t& operator[](const int i) const;
      
+      size_t size();
       /** Reserve space for `capacity` queues. */
       void reserve(const int capacity);
 

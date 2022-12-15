@@ -2,7 +2,7 @@ HIP_PLATFORM ?= amd
 LIBGPUFORTRT  = libgpufortrt_$(HIP_PLATFORM).a
 
 FC      = gfortran -fmax-errors=5
-FCFLAGS ?= -std=f2008 -ffree-line-length-none -cpp
+FCFLAGS ?= -ffree-line-length-none -cpp
 
 #FCFLAGS += -g -ggdb -O0 -fbacktrace -fmax-errors=5 # -DDEBUG=3
 

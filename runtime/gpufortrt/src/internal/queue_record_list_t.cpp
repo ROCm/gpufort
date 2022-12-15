@@ -18,6 +18,10 @@ const gpufortrt::internal::queue_record_t& gpufortrt::internal::queue_record_lis
   return this->records[i];  
 }
 
+size_t gpufortrt::internal::queue_record_list_t::size() {
+  return this->records.size();
+}
+
 void gpufortrt::internal::queue_record_list_t::reserve(int capacity) {
   this->records.reserve(capacity); 
 }
@@ -70,13 +74,13 @@ gpufortrt_queue_t gpufortrt::internal::queue_record_list_t::use_create_queue(int
 namespace {
   void synchronize_default_queue() {
     gpufortrt::internal::queue_record_t default_queue_record;
-    default_queue_record.setup(-1,gpufortrt_default_queue);
+    default_queue_record.setup(-1); // original was (-1,gpufortrt_default_queue)
     default_queue_record.synchronize();
   }
   
   bool test_default_queue() {
     gpufortrt::internal::queue_record_t default_queue_record;
-    default_queue_record.setup(-1,gpufortrt_default_queue);
+    default_queue_record.setup(-1); // original was (-1,gpufortrt_default_queue)
     return default_queue_record.test();
   }
 }
@@ -110,7 +114,7 @@ void gpufortrt::internal::queue_record_list_t::synchronize(const int id) {
     std::size_t loc;
     std::tie(success,loc) = this->find_record(id);
     if ( success ) {
-      result = this->records[loc].synchronize(); 
+      this->records[loc].synchronize(); 
       LOG_INFO(3,"synchronize queue; " << this->records[loc])
     } else {
       LOG_INFO(3,"synchronize queue; no queue found for id="<<id)
@@ -125,7 +129,7 @@ void gpufortrt::internal::queue_record_list_t::synchronize(const int id) {
  * have been completed.*/
 bool gpufortrt::internal::queue_record_list_t::test_all() {
   bool result = true;
-  for (size_t i = 0; i < queue_record_list.size(); i++) {
+  for (size_t i = 0; i < gpufortrt::internal::queue_record_list.records.size(); i++) {
     auto& queue_record = gpufortrt::internal::queue_record_list[i];
     result &= queue_record.test();
   } 
@@ -137,7 +141,7 @@ bool gpufortrt::internal::queue_record_list_t::test_all() {
 /** Synchronize all queues. */
 void gpufortrt::internal::queue_record_list_t::synchronize_all() {
   LOG_INFO(3,"synchronize all queues;")
-  for (size_t i = 0; i < queue_record_list.size(); i++) {
+  for (size_t i = 0; i < gpufortrt::internal::queue_record_list.records.size(); i++) {
     auto& queue_record = gpufortrt::internal::queue_record_list[i];
     queue_record.synchronize();
   } 

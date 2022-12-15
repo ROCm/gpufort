@@ -12,7 +12,7 @@ extern "C" {
   extern int gpufortrt_async_sync;
   extern int gpufortrt_async_default;
   
-  enum gpufortrt_property_t {
+  enum gpufortrt_device_property_t {
     gpufortrt_property_memory = 0,//>integer,  size of device memory in bytes
     gpufortrt_property_free_memory,//>integer,  free device memory in bytes
     gpufortrt_property_shared_memory_support,//>integer,  nonzero if the specified device supports sharing memory with the local thread

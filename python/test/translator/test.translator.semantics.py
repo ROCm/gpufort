@@ -48,16 +48,17 @@ class TestSemantics(unittest.TestCase):
         scope = indexer.scope.create_scope_from_declaration_list("""\
         use iso_c_binding
         implicit none
-        integer, parameter :: m = 2, n = 3, k = 4
+        integer, parameter :: m = 2, n = 3, p = 4
+        !integer, parameter :: Q(3) = [1,2,3]
         integer :: i,j,k
         integer :: A(m),B(m,n),C(m,n,k)
-        integer(c_long) :: D(m),E(m,n),F(m,n,k)
+        integer(c_long) :: D(m),E(m,n),F(m,n,p)
         real :: alpha,beta,gamma
-        real :: X(m),Y(m,n),Z(m,n,k)
-        real(c_double) :: U(m),V(m,n),W(m,n,k)
+        real :: X(m),Y(m,n),Z(m,n,p)
+        real(c_double) :: U(m),V(m,n),W(m,n,p)
 
         type mytype_t
-          real :: tX(m),tY(m,n),tZ(m,n,k)
+          real :: tX(m),tY(m,n),tZ(m,n,p)
         end type
         
         type(mytype_t) :: mytypes(10)
@@ -65,10 +66,18 @@ class TestSemantics(unittest.TestCase):
     
     parse_arith_expr_testdata = [
       "1", 
-      "(1.0,2.0)",
+      "(1.0,2.0)", # all literals
       "(1.0_c_double,2.0)",
-      "[1.0,2.0,3.0]",
-      "[1,2,i,j,k]",
+      "1 + 2  * 3",
+      "1.0 + 2.0 * 3.0",
+      "[1.0,2.0,3.0]", # till here
+      "[1.0,2.0,1 + 2.0 + 3.0]", # till here
+      "[1,2,M,N,P]",  # all parameters
+      "M + N*P", 
+      "[M + N*P,4*N*P]", # till here
+      "[1,2,i,j,k]", 
+      "i + j*k",
+      "[i + j*k,4*j*k]",
       "A(i) + B(i,j)",
       "A(i) + B(i,j) - C(i,j,k)",
       "A(i) + B(i,j)*C(i,j,k)",
@@ -85,23 +94,32 @@ class TestSemantics(unittest.TestCase):
     
     parse_arith_expr_parse_results = [] # will be filled by a test
     
+    #type|bytes per element|rank|parameter|literal|unprefixed_single_val
     resolve_arith_expr_results = [
-      ('integer', 4, 0, True),
-      ('complex', 2*4, 0, True),
-      ('complex', 2*8, 0, True),
-      ('real', 4, 1, True),
-      ('integer', 4, 1, True),
-      ('integer', 4, 0, False),
-      ('integer', 4, 0, False),
-      ('integer', 4, 0, False),
-      ('integer', 4, 0, False),
-      ('integer', 4, 0, False),
-      ('real', 4, 1, False),
-      ('integer', 4, 1, False),
-      ('real', 4, 1, False),
-      ('real', 4, 2, False),
-      ('real', 8, 2, False),
-      ('real', 8, 2, False),
+      ('integer', 4, 0, True, True, True),
+      ('complex', 8, 0, True, True, True),
+      ('complex', 16, 0, True, True, True),
+      ('integer', 4, 0, True, True, False),
+      ('real', 4, 0, True, True, False),
+      ('real', 4, 1, True, True, True),
+      ('real', 4, 1, True, True, True),
+      ('integer', 4, 1, True, False, True),
+      ('integer', 4, 0, True, False, False),
+      ('integer', 4, 1, True, False, True),
+      ('integer', 4, 1, False, False, True),
+      ('integer', 4, 0, False, False, False),
+      ('integer', 4, 1, False, False, True),
+      ('integer', 4, 0, False, False, False),
+      ('integer', 4, 0, False, False, False),
+      ('integer', 4, 0, False, False, False),
+      ('integer', 4, 0, False, False, False),
+      ('integer', 4, 0, False, False, False),
+      ('real', 4, 1, False, False, False),
+      ('integer', 4, 1, False, False, False),
+      ('real', 4, 1, False, False, False),
+      ('real', 4, 2, False, False, False),
+      ('real', 8, 2, False, False, False),
+      ('real', 8, 2, False, False, False),
     ]
 
     def test_02_parse_arith_expr(self):
@@ -119,9 +137,11 @@ class TestSemantics(unittest.TestCase):
               ttarithexpr.type,
               ttarithexpr.bytes_per_element,
               ttarithexpr.rank,
-              ttarithexpr.is_unprefixed_single_value
+              ttarithexpr.yields_parameter,
+              ttarithexpr.yields_literal,
+              ttarithexpr.is_unprefixed_single_value,
             )
-            #print(result_tuple)
+            #print(str(result_tuple)+",")
             self.assertEqual(TestSemantics.resolve_arith_expr_results[i],result_tuple)
 
     parse_rvalue_testdata = [

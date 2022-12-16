@@ -103,7 +103,7 @@ class TTUnconditionalGoTo(base.TTStatement):
     def cstr(self):
         return "goto _{};".format(self._label.rstrip("\n"))
 
-class TTBlank(base.TTNode):
+class TTBlankLine(base.TTStatement):
     
     def _assign_fields(self, tokens):
         self._text = tokens[0] 
@@ -114,7 +114,7 @@ class TTBlank(base.TTNode):
     def fstr(self):
         return self._text 
 
-class TTCommentedOut(base.TTNode):
+class TTComment(base.TTStatement):
 
     def _assign_fields(self, tokens):
         self._text = " ".join(tokens)

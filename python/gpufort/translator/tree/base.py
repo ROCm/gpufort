@@ -77,21 +77,6 @@ class TTNode(object):
 
     #__repr__ = __str__
 
-class TTDummy(TTNode):
-    """A node with user-defined C/C++ and Fortran
-    representations.
-    """
-
-    def __init__(self,cstr,fstr):
-        """:param str cstr: The C/C++ representation.
-        :param str fstr: The Fortran representation."""
-        self._cstr = cstr
-        self._fstr = fstr 
-    def cstr(self):
-        return self._cstr
-    def fstr(self):
-        return self._fstr
-
 class TTNone(TTNode):
     """Node modelling non-existing nodes or empty lists."""
     def __init__(self, tokens=[]):

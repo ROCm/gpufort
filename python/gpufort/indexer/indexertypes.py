@@ -524,9 +524,9 @@ class IndexVariable(IndexRecordAccessorBase):
     def resolve_rhs(self,scope=None):
         """Parse the right-hand side of variable declaration.
         :param scope: a scope for looking up referenced variables or none.
-        :raise util.error.lookuperror: if a symbol could not be resolved.
-        :raise util.error.syntaxerror: if the expression's syntax is not correct. 
-        :raise util.error.semanticerror: if the expression's semantics are not correct. 
+        :raise util.error.LookupError: if a symbol could not be resolved.
+        :raise util.error.SyntaxError: if the expression's syntax is not correct. 
+        :raise util.error.SemanticError: if the expression's semantics are not correct. 
         """
         assert self._rhs_parse_result == None, "already resolved"
         assert self._rhs_parse_result != None
@@ -542,18 +542,6 @@ class IndexVariable(IndexRecordAccessorBase):
         """
         assert self._bounds_parse_results == None, "already resolved"
         assert False, "not implemented"
-    
-    @property
-    def kind_is_resolved(self):
-        return self._is_kind_resolved != None
-    
-    @property
-    def bounds_are_resolved(self):
-        return self._bounds_parse_results != None
-
-    @property
-    def is_rhs_resolved(self):
-        return self._is_rhs_resolved != None
 
     @property
     def resolved_kind(self):

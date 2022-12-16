@@ -39,9 +39,6 @@ from . import render
 #   def kernel_arg_as_str(self):
 #       pass
 
-class MaskedDummyStatement(tree.TTDummy):
-    pass
-
 class HIPKernelBodyGenerator:
 
     """
@@ -368,48 +365,6 @@ class HIPKernelBodyGenerator:
               collapse = num_collapse
             )
 
-    def _traverse_array_assignment(self,ttassignment):
-        """
-        - generate collapsed loopnest if one of the expressions is not 
-          contiguous or full array
-         - assign collapsed loop index directly to full_array 
-          - assign collapsed loop index + offset directly to contiguous array
-        - generate 
-        :note: Currently, contiguous arrays
-        """
-        assert not ttassignment.rhs.applies_transformational_functions_to_arrays
-        if (
-            ttassignment.lhs.is_contiguous_array
-            and (ttassignment.rhs.yields_contiguous_array
-                or ttassignment.rhs.yields_scalar)
-          ):
-            loop_list = assignments.generate_loopnest_for_contiguous_array(
-              ttassignment.lhs,
-              ttassignment.lhs.is_full_array
-            )
-            for offset_decl_as_cstr in assignments.modify_c_repr_of_contiguous_array_expr(
-                  ttassignment,loop_list[0].index.cstr()
-                ):
-                  self._add_unmasked_code(offset_decl_as_cstr)
-        else:
-            loop_list = assignments.generate_loopnest_for_generic_subarray(
-              ttassignment.lhs
-            )
-            assignments.modify_c_repr_of_generic_array_expr(
-              ttassignment,[l.index for l in loop_list]
-            )
-        # 
-        dummy = MaskedDummyStatement(
-          cstr = ttassignment.cstr(),
-          fstr = ttassignment.fstr()
-        )
-        self._create_default_loopnest_mgr_for_array_operation(len(loop_list))
-        for loop in loop_list:
-            self._loopnest_mgr.append_do_loop(loop)
-        first_loop = assignments.nest_loop_list(loop_list,[dummy]) # there is only one
-        self._loopnest_mgr.apply_loop_transformations()
-        self._render_loopnest_and_descend(first_loop)
-
     def _traverse(self,ttnode):
         if isinstance(ttnode,(tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
             self._traverse_acc_compute_construct(ttnode)
@@ -447,7 +402,14 @@ class HIPKernelBodyGenerator:
                     pass # check for reductions, otherwise fail
                 else:
                     self._add_masked_code(ttnode.cstr())
-        elif isinstance(ttnode,MaskedDummyStatement):
+        elif isinstance(ttnode,tree.TTSubstitution):
+            #if ttnode.orig.rank > 0:
+            #    self._create_default_loopnest_mgr_for_array_operation(ttnode.orig.rank)
+            if type(ttnode.subst) == tree.TTContainer:
+                self._traverse_container_body(ttnode.subst,indent="")
+            else:
+                self._traverse(ttnode.subst)
+        elif isinstance(ttnode,tree.TTUnrolledArrayAssignment):
             self._add_masked_code(ttnode.cstr())
         elif isinstance(ttnode,tree.TTSubroutineCall):
             # must be masked in OpenACC context, is always masked in CUF context, see rule on acc routine clauses,
@@ -495,6 +457,24 @@ def map_to_hip_cpp(
     codegen.single_level_indent = opts.single_level_indent
     codegen.map_to_flat_arrays = opts.map_to_flat_arrays
     codegen.map_to_flat_scalars = opts.map_to_flat_scalars
+    # todo: copy, reduction, hipblas detection must go here?
+    assignments.unroll_all_array_assignments(ttcomputeconstruct)
+    if isinstance(ttcomputeconstruct,tree.TTRoot):
+        ttcomputeconstruct = ttcomputeconstruct.body[-1] # might be a comment before
+    # insert artificla acc loop node if first compute construct child is
+    # a substituted array ex[ressopm amd 
+    if type(ttcomputeconstruct) == tree.TTAccKernels:
+        if type(ttcomputeconstruct.body[0]) == tree.TTSubstitution:
+            collapse_expr = tree.TTNumber([
+              str(ttcomputeconstruct.body[0].orig.rank)
+            ])
+            clauses = [
+              tree.TTAccClauseGang([]),
+              tree.TTAccClauseVector([]),
+              tree.TTAccClauseCollapse([collapse_expr]),
+            ]
+            ttcomputeconstruct.body.insert(0,tree.TTAccLoop(clauses))
+    # todo: Do arg analyis here
     return codegen.map_to_hip_cpp(
       ttcomputeconstruct,
       scope,

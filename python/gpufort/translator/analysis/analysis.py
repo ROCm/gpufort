@@ -384,7 +384,7 @@ def _perfectly_nested_outer_do_loops(ttcomputeconstruct):
             if isinstance(child,tree.TTDo):
                 ttdos.append(child)
                 descend_(child,depth+1)
-            elif not isinstance(child,(tree.TTCommentedOut,tree.TTCycle,tree.TTLabel)):
+            elif not isinstance(child,(tree.TTComment,tree.TTCycle,tree.TTLabel)):
                 # if there are other statements on the same level
                 # and a do loop was added, remove it and its
                 # inner loops. Then break the loop.

@@ -1,5 +1,35 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
+"""This module contains routines to derive a scope from
+the index records created by the indexer module.
+It takes care about resolving dependencies between modules, looking
+up variable and procedure symbol info and hiding parent symbols
+in nested code constructs.
+
+TODOs (12/16/22):
+
+* Do not store pure records in scope but IndexVariable instances to have 
+  a unique instance for every symbol. 
+    
+  * Implications: 
+    + Will be able to resolve variable kind, bounds, rhs more efficiently
+      as every required symbol needs to be resolved only once.
+      * When resolving included public accessible variable from another
+        module scope must change to that module to use 
+        private variables. This might need to be done recursively, similar
+        to what is already done for looking up derived type member definitions.
+
+    - Need serialization method when converting scope to module record and vice versa.
+      * This is essential for high-level optimization of module lookups
+        where module files contain all symbols from used modules.
+
+* Use OrderedDict as data structure to improve lookup time of symbols
+  while keeping ordering at the same. Hiding of members is done easily too.
+
+"""
+
+
 import os, sys, traceback
 import copy
 import re

@@ -376,6 +376,8 @@ class TTIdentifier(Reference):
         return "TTIdentifier(name:"+str(self._name)+")"
     __repr__ = __str__
 
+    def eval(self):
+        return self.symbol_info.resolved_rhs.eval()
 
 class TTFunctionCall(Reference):
     """Tree node for function call and array access expressions.

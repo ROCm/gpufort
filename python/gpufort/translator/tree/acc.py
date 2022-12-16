@@ -841,6 +841,7 @@ class TTAccLoop(TTAccConstruct):
                     a flag if the clause is specified,
                     a flag if an argument is specified,
                     the argument or None. 
+        :param str device_type: Device type specifier such as 'radeon' or 'nvidia', or None.
         """
         for clause in self.walk_clauses_device_type(device_type):
             if isinstance(clause,TTAccClauseGang):
@@ -852,6 +853,7 @@ class TTAccLoop(TTAccConstruct):
                     a flag if the clause is specified,
                     a flag if an argument is specified,
                     the argument or None. 
+        :param str device_type: Device type specifier such as 'radeon' or 'nvidia', or None.
         """
         for clause in self.walk_clauses_device_type(device_type):
             if isinstance(clause,TTAccClauseWorker):
@@ -863,6 +865,7 @@ class TTAccLoop(TTAccConstruct):
                     a flag if the clause is specified,
                     a flag if an argument is specified,
                     the argument or None. 
+        :param str device_type: Device type specifier such as 'radeon' or 'nvidia', or None.
         """
         for clause in self.walk_clauses_device_type(device_type):
             if isinstance(clause,TTAccClauseVector):
@@ -873,6 +876,7 @@ class TTAccLoop(TTAccConstruct):
         """:return: A tuple consisting of a flag if the
                     clause was specified and the arguments of
                     the clause or None.
+        :param str device_type: Device type specifier such as 'radeon' or 'nvidia', or None.
         """
         for clause in self.walk_clauses_device_type(device_type):
             if isinstance(clause,TTAccClauseTile):
@@ -883,6 +887,7 @@ class TTAccLoop(TTAccConstruct):
         """:return: A tuple consisting of a flag if the
                     clause was specified, if the force modifier was
                     specified and the argument of the clause or None.
+        :param str device_type: Device type specifier such as 'radeon' or 'nvidia', or None.
         """
         for clause in self.walk_clauses_device_type(device_type):
             if isinstance(clause,TTAccClauseCollapse):
@@ -891,11 +896,47 @@ class TTAccLoop(TTAccConstruct):
 
     def associated_loops(self,device_type):
         """:return: The loop statements associated with this directive.
+        :note: Assumes semantics have been checked before, i.e.:
+               * `tile` and `collapse` clause are not specified together
+               * no other statements are intermixed into loopnest, unless
+                 the `force` modifier is specified.
+        :param str device_type: Device type specifier such as 'radeon' or 'nvidia', or None.
         """
-        (collapse_specified,force_specified,collapse.arg) = self.collapse()
-        assert collapse.arg.is_literal
-        for ttnode in self.body: 
-            assert False, "not implemented"
+        (collapse_specified,_,collapse_arg) = self.collapse(device_type)
+        (tile_specified,tile_args) = self.tile(device_type)
+        if collapse_specified:
+            assert not tile_specified
+            num_loops = collapse.arg.eval()
+        elif tile_specified: # collapse and tile may not be specified both as order of operation is not clear
+            assert not collapse_specified
+            num_loops = len(tile_args)
+        else:
+            num_loops = 1 
+        loop_list = []
+        def descend_(curr):
+            nonlocal loop_list
+            for ttstatement in self.body:
+                if isinstance(ttstatement,TTDo):
+                    loop_list.append(ttstatement)
+                    if len(loop_list) == num_loops:
+                        return
+                    descend_(ttstatement)
+                elif isinstance(ttstatement,TTContainer):
+                    descend_(ttstatement)
+        descend_(self)
+        
+        assert len(loop_list) == num_loops
+        return loop_list
+
+# for acc loop semantics check, check must be placed when one comes up from the do-loop
+# if isinstance(ttstatement,(
+#     tree.TTLabel,
+#     tree.TTComment,
+#     tree.TTBlankLine,
+#     tree.TTAccDirective,
+#   )):
+#     pass
+
 
 class TTAccAtomic(TTAccDirective):
     kind = "atomic"
@@ -1263,7 +1304,6 @@ class TTAccRoutine(TTAccDirective):
             TTAccClauseSeq,
             TTAccClauseBind, # :todo: identifier (as in language being compiled) vs string (unmodified)
           ))
-
 
 class TTAccCache(TTAccDirective):
     kind = "cache"

@@ -762,6 +762,11 @@ class Semantics:
                         clause.kind
                       )
                     )
+                    if not isinstance(clause,tree.TTAccClauseGang):
+                        if not clause.arg.yields_literal:
+                            raise util.error.LimitationError(
+                              "'{}' clause argument must be literal integer expression".format(clause.kind)
+                            )
             if isinstance(clause,(
                 tree.TTAccClauseNumGangs,
                 tree.TTAccClauseNumWorkers,
@@ -774,6 +779,15 @@ class Semantics:
                      clause.kind
                    )
                  )
+                 if not clause.arg.yields_scalar:
+                     raise util.error.SemanticError(
+                       "'{}' clause argument must be scalar".format(clause.kind)
+                     )
+                 if not isinstance(clause,tree.TTAccClauseNumGangs):
+                     if not clause.arg.yields_literal:
+                         raise util.error.LimitationError(
+                           "'{}' clause argument must be literal integer expression".format(clause.kind)
+                         )
             if isinstance(clause,(
                 tree.TTAccClauseDeviceNum
               )):
@@ -784,6 +798,10 @@ class Semantics:
                      clause.kind
                    )
                  )
+                 if not clause.arg.yields_scalar:
+                     raise util.error.SemanticError(
+                       "'{}' clause argument must be scalar".format(clause.kind)
+                     )
             if isinstance(clause,(
                 tree.TTAccClauseDeviceType
               )):
@@ -852,10 +870,14 @@ class Semantics:
               )):
                 self.resolve_arith_expr(clause.arg,scope)
                 self._check_yields_default_integer_type(
-                  arg,"arguments of 'collapse' clause must be of default integer kind"
+                  clause.arg,"'collapse' clause argument must be of default integer kind"
                 )
+                if not clause.arg.yields_scalar:
+                    raise util.error.SemanticError(
+                      "'collapse' clause argument must be scalar"
+                    )
                 if not clause.arg.yields_literal:
-                    raise util.error.LimitationError("'collapse' clause argument must be literal expression")
+                    raise util.error.LimitationError("'collapse' clause argument must be literal integer expression")
                 # :todo: parameters should be supported too.
             if isinstance(clause,(
                 tree.TTAccClauseWait

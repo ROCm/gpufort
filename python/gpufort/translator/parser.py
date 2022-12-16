@@ -223,12 +223,12 @@ def parse_fortran_code(code,result_name=None,scope=None):
         # tree construction
         if statement_classifier.is_blank_line(stmt):
             if type(curr) != tree.TTRoot:
-                append_(tree.TTBlank([stmt]), "blank line")
+                append_(tree.TTBlankLine([stmt]), "blank line")
         elif _is_ignored_statement(tokens):
             ignore_("statement")
         elif statement_classifier.is_fortran_directive(stmt,modern_fortran):
             try:
-                append_(tree.TTCommentedOut([stmt]), "comment", quiet=True)
+                append_(tree.TTComment([stmt]), "comment", quiet=True)
                 if _is_ignored_fortran_directive(tokens):
                     ignore_("directive")
                 elif (
@@ -252,7 +252,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
         elif statement_classifier.is_fortran_comment(stmt,modern_fortran):
             if type(curr) != tree.TTRoot:
                 comment = re.split("!|^[c*]", stmt1, 1, re.IGNORECASE)[1]
-                append_(tree.TTCommentedOut([comment]), "comment")
+                append_(tree.TTComment([comment]), "comment")
         elif statement_classifier.is_block(tokens):
             named_label = statement_classifier.parse_result
             descend_(

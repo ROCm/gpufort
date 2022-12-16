@@ -35,7 +35,7 @@ def _render_c_idx_offset(cname,indices):
       args = ",".join(indices)
     )
 
-def generate_loopnest_for_contiguous_array(ttvalue,yields_full_array):
+def _generate_loopnest_for_contiguous_array(ttvalue,yields_full_array):
     """Generate a loopnest based on the 
     :return: A list with a single entry: 
              A dummy TTDo that can be used to generate C++ code
@@ -84,7 +84,7 @@ def generate_loopnest_for_contiguous_array(ttvalue,yields_full_array):
       tree.TTDo([begin,last,step,body])
     ]
 
-def generate_loopnest_for_generic_subarray(ttvalue):
+def _generate_loopnest_for_generic_subarray(ttvalue):
     """Loopnest generator generic subarray expressions.
     :return: A nest of dummy TTDos that can be used to generate C++ code
              Fortran problem size information. 
@@ -137,7 +137,7 @@ def generate_loopnest_for_generic_subarray(ttvalue):
         loop_list.append(tree.TTDo([begin,last,step,body]))
     return loop_list
 
-def nest_loop_list(loops,innermost_loop_body):
+def _nest_loop_list(loops,innermost_loop_body):
     """Nests a linear list of loops so that the do-loop traversal algorithm can be used.
     :param list loops: A list of loops.
     :param list innermost_loop_body: A list of statement nodes to put into
@@ -153,7 +153,7 @@ def nest_loop_list(loops,innermost_loop_body):
     last.body += innermost_loop_body
     return first  
 
-def modify_c_repr_of_contiguous_array_expr(ttassignment,loop_index_cstr):
+def _modify_c_repr_of_contiguous_array_expr(ttassignment,loop_index_cstr):
     """Overwrite TTValue nodes that have originally a Fortran-style () index operator to use
     a C-style [] index operator for accessing the array elements.
     For contiguous subarrays that do not cover the full array, an
@@ -161,11 +161,6 @@ def modify_c_repr_of_contiguous_array_expr(ttassignment,loop_index_cstr):
     :return: A list of const int declarations per offsets
              of discovered contiguous subarrays.
     """
-    # TODO
-    #assert (ttassignment.rhs.yields_contiguous_array
-    #       or ttassignment.rhs.yields_scalar)
-    #assert not ttassignment.rhs.applies_transformational_functions_to_arrays
-    #assert not ttassignment.rhs.contains_array_access_with_index_array
     offset_var_decls = [] 
     for ttnode in ttassignment.walk_preorder():
         if isinstance(ttnode,tree.TTValue):
@@ -189,14 +184,9 @@ def modify_c_repr_of_contiguous_array_expr(ttassignment,loop_index_cstr):
                 )
     return offset_var_decls
 
-def modify_c_repr_of_generic_array_expr(ttassignment,loop_indices):
-    """Overwrite TTValue nodes that
+def _modify_c_repr_of_generic_array_expr(ttassignment,loop_indices):
     """
-    # TODO
-    #assert (ttassignment.rhs.yields_contiguous_array
-    #       or ttassignment.rhs.yields_scalar)
-    #assert not ttassignment.rhs.applies_transformational_functions_to_arrays
-    #assert not ttassignment.rhs.contains_array_access_with_index_array
+    """
     for ttnode in ttassignment.walk_preorder():
         if isinstance(ttnode,tree.TTValue):
             rank_defining_node = ttnode.rank_defining_node
@@ -216,3 +206,73 @@ def modify_c_repr_of_generic_array_expr(ttassignment,loop_indices):
                   cargs,
                   False # no square brackets
                 )
+
+def unroll_array_assignment(ttassignment):
+    """Unrolls a Fortran assignment where LHS and RHS are arrays.
+
+    Generates loopnest if one of the expressions is not contiguous.
+    Otherwise, generates a single loop that uses a C-style index for accessing the 
+    elements of the involved array references. 
+    :note: Modifies the C representation of all involved lvalue and rvalue nodes
+           while the Fortran representation is not changed.
+    :param ttassignment: A TTAssignment node.
+    :return: Tuple consisting of outermost loop and the number of loops (in that order).
+    """
+    assert not ttassignment.rhs.applies_transformational_functions_to_arrays
+    if (
+        ttassignment.lhs.is_contiguous_array
+        and (ttassignment.rhs.yields_contiguous_array
+            or ttassignment.rhs.yields_scalar)
+      ):
+        loop_list = _generate_loopnest_for_contiguous_array(
+          ttassignment.lhs,
+          ttassignment.lhs.is_full_array
+        )
+        offset_var_decls = _modify_c_repr_of_contiguous_array_expr(
+          ttassignment,loop_list[0].index.cstr()
+        )
+    else:
+        loop_list = _generate_loopnest_for_generic_subarray(
+          ttassignment.lhs
+        )
+        _modify_c_repr_of_generic_array_expr(
+          ttassignment,[l.index for l in loop_list]
+        )
+        offset_var_decls = []
+    #
+    ttunrolled = tree.TTUnrolledArrayAssignment(
+      [ttassignment.lhs,ttassignment.rhs]
+    )
+    first_loop = _nest_loop_list(loop_list,[ttunrolled]) 
+    return (first_loop, offset_var_decls)
+
+def unroll_all_array_assignments(ttcontainer):
+    """Recursively unrolls all array assignments,
+    found in the container, i.e. descends into every
+    container statements in the body. 
+    """
+    newbody = list(ttcontainer.body)
+    for i,ttstmt in enumerate(ttcontainer.body):
+        if isinstance(ttstmt,tree.TTAssignment):
+            if ttstmt.lhs.is_array:
+                if ttstmt.rhs.applies_transformational_functions_to_arrays:
+                    raise util.error.LimitationError(
+                      "found transformational function in array assignment expression"
+                    )
+                else:
+                    # :todo: Should have deepcopy here, but need to override __deepcopy__(self,memo)
+                    #        in every node. Some objects such as symbol_info should not be deep copied,
+                    #        while new child nodes should not point to old parent nodes and vice versa.
+                    #        As the previous Fortran representation is preserved in the modified assignment
+                    #        we ignore this todo for now even though it can be regarded as unclean.
+                    (unrolled,offset_var_decls) = unroll_array_assignment(ttstmt)
+                    subst = tree.TTContainer()
+                    for decl_cstr in reversed(offset_var_decls):
+                        subst.body.append(
+                          tree.TTDummyStatement(cstr=decl_cstr,fstr="")
+                        )
+                    subst.body.append(unrolled)
+                    newbody[i] = tree.TTSubstitution(ttstmt,subst)
+        elif isinstance(ttstmt,tree.TTContainer):
+            unroll_all_array_assignments(ttstmt)
+    ttcontainer.body = newbody

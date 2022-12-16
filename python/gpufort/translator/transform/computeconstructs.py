@@ -347,6 +347,7 @@ class HIPKernelBodyGenerator:
             if not self._loopnest_mgr.is_complete():
                 self._loopnest_mgr.append_do_loop(ttdo)
                 if self._loopnest_mgr.is_complete():
+                    self._loopnest_mgr.apply_loop_transformations()
                     self._render_loopnest_and_descend(ttdo)
                 else:
                     self._traverse_container_body(ttdo,"")
@@ -366,63 +367,6 @@ class HIPKernelBodyGenerator:
               vector = None,
               collapse = num_collapse
             )
-
-
-    def _traverse_mixed_array_assignment(self,ttassignment):
-        """Traverse an assignment with a contiguous array LHS
-        and generic subarray RHS, or vice versa.
-        """
-        if ttassignment.lhs.is_contiguous_array:
-            contiguous_part = ttassignment.lhs
-            generic_part = ttassignment.rhs
-        else:
-            contiguous_part = ttassignment.rhs
-            generic_part = ttassignment.lhs
-        #
-        loop_list = assignments.generate_loopnest_for_generic_subarray(
-          ttassignment.lhs
-        )
-        self._create_default_loopnest_mgr_for_array_operation(len(loop_list))
-        for loop in loop_list:
-            self._loopnest_mgr.append_do_loop(loop)
-        collapsed_loop = self._loopnest_mgr.apply_loop_transformations()[0]
-        # modify contiguous array part values
-        for offset_decl_as_cstr in assignments.modify_c_repr_of_contiguous_array_expr(
-              contiguous_part,collapsed_loop.index
-            ):
-              self._add_unmasked_code(offset_decl_as_cstr)
-        # modify generic subarray part values
-        assignments.modify_c_repr_of_generic_array_expr(
-          generic_part,[l.index for l in loop_list]
-        )
-        dummy = MaskedDummyStatement(
-          cstr = ttassignment.cstr(),
-          fstr = ttassignment.fstr()
-        )
-        dummy_container = tree.TTContainer()
-        dummy_container.body.append(dummy)
-        self._render_loopnest_and_descend(dummy_container)
-    
-    def _traverse_generic_array_assignment(self,ttassignment):
-        """Traverse an assignment with a contiguous array LHS
-        and generic subarray RHS, or vice versa.
-        """
-        loop_list = assignments.generate_loopnest_for_generic_subarray(
-          ttassignment.lhs
-        )
-        self._create_default_loopnest_mgr_for_array_operation(len(loop_list))
-        for loop in loop_list:
-            self._loopnest_mgr.append_do_loop(loop)
-        assignments.modify_c_repr_of_generic_array_expr(
-          ttassignment,[l.index for l in loop_list]
-        )
-        dummy = MaskedDummyStatement(
-          cstr = ttassignment.cstr(),
-          fstr = ttassignment.fstr()
-        )
-        first_loop = assignments.nest_loop_list(loop_list,[dummy]) # there is only one
-        self._loopnest_mgr.apply_loop_transformations()
-        self._render_loopnest_and_descend(first_loop)
 
     def _traverse_array_assignment(self,ttassignment):
         """

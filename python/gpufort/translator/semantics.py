@@ -687,6 +687,7 @@ class Semantics:
         self.resolve_arith_expr(ttnode.rhs,scope)
         lhs_bytes_per_element = ttnode.lhs.bytes_per_element
         rhs_bytes_per_element = ttnode.rhs.bytes_per_element
+        # check type
         if ttnode.lhs.yields_numeric_type:
             if not ttnode.rhs.yields_numeric_type:
                 raise util.error.SemanticError(
@@ -853,6 +854,9 @@ class Semantics:
                 self._check_yields_default_integer_type(
                   arg,"arguments of 'collapse' clause must be of default integer kind"
                 )
+                if not clause.arg.yields_literal:
+                    raise util.error.LimitationError("'collapse' clause argument must be literal expression")
+                # :todo: parameters should be supported too.
             if isinstance(clause,(
                 tree.TTAccClauseWait
               )):

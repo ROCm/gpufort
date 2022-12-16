@@ -96,30 +96,30 @@ class TestSemantics(unittest.TestCase):
     
     #type|bytes per element|rank|parameter|literal|unprefixed_single_val
     resolve_arith_expr_results = [
-      ('integer', 4, 0, True, True, True),
-      ('complex', 8, 0, True, True, True),
-      ('complex', 16, 0, True, True, True),
-      ('integer', 4, 0, True, True, False),
-      ('real', 4, 0, True, True, False),
-      ('real', 4, 1, True, True, True),
-      ('real', 4, 1, True, True, True),
-      ('integer', 4, 1, True, False, True),
-      ('integer', 4, 0, True, False, False),
-      ('integer', 4, 1, True, False, True),
-      ('integer', 4, 1, False, False, True),
-      ('integer', 4, 0, False, False, False),
-      ('integer', 4, 1, False, False, True),
-      ('integer', 4, 0, False, False, False),
-      ('integer', 4, 0, False, False, False),
-      ('integer', 4, 0, False, False, False),
-      ('integer', 4, 0, False, False, False),
-      ('integer', 4, 0, False, False, False),
-      ('real', 4, 1, False, False, False),
-      ('integer', 4, 1, False, False, False),
-      ('real', 4, 1, False, False, False),
-      ('real', 4, 2, False, False, False),
-      ('real', 8, 2, False, False, False),
-      ('real', 8, 2, False, False, False),
+      ('integer', 4, 0, True, True, True, 1),
+      ('complex', 8, 0, True, True, True, (1+2j)),
+      ('complex', 16, 0, True, True, True, (1+2j)),
+      ('integer', 4, 0, True, True, False, 7),
+      ('real', 4, 0, True, True, False, 7.0),
+      ('real', 4, 1, True, True, True, [1.0, 2.0, 3.0]),
+      ('real', 4, 1, True, True, True, [1.0, 2.0, 6.0]),
+      ('integer', 4, 1, True, False, True, None),
+      ('integer', 4, 0, True, False, False, None),
+      ('integer', 4, 1, True, False, True, None),
+      ('integer', 4, 1, False, False, True, None),
+      ('integer', 4, 0, False, False, False, None),
+      ('integer', 4, 1, False, False, True, None),
+      ('integer', 4, 0, False, False, False, None),
+      ('integer', 4, 0, False, False, False, None),
+      ('integer', 4, 0, False, False, False, None),
+      ('integer', 4, 0, False, False, False, None),
+      ('integer', 4, 0, False, False, False, None),
+      ('real', 4, 1, False, False, False, None),
+      ('integer', 4, 1, False, False, False, None),
+      ('real', 4, 1, False, False, False, None),
+      ('real', 4, 2, False, False, False, None),
+      ('real', 8, 2, False, False, False, None),
+      ('real', 8, 2, False, False, False, None),
     ]
 
     def test_02_parse_arith_expr(self):
@@ -133,6 +133,10 @@ class TestSemantics(unittest.TestCase):
             ttarithexpr = TestSemantics.parse_arith_expr_parse_results[i]
             #print(ttarithexpr.fstr())
             semantics.resolve_arith_expr(ttarithexpr,scope)
+            try:
+                eval_result = ttarithexpr.eval()
+            except Exception as e:
+                eval_result = None
             result_tuple = (
               ttarithexpr.type,
               ttarithexpr.bytes_per_element,
@@ -140,6 +144,7 @@ class TestSemantics(unittest.TestCase):
               ttarithexpr.yields_parameter,
               ttarithexpr.yields_literal,
               ttarithexpr.is_unprefixed_single_value,
+              eval_result,
             )
             #print(str(result_tuple)+",")
             self.assertEqual(TestSemantics.resolve_arith_expr_results[i],result_tuple)

@@ -1,5 +1,7 @@
-
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import collections
+
 from gpufort import util
 
 from .. import opts
@@ -553,7 +555,7 @@ class TTAccConstruct(TTAccDirective,base.TTContainer):
           
     def walk_mapped_variables(self):
         """Yields triples consisting of variable lvalue paired with mapping kind and a flag
-           if the readonly modifier was specified (only relevan to 'copyin' clause). .""" 
+        if the readonly modifier was specified (only relevant to 'copyin' clause). .""" 
         for clause in self.walk_clauses():
             if isinstance(clause,(
                 TTAccClauseCopy,
@@ -565,11 +567,11 @@ class TTAccConstruct(TTAccDirective,base.TTContainer):
                 TTAccClauseDeviceptr,
                 TTAccClauseAttach,
               )):
-                readonly = False
+                modifiers = {}
                 if isinstance(clause,TTAccClauseCopyin):
-                    readonly = clause.readonly
+                    modifiers["readonly"].append(clause.readonly)
                 for var in clause.var_list:
-                    yield (var,clause.kind,readonly)
+                    yield (var,clause.kind,modifiers)
 
     def walk_private_variables(self):
         """Yields variable lvalues appearing in the 'private' clause.""" 
@@ -625,6 +627,57 @@ class TTAccConstruct(TTAccDirective,base.TTContainer):
             if isinstance(clause,TTAccClauseVector):
                 return (True,clause.arg)
         return (False,None)
+    
+    def walk_variable_references_in_body(self):
+        """Generator that walks through the variable references 
+        in the construct's body but ignores the clauses.
+        """
+        for child in self.body:
+            yield from child.walk_variable_references()
+
+    #def walk_loop_variables_in_body(self):
+    #    for child in self.body:
+    #        for 
+
+    #def variable_reference_mapping_pairs(self,device_type):
+    #    """Returns an ordered dictory of variable references and pairs them with their 
+    #    respective mapping, or None, if no mapping was found.
+    #    :note: Semantics check ensures that same symbol does 
+    #           not appear twice across mapping clauses.
+    #    :note: If a mapping was found, the TTValue node is returned 
+    #           Otherwise. 
+    #    """
+    #    collections.OrderedDict  # ordering must be consistent
+    #    for ttref in self.walk_variable_references_in_body():
+    #        found = False
+    #        for (ttvalue,clause.kind,readonly) in walk_mapped_variables(self):
+    #            if ttref.refer_to_same_symbol(ttvalue.type_defining_node):
+    #                found = True
+    #                     
+    #        for ttvalue in walk_private_variables(self):
+    #            """Yields variable lvalues appearing in the 'private' clause.""" 
+    #            for clause in self.walk_clauses():
+    #                if isinstance(clause,TTAccClausePrivate):
+    #                    for var in clause.var_list:
+    #                        yield var
+    #        
+    #        def walk_firstprivate_variables(self):
+    #            """Yields variable lvalues appearing in the 'first_private' clause.
+    #            :note: Not applicable to TTAccLoop
+    #            """ 
+    #            for clause in self.walk_clauses():
+    #                if isinstance(clause,TTAccClauseFirstprivate):
+    #                    for var in clause.var_list:
+    #                        yield var
+    #        
+    #        def walk_reduction_variables(self):
+    #            """Yields tuples consisting of variable paired with reduction operation. 
+    #            :note: Not applicable to TTAccKernels
+    #            """
+    #            for clause in self.walk_clauses():
+    #                if isinstance(clause,TTAccClauseReduction):
+    #                    for var in clause.var_list:
+    #                        yield (var,clause.op)
 
 class TTAccComputeConstruct(TTAccConstruct):
     
@@ -749,6 +802,9 @@ class TTAccKernels(TTAccComputeConstruct):
 # within compute and combined construct
 class TTAccLoop(TTAccConstruct):
     kind = "loop"   
+
+    def __init__(self,clauses):
+        TTAccConstruct.__init__(self,clauses)
  
     def _is_legal_clause(self,clause):
         return isinstance(clause,(
@@ -832,6 +888,14 @@ class TTAccLoop(TTAccConstruct):
             if isinstance(clause,TTAccClauseCollapse):
                 return (True,clause.force,clause.arg)
         return (False,False,None)
+
+    def associated_loops(self,device_type):
+        """:return: The loop statements associated with this directive.
+        """
+        (collapse_specified,force_specified,collapse.arg) = self.collapse()
+        assert collapse.arg.is_literal
+        for ttnode in self.body: 
+            assert False, "not implemented"
 
 class TTAccAtomic(TTAccDirective):
     kind = "atomic"

@@ -137,8 +137,8 @@ class TestTransformAcc(unittest.TestCase):
             print(s.getvalue())
     def test_01_transform(self):
         device_type = "radeon"
-        #for i,test in enumerate(testdata[-1:]):
-        for i,test in enumerate(testdata[0:8]):
+        for i,test in enumerate(testdata):
+        #for i,test in enumerate(testdata[0:8]):
             print(">>>>>>>\n"+test+"<<<<<<<\n")
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(

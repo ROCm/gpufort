@@ -4,13 +4,13 @@
 
 Concepts:
 
-Aside from the operators, 
+* is_<property> vs yields_property:
 
-* `is_<tensor_kind>` indicate that the expression is actually of the tensor kind (scalar, array (contiguous,full,generic)).
-* `yield_<tensor_kind>` routines indicate that an operator, including the identity operator,
-  as well as elemental and transformational function calls produce a tensor of that kind.
-
-Generators:
+  * `yield_<tensor_kind>` routines indicate that an operator, including the identity operator,
+    as well as elemental and transformational function calls produce a tensor of that kind.
+  
+  * `is_<tensor_kind>` indicate that the expression is actually of the tensor kind 
+    (scalar, array (contiguous,full,generic)). This is essentially a shortcut for `yield_<tensor_kind>` and a type check.
 
 * **walk_values_ignore_args**: 
 
@@ -30,7 +30,19 @@ Generators:
   to entries in the symbol table. For example, given an expression
   `a%b%c(i)` this generator would yield the nodes (TTIdentifier,TTFunctionCall) 
   representing `a`,`a%b`, and `a%b%c` and `i`.
-                            
+
+Warnings:
+
+* Regarding evaluating literal and parameter arithmetic expressions as python datatypes:
+
+    * Due to python's real datatypes with adaptive resolution,
+      evaluating literal and parameter operations that involve floating point numbers
+      may lead to different results when compared to what the host compiler would produce.
+    
+    * Due to python's integer datatypes with adaptive resolution,
+      evaluating literal and parameter operations
+      may lead to different results when compared to what the host compiler would produce.
+      Particular scenarios are those where the host compiler would produce integer overflows.
 """
 
 import pyparsing
@@ -180,10 +192,6 @@ class Literal(ArithExprNode):
  
     def walk_variable_references(self):
         yield from ()
-
-    @property
-    def resolved(self):
-        return self._bytes_per_element != None
     
     def fstr(self):
         return self._raw_value
@@ -214,10 +222,14 @@ class TTLogical(Literal):
         return FortranType.LOGICAL
 
     def cstr(self):
-        if self.bytes_per_element == "1":
+        if self.bytes_per_element == 1:
             return "true" if self._value.lower() == ".true." else "false"
         else:
             return "1" if self._value.lower() == ".true." else "0"
+
+    def eval(self):
+        """Return the value as Python datatype."""
+        return True if self._value.lower() == ".true." else False
 
 class TTNumber(Literal):
 
@@ -258,6 +270,12 @@ class TTNumber(Literal):
         return "TTNumber(val:"+str(self._value)+",kind:"+kind+")"
     __repr__ = __str__
 
+    def eval(self):
+        """:return: the value as python datatype."""
+        if self.type == FortranType.INTEGER:
+            return int(self._value)
+        else:
+            return float(self._value) 
 
 class Reference(ArithExprNode):
     """Base class for TTIdentifier and TTFunctionCall,
@@ -266,27 +284,20 @@ class Reference(ArithExprNode):
     def _assign_fields(self, tokens):
         self._symbol_info = None
         self._bytes_per_element = None 
-    
-    @property
-    def partially_resolved(self):
-        return self._symbol_info != None
-   
-    @property
-    def resolved(self):
-        return ( 
-          self.partially_resolved
-          and self._bytes_per_element != None
-        )
  
     @property
     def symbol_info(self):
-        assert self.partially_resolved
+        assert self._symbol_info != None
         return self._symbol_info 
     
     @symbol_info.setter
     def symbol_info(self,symbol_info):
         self._symbol_info = symbol_info
    
+    def refer_to_same_symbol(self,other_reference):
+        """If both variable/procedure references refer to the same symbol."""
+        return self.symbol_info == other_reference.symbol_info
+
     def _get_type_defining_record(self):
         """:return: An index symbol_info that describes the type
         of an expression. Per default it is the main symbol_info."""
@@ -298,7 +309,7 @@ class Reference(ArithExprNode):
 
     @property
     def bytes_per_element(self):
-        assert self.resolved
+        assert self._bytes_per_element != None
         return self._bytes_per_element
     
     @bytes_per_element.setter
@@ -310,7 +321,6 @@ class Reference(ArithExprNode):
 
     @property
     def ctype(self):
-        assert self.resolved
         return opts.bytes_2_c_type[
           self.type][self.bytes_per_element] 
 
@@ -325,12 +335,10 @@ class TTIdentifier(Reference):
 
     @property 
     def rank(self):
-        assert self.partially_resolved
         return self.symbol_info.rank
     
     @property 
     def kind(self):
-        assert self.partially_resolved
         return self.symbol_info.kind
     
     @property
@@ -353,7 +361,6 @@ class TTIdentifier(Reference):
    
     @property 
     def is_parameter(self):
-        assert self.partially_resolved
         return self.symbol_info.is_parameter
     @property
     def yields_parameter(self):
@@ -1073,6 +1080,9 @@ class TTComplexConstructor(ArithExprNode):
                 real=traversals.make_fstr(self.real),\
                 imag=traversals.make_fstr(self.imag))
 
+    def eval(self):
+        return complex(self.real.eval(),self.imag.eval()) 
+
 class TTArrayConstructor(ArithExprNode):
 
     def _assign_fields(self, tokens):
@@ -1147,6 +1157,12 @@ class TTArrayConstructor(ArithExprNode):
         return "[{}]".format(
           ",".join([traversals.make_fstr(e) for e in self.entries])
         )
+    
+    def eval(self):
+        """:return: a standard python array with resolved components.
+        :note: assumes that semantics have been checked. 
+        """
+        return [entry.eval() for entry in self.entries]
 
 class TTValue(ArithExprNode):
     
@@ -1170,26 +1186,6 @@ class TTValue(ArithExprNode):
             return self.value.rank_defining_node
         else:
             return self.value
-    
-    @property
-    def partially_resolved(self):
-        if isinstance(self.value,(TTDerivedTypePart)):
-            for ttpart in self.value.walk_derived_type_parts_preorder():
-                if not ttpart.derived_type.partially_resolved:
-                    return False
-            return ttpart.element.partially_resolved
-        else:
-            return self.value.partially_resolved
-
-    @property
-    def resolved(self):
-        if isinstance(self.value,(TTDerivedTypePart)):
-            for ttpart in self.value.walk_derived_type_parts_preorder():
-                if not ttpart.derived_type.resolved:
-                    return False
-            return ttpart.element.resolved
-        else:
-            return self.value.resolved
     
     @property
     def type(self):
@@ -1401,6 +1397,7 @@ class TTValue(ArithExprNode):
         else:
             yield self
 
+
     def loop_bounds_as_str(self,
         only_consider_index_ranges=False,
         converter=traversals.make_cstr
@@ -1487,6 +1484,11 @@ class TTValue(ArithExprNode):
                 return result
         else:
             return traversals.make_cstr(self.value)
+
+    def eval(self):
+        """:note: assumes that semantics have been checked. 
+        """
+        return self.value.eval() 
 
 class TTLvalue(TTValue):
     def __str__(self):
@@ -1589,6 +1591,9 @@ class TTUnaryOp(ArithExprNode):
  
     def _op_c_template(self):
         return TTUnaryOp.f2c.get(self.op.lower())
+    
+    def _py_op(self):
+        return TTUnaryOp.f2py.get(self.op.lower())
 
     def cstr(self):
         if _need_to_add_brackets(self,self.opd):
@@ -1605,6 +1610,10 @@ class TTUnaryOp(ArithExprNode):
             return self.op + "(" + self.opd.fstr() + ")"
         else:
             return self.op + self.opd.fstr()
+
+    def eval(self):
+        """:note: Assumes that semantics have been checked before."""
+        self._py_op()(self.opd.eval())
 
 class TTBinaryOpChain(ArithExprNode):
     """pyparsing's infixNotation flattens
@@ -1840,6 +1849,9 @@ class TTBinaryOpChain(ArithExprNode):
     def _op_c_template(self,op):
         return TTBinaryOpChain.f2c.get(op.lower())
     
+    def _py_op(self,op):
+        return TTBinaryOpChain.f2py.get(op.lower())
+    
     def cstr(self):
         # a + b + c
         # + + 
@@ -1878,6 +1890,22 @@ class TTBinaryOpChain(ArithExprNode):
               l = l,
               r = r,
               op = op
+            )
+        return result
+    
+
+    def eval(self):
+        """:note: Assumes that semantics have been checked before."""
+        # a + b + c
+        # + + 
+        # a b c
+        # add(add(a,b),c)
+        opds = self.operands
+        result = opds[0].eval()
+        for i,op in enumerate(self.operators):
+            result = self._py_op(op)(
+              result,
+              opds[i+1].eval()
             )
         return result
 
@@ -1980,6 +2008,8 @@ class TTArithExpr(ArithExprNode):
     def fstr(self):
         return self.expr.fstr()
 
+    def eval(self):
+        return self.expr.eval()
 
 class TTKeywordArgument(ArithExprNode):
     def _assign_fields(self, tokens):
@@ -2027,7 +2057,10 @@ class TTKeywordArgument(ArithExprNode):
 
     def fstr(self):
         return self.key + "=" + self.value.fstr()
-
+  
+    def eval(self):
+        """:note: Assumes semantics have been checked before."""
+        return self.value.eval()
 
 class TTAssignment(base.TTStatement):
 

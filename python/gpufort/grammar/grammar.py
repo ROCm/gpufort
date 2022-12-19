@@ -42,6 +42,7 @@ class Grammar:
           no_logic_ops,
           no_custom_ops
         ) 
+        self._init_var_decl_bound_specification(ignorecase)
         self._init_fortran_statements(ignorecase) 
         self._init_gpufort_control_directives(ignorecase)
         #
@@ -276,6 +277,18 @@ class Grammar:
         )
         # define forward declared tokens
         self.function_call_arg <<= self.index_range | self.keyword_argument | self.arith_expr
+
+    def _init_var_decl_bound_specification(self,ignorecase):
+        """Init grammar for defining bound specifications as 
+        they appear in variable declarations and the Fortra DIMENSION qualifier/statement.
+        """
+        # note: ':' has meaning here as separator, is not suppressed.
+        self.extent = ( 
+          ( self.arith_expr + pyp.Literal(":") + pyp.Optional( arith_expr | pyp.Literal("*") ) )
+          | self.arith_expr
+          | pyp.Literal("..") 
+          | pyp.Literal("*")
+        )
 
     def _init_fortran_statements(self,ignorecase):
         self.fortran_subroutine_call = self.CALL + self.function_call

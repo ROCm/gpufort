@@ -43,6 +43,12 @@ Warnings:
       evaluating literal and parameter operations
       may lead to different results when compared to what the host compiler would produce.
       Particular scenarios are those where the host compiler would produce integer overflows.
+
+TODOs:
+
+* Give the types more intuitive constructors, delegate the decomposition
+  of the token stream to a dedicated pyparsing parse action function,
+  and then initialize the types from there.
 """
 
 import pyparsing
@@ -292,7 +298,7 @@ class Reference(ArithExprNode):
     @symbol_info.setter
     def symbol_info(self,symbol_info):
         self._symbol_info = symbol_info
-   
+ 
     def refer_to_same_symbol(self,other_reference):
         """If both variable/procedure references refer to the same symbol."""
         return self.symbol_info == other_reference.symbol_info
@@ -412,7 +418,6 @@ class TTFunctionCall(Reference):
         else:
             self.args = []
         Reference._assign_fields(self,tokens)
-
 
     def __copy_ignore_args(self):
         new = TTFunctionCall.__new__(TTFunctionCall)
@@ -923,6 +928,23 @@ class TTIndexRange(ArithExprNode):
             except:
                 pass
         return result
+    
+    def size_expr(self):
+        """Produces an tree representation of the size
+        corresponding to the extent specification."""
+        if self._size_expr != None:
+            return self._size_expr
+        else:
+            assert self.has_ubound,"no upper bound specified"
+            # TODO set upper bound from variable via symbol info
+            delta = TTBinaryOpChain(
+              [self.ubound,"-",self.lbound,"+",TTNumber(["1"])] 
+            )
+            if self.step == None:
+                self._size_expr = delta
+            else:
+                self._size_expr = TTBinaryOpChain([delta,"/",self.step])
+            return self._size_expr
 
     def cstr(self):
         #return self.size(traversals.make_cstr)
@@ -2201,6 +2223,93 @@ class TTSubroutineCall(base.TTStatement):
     def cstr(self):
         return self._subroutine.cstr() + ";"
 
+# Declarations
+def TTExtent(base.TTNode)
+    """Extent specifier such as
+    '..',
+    '*',
+    ':',
+    '<int-expr>',
+    '<int-expr>:',
+    '<int-expr>:<int-expr>'
+    '<int-expr>:*>
+    :todo: simplify the syntax to emit better errors
+    """   
+ 
+    def __init__(self,tokens):
+        self.lbound, self.ubound = None, None
+        if len(tokens) == 3: # lb + ':' + ub
+            self.lbound = tokens[0]
+            self.ubound = tokens[2]
+        elif len(tokens) == 2: # lb + ':'
+            self.lbound = tokens[0]
+        else len(tokens) == 1: # ub
+            self.ubound = tokens[1]
+
+    def child_nodes(self):
+        if isinstance(self.lbound,tree.TTNode):
+            yield self.lbound
+        if isinstance(self.ubound,tree.TTNode):
+            yield self.ubound
+
+    @property
+    def lbound_specified(self):
+        return self.lbound != None
+    @property
+    def ubound_specified(self):
+        return self.ubound != None
+    @property
+    def ubound_is_asterisk(self):
+        return self.lbound == "*"
+    @property
+    def ubound_is_dots(self):
+        return self.lbound == ".."
+    @property
+    def has_specified_size(self):
+        """:return: If the size has been specified
+                    in terms of runtime or compile time
+                    variables."""
+        return (
+          self.ubound_specified
+          and not self.ubound_is_asterisk
+          and not self.ubound_is_dots 
+        )
+        
+    def size_expr(self):
+        """Produces an tree representation of the size
+        correspondin to the extent specification."""
+        assert self.has_specified_size
+        return TTBinaryOpChain(
+          [self.ubound,"-",self.lbound,"+",TTNumber(["1"])] 
+        )
+
+    @property
+    def has_fixed_size(self):
+        """If the extent describes a fixed size and it evaluates to a 
+        Fortran parameter.
+        :note: Assumes that lbound and ubound have been resolved.
+        """
+        if not self.has_specified_size:
+            return False
+        size_expr = self.size_expr()
+        if size_expr.is_parameter:
+            return True
+        return False
+    
+    @property
+    def has_literal_fixed_size(self):
+        """If the extent describes a fixed size and it evaluates
+        to a literal without any parameter substitution.
+        :note: Assumes that lbound and ubound have been resolved.
+        """
+        if not self.has_specified_size:
+            return False
+        size_expr = self.size_expr()
+        if size_expr.is_literal:
+            return True
+        return False
+        
+
 def set_arith_expr_parse_actions(grammar):
     grammar.logical.setParseAction(TTLogical)
     grammar.character.setParseAction(TTCharacter)
@@ -2217,6 +2326,8 @@ def set_arith_expr_parse_actions(grammar):
     grammar.array_constructor.setParseAction(
         TTArrayConstructor)
     grammar.keyword_argument.setParseAction(TTKeywordArgument)
+    # decl nodes
+    grammar.extent.setParseAction(TTExtent)
     # statements
     grammar.assignment.setParseAction(TTAssignment)
     grammar.fortran_subroutine_call.setParseAction(TTSubroutineCall)

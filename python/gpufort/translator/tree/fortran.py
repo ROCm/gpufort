@@ -153,9 +153,7 @@ class TTUnconditionalDo(base.TTContainer):
         self.body = tokens[0]
         self.numeric_do_label = None
     def header_cstr(self):
-        return "while (true) {{\n"
-    def footer_cstr(self):
-        return "}\n" 
+        return "while (true)"
 
 class TTBlock(base.TTContainer):
     def _assign_fields(self, tokens):
@@ -169,34 +167,36 @@ class TTIfElseBlock(base.TTContainer):
     def _assign_fields(self, tokens):
         self.indent = "" # container of if/elseif/else branches, so no indent
 
-class TTIfElseIf(base.TTContainer):
+class TTIf(base.TTContainer):
 
     def _assign_fields(self, tokens):
-        self._else, self._condition, self.body = tokens
+        self.condition, self.body = tokens
 
     def child_nodes(self):
-        yield self._condition
+        yield self.condition
         yield from self.body
     
     def header_cstr(self):
-        prefix = self._else+" " if self._else != None else ""
-        return "{}if ({}) {{\n".format(prefix,traversals.make_cstr(self._condition))
-    def footer_cstr(self):
-        return "}\n" 
+        prefix = self.else_prefix+" " if self.else_prefix != None else ""
+        return "if ({})".format(prefix,traversals.make_cstr(self.condition))
+
+class TTElseIf(base.TTContainer):
+
+    def _assign_fields(self, tokens):
+        self.condition, self.body = tokens
+
+    def child_nodes(self):
+        yield self.condition
+        yield from self.body
+    
+    def header_cstr(self):
+        prefix = self.else_prefix+" " if self.else_prefix != None else ""
+        return "else if ({})".format(prefix,traversals.make_cstr(self.condition))
 
 class TTElse(base.TTContainer):
     
     def header_cstr(self):
-        return "else {\n"
-    def footer_cstr(self):
-        return "}\n" 
-
-    def cstr(self):
-        body_content = base.TTContainer.cstr(self)
-        return "{}{}\n{}".format(
-            self.header_cstr(),
-            body_content,
-            self.footer_cstr())
+        return "else"
 
 class TTSelectCase(base.TTContainer):
     def _assign_fields(self, tokens):
@@ -206,9 +206,7 @@ class TTSelectCase(base.TTContainer):
         yield self.selector
         yield from self.body
     def header_cstr(self):
-        return "switch ({}) {{\n".format(self.selector)
-    def footer_cstr(self):
-        return "}\n" 
+        return "switch ({})".format(self.selector)
 
 class TTCase(base.TTContainer):
 
@@ -222,10 +220,10 @@ class TTCase(base.TTContainer):
     def header_cstr(self):
         result = ""
         for case in self.cases:
-            result += "case ("+traversals.make_cstr(case)+"):\n"
+            result += "case ("+traversals.make_cstr(case)+"):"
         return result
     def footer_cstr(self):
-        return "  break;\n" 
+        return "break;" 
 
 class TTCaseDefault(base.TTContainer):
 
@@ -236,9 +234,9 @@ class TTCaseDefault(base.TTContainer):
         yield from self.body
     
     def header_cstr(self):
-        return "default:\n"
+        return "default:"
     def footer_cstr(self):
-        return "  break;\n" 
+        return "break;" 
 
 class TTDoWhile(base.TTContainer):
 
@@ -251,8 +249,6 @@ class TTDoWhile(base.TTContainer):
         yield from self.body
     
     def header_cstr(self):
-        return "while ({0}) {{\n".format(
+        return "while ({0}) {{".format(
           traversals.make_cstr(self._condition)
         )
-    def footer_cstr(self):
-        return "  break;\n" 

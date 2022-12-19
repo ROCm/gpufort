@@ -402,13 +402,10 @@ class HIPKernelBodyGenerator:
                     pass # check for reductions, otherwise fail
                 else:
                     self._add_masked_code(ttnode.cstr())
-        elif isinstance(ttnode,tree.TTSubstitution):
-            #if ttnode.orig.rank > 0:
-            #    self._create_default_loopnest_mgr_for_array_operation(ttnode.orig.rank)
-            if type(ttnode.subst) == tree.TTContainer:
-                self._traverse_container_body(ttnode.subst,indent="")
-            else:
-                self._traverse(ttnode.subst)
+        elif isinstance(ttnode,tree.TTSubstContainer):
+            self._traverse_container_body(ttnode,indent="")
+        elif isinstance(ttnode,tree.TTSubstStatement):
+            self._traverse(ttnode.subst)
         elif isinstance(ttnode,tree.TTUnrolledArrayAssignment):
             self._add_masked_code(ttnode.cstr())
         elif isinstance(ttnode,tree.TTSubroutineCall):
@@ -444,7 +441,7 @@ class HIPKernelBodyGenerator:
         return self._result
 
 def map_to_hip_cpp(
-    ttcomputeconstruct,
+    ttroot,
     scope,
     device_type = None
   ):
@@ -452,31 +449,34 @@ def map_to_hip_cpp(
     :param scope: A scope object, see GPUFORT's indexer component.
     :param str device_type: The device type (`nvidia`, `radeon` or None).
      """
+    assert type(ttroot) == tree.TTRoot
     loops.single_level_indent = opts.single_level_indent
     codegen = HIPKernelBodyGenerator()
     codegen.single_level_indent = opts.single_level_indent
     codegen.map_to_flat_arrays = opts.map_to_flat_arrays
     codegen.map_to_flat_scalars = opts.map_to_flat_scalars
     # todo: copy, reduction, hipblas detection must go here?
-    assignments.unroll_all_array_assignments(ttcomputeconstruct)
-    if isinstance(ttcomputeconstruct,tree.TTRoot):
-        ttcomputeconstruct = ttcomputeconstruct.body[-1] # might be a comment before
-    # insert artificla acc loop node if first compute construct child is
-    # a substituted array ex[ressopm amd 
-    if type(ttcomputeconstruct) == tree.TTAccKernels:
-        if type(ttcomputeconstruct.body[0]) == tree.TTSubstitution:
+    assignments.unroll_all_array_assignments(ttroot)
+    # insert artificial acc loop node if first compute construct child is
+    # a substituted array expression
+    for ttstmt in ttroot.body:
+        if (
+           type(ttstmt) == tree.TTAccKernels
+           and type(ttstmt.body[0]) == tree.TTSubstContainer
+           and type(ttstmt.body[0].orig) == tree.TTAssignment
+          ):
             collapse_expr = tree.TTNumber([
-              str(ttcomputeconstruct.body[0].orig.rank)
+              str(ttstmt.body[0].orig.rank)
             ])
             clauses = [
               tree.TTAccClauseGang([]),
               tree.TTAccClauseVector([]),
               tree.TTAccClauseCollapse([collapse_expr]),
             ]
-            ttcomputeconstruct.body.insert(0,tree.TTAccLoop(clauses))
+            ttstmt.body.insert(0,tree.TTAccLoop(clauses))
     # todo: Do arg analyis here
     return codegen.map_to_hip_cpp(
-      ttcomputeconstruct,
+      ttroot,
       scope,
       device_type
     )

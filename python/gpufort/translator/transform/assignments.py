@@ -248,10 +248,10 @@ def unroll_array_assignment(ttassignment):
 
 def unroll_all_array_assignments(ttcontainer):
     """Recursively unrolls all array assignments,
-    found in the container, i.e. descends into every
-    container statements in the body. 
+    found in the container, descends into every
+    container statement in the body. 
     """
-    newbody = list(ttcontainer.body)
+    newbody = list(ttcontainer.body) # shallow copy
     for i,ttstmt in enumerate(ttcontainer.body):
         if isinstance(ttstmt,tree.TTAssignment):
             if ttstmt.lhs.is_array:
@@ -266,13 +266,13 @@ def unroll_all_array_assignments(ttcontainer):
                     #        As the previous Fortran representation is preserved in the modified assignment
                     #        we ignore this todo for now even though it can be regarded as unclean.
                     (unrolled,offset_var_decls) = unroll_array_assignment(ttstmt)
-                    subst = tree.TTContainer()
+                    subst = tree.TTSubstContainer(ttstmt)
                     for decl_cstr in reversed(offset_var_decls):
-                        subst.body.append(
+                        subst.append(
                           tree.TTDummyStatement(cstr=decl_cstr,fstr="")
                         )
-                    subst.body.append(unrolled)
-                    newbody[i] = tree.TTSubstitution(ttstmt,subst)
+                    subst.append(unrolled)
+                    newbody[i] = subst
         elif isinstance(ttstmt,tree.TTContainer):
             unroll_all_array_assignments(ttstmt)
     ttcontainer.body = newbody

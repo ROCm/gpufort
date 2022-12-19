@@ -299,25 +299,30 @@ class AccLoopnestManager(LoopnestManager):
             first_loop_mgr = self.loop_mgr_list[0]
             # todo: render reduction variables
             # 1. create unique index var with value = loopnest.index()
-            #parallelism = [first_loop_mgr.gang.specified,
-            #               first_loop_mgr.worker.specified,
-            #               first_loop_mgr.vector.specified]
-            #if   parallelism == [False,False,False]:
-            #    pass
-            #elif parallelism == [False,False,True ]: 
-            #    pass
-            #elif parallelism == [False,True ,False]: 
-            #    pass
-            #elif parallelism == [False,True ,True ]:
-            #    pass
-            #elif parallelism == [True ,False,False]:
-            #    pass
-            #elif parallelism == [True ,False,True ]: 
-            #    pass
-            #elif parallelism == [True ,True ,False]: 
-            #    pass
-            #elif parallelism == [True ,True ,True ]:
-            #    pass
+            parallelism = [first_loop_mgr.gang.specified,
+                           first_loop_mgr.worker.specified,
+                           first_loop_mgr.vector.specified]
+            loopnest_open += textwrap.indent(
+              render.render_private_vars_decl_list(self.private_vars,scope),
+              loopnest_indent
+            )
+                              # gang, worker, vector
+            if parallelism == [False,False,False]:
+                assert False, "not implemented"
+            elif parallelism == [False,False,True ]: 
+                assert False, "not implemented"
+            elif parallelism == [False,True ,False]: 
+                assert False, "not implemented"
+            elif parallelism == [False,True ,True ]:
+                assert False, "not implemented"
+            elif parallelism == [True ,False,False]:
+                assert False, "not implemented"
+            elif parallelism == [True ,False,True ]: 
+                
+            elif parallelism == [True ,True ,False]: 
+                assert False, "not implemented"
+            elif parallelism == [True ,True ,True ]:
+                assert False, "not implemented"
             pass
         return (loopnest_open,
                 loopnest_close,

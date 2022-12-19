@@ -9,7 +9,6 @@ from .. import conv
 
 from . import base
 from . import traversals
-from . import directives
 
 class TTAccClause(base.TTNode):
     """Base class."""   
@@ -222,16 +221,6 @@ class TTAccClauseReduction(TTAccClause):
     def child_nodes(self):
         yield from self.var_list
 
-    #def reductions(self, converter=traversals.make_fstr):
-    #    result = {}
-    #    op = converter(self.operator)
-    #    if converter == traversals.make_cstr:
-    #        # post-process
-    #        op = conv.get_operator_name(op.lower())
-    #        # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
-    #    result[op] = [traversals.make_fstr(var) for var in self.var_list]
-    #    return result
-
 class TTAccClauseBind(TTAccClause):
     kind = "bind"
 
@@ -285,9 +274,6 @@ class TTAccClauseWait(TTAccClause):
     
     def child_nodes(self):
         yield from self.queues
-
-#    def expressions(self):
-#        return [traversals.make_fstr(expr) for expr in self.expressions]
 
 class TTAccClauseAsync(TTAccClause):
     kind = "async"
@@ -893,6 +879,68 @@ class TTAccLoop(TTAccConstruct):
             if isinstance(clause,TTAccClauseCollapse):
                 return (True,clause.force,clause.arg)
         return (False,False,None)
+    
+    def next_n_loops_in_body(self,
+        num_loops,
+        perfect_nesting = True
+      ):
+        """:return: A tuple consisting of the next `num_loops` and the statements that must 
+                    be moved inside the innermost loop to collapse the loop.
+        :raise util.error.LookupError: If the next `num_loops` loops could not be found. Either
+                                       because a leaf of the tree was reached, a divergent flow statement
+                                       was reached or because a non-divergent statement was detected
+                                       but the `perfect_nesting` flag is specified.
+        :note: It might not be possible to move the statements inside the innermost loops as
+               one of the loops might depend on the outcome of the statement, e.g. if the statement is an assignment
+               or a subroutine call with inout argument.
+        """
+        loop_list = []
+        statements_to_move_inside = []
+
+        def statement_is_allowed_(ttstmt):
+            if isinstance(ttstmt,(
+                fortran.TTComment,
+                fortran.TTBlankLine,
+                arithexpr.TTAssignment,
+                arithexpr.TTSubroutineCall,
+                transformations.TTInjectedStatement, # todo: double check that valid for all injected statements
+                fortran.TTfBlock,
+                fortran.TTIfElseIfBlock,
+                fortran.TTIf,
+                fortran.TTAccLoop,
+              )):
+                return True
+            else:
+                return False
+        
+        loop_cls = (tree.TTDo) # todo: think do_concurrent
+        def descend_(curr):
+            nonlocal loop_list
+            nonlocal statements_to_move_inside
+            for ttstmt in self.body:
+                if isinstance(ttstmt,loop_cls):
+                    loop_list.append(ttstmt)
+                    if len(loop_list) == num_loops:
+                        return
+                    descend_(ttstmt)
+                elif statement_is_allowed_(stmt):
+                    if perfect_nesting:
+                        raise util.error.LookupError(
+                          "loop nesting disrupted by statement of type '{}'".format(type(ttstmt)
+                        )
+                    else:
+                        statements_to_move_inside.append(ttstmt)
+                    if isinstance(ttstmt,fortran.TTContainer):
+                        descend_(ttstmt)
+                else:
+                    raise util.error.LookupError(
+                      "loop nesting disrupted by statement of type '{}'".format(type(ttstmt)
+                    )
+        descend_(self)
+        
+        if len(loop_list) == num_loops:
+            raise util.error.LookupError("not enough loops found")
+        return loop_list, statements_to_move_inside
 
     def associated_loops(self,device_type):
         """:return: The loop statements associated with this directive.
@@ -901,8 +949,9 @@ class TTAccLoop(TTAccConstruct):
                * no other statements are intermixed into loopnest, unless
                  the `force` modifier is specified.
         :param str device_type: Device type specifier such as 'radeon' or 'nvidia', or None.
+        :see: next_n_loops_in_body
         """
-        (collapse_specified,_,collapse_arg) = self.collapse(device_type)
+        (collapse_specified,force_specified,collapse_arg) = self.collapse(device_type)
         (tile_specified,tile_args) = self.tile(device_type)
         if collapse_specified:
             assert not tile_specified
@@ -912,24 +961,16 @@ class TTAccLoop(TTAccConstruct):
             num_loops = len(tile_args)
         else:
             num_loops = 1 
-        loop_list = []
-        def descend_(curr):
-            nonlocal loop_list
-            for ttstatement in self.body:
-                if isinstance(ttstatement,TTDo):
-                    loop_list.append(ttstatement)
-                    if len(loop_list) == num_loops:
-                        return
-                    descend_(ttstatement)
-                elif isinstance(ttstatement,TTContainer):
-                    descend_(ttstatement)
-        descend_(self)
-        
-        assert len(loop_list) == num_loops
-        return loop_list
+        return self.next_n_loops_in_body(num_loops)
+
+    def acc_loop(self):
+        """Extracts the acc loop part from the directive.
+        :note: This is only relevant for the subclasses."""
+        return TTAccLoop([clause for clause in self.clause 
+                          if TTAccLoop._is_legal_clause(self,clause)])
 
 # for acc loop semantics check, check must be placed when one comes up from the do-loop
-# if isinstance(ttstatement,(
+# if isinstance(ttstmt,(
 #     tree.TTLabel,
 #     tree.TTComment,
 #     tree.TTBlankLine,
@@ -969,6 +1010,11 @@ class TTAccParallelLoop(TTAccParallel,TTAccLoop):
     def _is_unique_clause_per_device_type(self,clause):
         return (TTAccParallel._is_unique_clause_per_device_type(self,clause)
                or TTAccLoop._is_unique_clause_per_device_type(self,clause))
+   
+    def acc_parallel(self):
+        """Extracts the acc parallel part from the directive."""
+        return TTAccParallel([clause for clause in self.clause 
+                          if TTAccParallel._is_legal_clause(self,clause)])
     
     
 class TTAccKernelsLoop(TTAccKernels,TTAccLoop):
@@ -986,6 +1032,10 @@ class TTAccKernelsLoop(TTAccKernels,TTAccLoop):
         return (TTAccKernels._is_unique_clause_per_device_type(self,clause)
                or TTAccLoop._is_unique_clause_per_device_type(self,clause))
     
+    def acc_kernels(self):
+        """Extracts the acc kernels part from the directive."""
+        return TTAccKernels([clause for clause in self.clause 
+                            if TTAccKernels._is_legal_clause(self,clause)])
 
 # data and host_data environment
 class TTAccData(TTAccDirective):

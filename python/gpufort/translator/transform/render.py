@@ -111,3 +111,26 @@ def render_private_vars_decl_list(ttvalues,scope):
             )
             # array_descr is passed as argument
     return decl_list_snippet
+
+def render_reduction_vars_decl_list(value_op_pairs,scope):
+    """Generates a list of private variables initialized
+    according to their 
+    :param value_op_pairs: List of pairs of a value tree node plus an 
+                           operator name (string).
+    :note: Assumes that all values are scalar identifiers.
+    """
+    decl_list_snippet = ""
+    for (private_var, op) in value_op_pairs:
+        var_expr = tree.traversals.make_fstr(private_var)
+        var_tag = indexer.scope.create_index_search_tag(var_expr) 
+        assert not "%" in var_tag, "reduction var must not be derived type member"
+        tavar = analysis.create_analysis_var(scope,var_expr) 
+        c_type = tavar["kind"] if tavar["f_type"]=="type" else tavar["c_type"]
+        assert tavar["rank"] == 0:
+        decl_list_snippet += "{c_prefix}{c_type} {c_name} = {rhs};\n".format(
+          c_prefix=c_prefix,
+          c_type=c_type,
+          c_name = tavar["c_name"]
+          rhs = conv.get_operator_name(reduction_op)
+        )
+    return decl_list_snippet

@@ -111,7 +111,6 @@ def find_first(obj, searched_type):
     else:
         return None
 
-
 def make_cstr(obj):
     if obj is None:
         return ""

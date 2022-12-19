@@ -7,6 +7,7 @@ from gpufort import indexer
 
 from . import tree
 from . import opts
+from . import conv
 
 class Semantics:
     """Class for performing semantics checks.
@@ -50,35 +51,13 @@ class Semantics:
         self.acc_supported_device_types = ["host","nohost","nvidia","radeon","hip"]
         #
         self.warnings = []
-  
-    def _lookup_bytes_per_element1(self,ftype,kind):
-        """Lookup number of bytes required to store one instance of the type. 
-        :note: As Fortran allows user-defined kinds, we use
-               bytes per element to uniquely determine a datatype.
-        :note: argument 'kind' might be not be lower case if the property 
-               was derived from a literal such as '1.0_DP'.
-        :note: We assume the Fortran type ('ftype') is already lower
-               case as it stems from the symbol table.
-        """
-        kind = kind.lower() if kind != None else None
-        try:
-            return opts.fortran_type_2_bytes_map[ftype][kind]
-        except KeyError as ke:
-            if ftype == "type":
-                return None
-            else:
-                raise util.error.LookupError("could not find bytes per element for"
-                  + " type '{}' and kind '{}' in translator.opts.fortran_type_2_bytes_map".format(
-                    ftype,kind
-                  )
-                ) from ke
     
     def _lookup_bytes_per_element(self,ttnode):
         """Shortcut for nodes with (resolved) kind attribute."""
-        return self._lookup_bytes_per_element1(ttnode.type,ttnode.kind)
+        return conv.bytes_per_element(ttnode.type,ttnode.kind)
 
     def _default_integer_bytes_per_element(self):
-        return self._lookup_bytes_per_element1(tree.FortranType.INTEGER,None)
+        return conv.bytes_per_element(tree.FortranType.INTEGER,None)
         
     def _check_yields_expected_rank(self,ttnode,expected_rank,errmsg):
         """Checks if the expression has/yields the expected rank."""
@@ -89,9 +68,9 @@ class Semantics:
         """:return: If the arithmetic expression node yields the expected type."""
         actual_type = ttnode.type
         #actual_kind = ttnode.kind
-        #actual_bytes = self._lookup_bytes_per_element1(actual_type,actual_kind)
+        #actual_bytes = conv.bytes_per_element(actual_type,actual_kind)
         actual_bytes = ttnode.bytes_per_element 
-        expected_bytes = self._lookup_bytes_per_element1(expected_type,expected_kind)
+        expected_bytes = conv.bytes_per_element(expected_type,expected_kind)
         return (actual_type == expected_type 
                or actual_bytes == expected_bytes)
 
@@ -183,6 +162,7 @@ class Semantics:
             name = ttnode.name
         ttnode.symbol_info = indexer.scope.search_scope_for_var(scope,name)
         ttnode.bytes_per_element = self._lookup_bytes_per_element(ttnode)
+        ttnode.symbol_info.bytes_per_element = ttnode.bytes_per_element
  
     def _compare_operand_and_operator(self,ttop,ttopd):
         """Checks if operand and operator type agree.
@@ -350,7 +330,7 @@ class Semantics:
         # bytes per element
         if check_bytes_per_element:
             if not expected_arg.matches_any_type:
-                expected_bytes_per_element = self._lookup_bytes_per_element1(
+                expected_bytes_per_element = conv.bytes_per_element(
                   expected_arg.type,expected_arg.kind 
                 )
                 if ttarg.bytes_per_element != expected_bytes_per_element:
@@ -424,7 +404,7 @@ class Semantics:
                     func_result_kind = ttarg.fstr().replace(" ","")
             max_rank = max(max_rank,ttarg.rank)
         # set bytes per element
-        ttfunccall.bytes_per_element = self._lookup_bytes_per_element1(
+        ttfunccall.bytes_per_element = conv.bytes_per_element(
           func_result_type,func_result_kind
         )
  
@@ -536,6 +516,7 @@ class Semantics:
    
     def _resolve_array_expr(self,ttnode):
         ttnode.bytes_per_element = self._lookup_bytes_per_element(ttnode)
+        ttnode.symbol_info.bytes_per_element = ttnode.bytes_per_element
         if ttnode.symbol_info.rank != len(ttnode.args):
             raise util.error.SemanticError(
               "'{}': rank mismatch in array reference, expected only {} indices".format(
@@ -708,6 +689,7 @@ class Semantics:
         """Checks that no variable appears twice across
         all OpenACC mapping clauses, private and first_private clauses,
         and reduction clauses.
+        :param ttaccdir: TTAccLoop, compute construct, or combined construct.
         :note: Must be used after all clauses have been resolved.
         :todo: Currently only symbol based and does not consider
                that different subarrays of the same arrays may be mapped.
@@ -724,10 +706,64 @@ class Semantics:
             add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
         for ttvarexpr in ttaccdir.walk_private_variables():
             add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
-        for ttvarexpr in ttaccdir.walk_firstprivate_variables():
+        for ttvarexpr in ttaccdir.walk_firstprivate_variables(): # note: Does yield nothing for AccLoop
             add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
-        for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables():
+        for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # note: Does yield nothing for AccKernels
             add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
+
+    def resolve_variable_kind(self,scope=None):
+        """Parse the 'kind' entry of the variable.
+        :param scope: a scope for looking up referenced variables or none.
+        :raise util.error.LookupError: if a symbol could not be resolved.
+        :raise util.error.SyntaxError: if the expression's syntax is not correct. 
+        :raise util.error.SemanticError: if the expression's semantics are not correct. 
+        """
+        from . import parser # todo: cross import
+        assert symbol_info.resolved_kind == None, "already resolved"
+        kind = symbol_info.record["kind"]
+        symbol_info.resolved_kind = translator.parser.parse_arith_expr(kind,scope)
+   
+    def resolve_variable_rhs(self,scope=None):
+        """Parse the right-hand side of the variable.
+        :param scope: a scope for looking up referenced variables or none.
+        :raise util.error.LookupError: if a symbol could not be resolved.
+        :raise util.error.SyntaxError: if the expression's syntax is not correct. 
+        :raise util.error.SemanticError: if the expression's semantics are not correct. 
+        """
+        from . import parser # todo: cross import
+        assert symbol_info.resolved_rhs == None, "already resolved"
+        assert symbol_info.resolved_rhs != None
+        rhs = symbol_info.record["rhs"]
+        symbol_info.resolved_rhs = translator.parser.parse_arith_expr(rhs,scope)
+
+    def resolve_variable_bounds(self,scope=None):
+        """Parse the array bounds of the variable.
+        :param scope: A scope for looking up referenced variables or None.
+        :raise util.error.LookupError: If a symbol could not be resolved.
+        :raise util.error.SyntaxError: If the expression's syntax is not correct. 
+        :raise util.error.SemanticError: If the expression's semantics are not correct. 
+        """
+        assert symbol_info.resolved_bounds == None, "already resolved"
+        bounds = symbol_info.record["bounds"]
+        symbol_info.resolved_bounds = []
+        extent_size_exprs = []
+        for bound in bounds:
+            ttextent = tree.parse_extent(bound)
+            if (scope != None):
+                isinstance(ttextent.lbound,tree.TTArithExpr)
+                self.resolve_arith_expr(ttextent)
+                extent_size_exprs.append(ttextent.size_expr())
+            symbol_info.resolved_bounds.append(ttextent)
+            
+
+    def _acc_resolve_mapped_variable_bounds(self,ttaccdir,scope):
+        """Resolve the bounds of the symbol ."""
+        for ttvarexpr in ttaccdir.walk_private_variables():
+            symbol_info = ttvarexpr.type_defining_node.symbol_info
+        for ttvarexpr in ttaccdir.walk_firstprivate_variables(): # note: Does yield nothing for AccLoop
+            symbol_info = ttvarexpr.type_defining_node.symbol_info
+        for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # note: Does yield nothing for AccKernels
+            symbol_info = ttvarexpr.type_defining_node.symbol_info
 
     def _acc_resolve_clauses(self,ttaccdir,scope):
 
@@ -851,8 +887,24 @@ class Semantics:
             if isinstance(clause,(
                 tree.TTAccClauseReduction
               )):
+                supported_operators=[
+                  "+","*","max","min", # arithmetic
+                  "iand","ior","ieor", # bitwise 
+                  ".and.",".or.",".eqv.",".neqv." # logical
+                ]
+                if not clause.op.lower() in supported_operators:
+                    raise util.error.SemanticError(
+                      "unsupported reduction operator: '{}'".format(clause.op) 
+                    )
                 for child in clause.child_nodes():
                     self.resolve_value(child,scope)
+                    if not ( 
+                        child.is_scalar 
+                        and child.is_identifier_expr
+                    ):
+                      raise util.error.LimitationError(
+                        "arguments to 'reduction' clause must be scalar identifiers"
+                      )
             if isinstance(clause,(
                 tree.TTAccClauseBind
               )):
@@ -905,3 +957,4 @@ class Semantics:
         self._acc_resolve_clauses(ttaccdir,scope)
         if isinstance(ttaccdir,tree.TTAccConstruct):
             self._acc_check_var_is_not_mapped_twice(ttaccdir)
+            self._acc_resolve_mapped_variable_bounds(ttaccdir,scope)

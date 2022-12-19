@@ -35,20 +35,20 @@ def _is_ignored_fortran_directive(tokens):
            or util.parsing.compare_ignore_case(tokens[1:3],["acc","routine"]))
 
 # todo resolve all at the end?
-def _parse_arith_expr(expr_as_str,scope):
-    parse_result = parse_arith_expr(expr_as_str)
+def parse_arith_expr(expr_as_str,scope):
+    parse_result = tree.parse_arith_expr(expr_as_str)
     if scope != None:
         semantics_checker.resolve_arith_expr(parse_result,scope)
     return parse_result
 
-def _parse_assignment(expr_as_str,scope):
-    parse_result = parse_assignment(expr_as_str)
+def parse_assignment(expr_as_str,scope):
+    parse_result = tree.parse_assignment(expr_as_str)
     if scope != None:
         semantics_checker.resolve_assignment(parse_result,scope)
     return parse_result
 
-def _parse_acc_directive(expr_as_str,scope):
-    parse_result = parse_acc_directive(expr_as_str)
+def parse_acc_directive(expr_as_str,scope):
+    parse_result = tree.parse_acc_directive(expr_as_str)
     if scope != None:
         semantics_checker.resolve_acc_directive(parse_result,scope)
     return parse_result
@@ -240,7 +240,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
                     or util.parsing.compare_ignore_case(tokens[1:3],["acc","serial"])
                     or util.parsing.compare_ignore_case(tokens[1:3],["acc","loop"])
                   ):
-                    directive = _parse_acc_directive(stmt,scope)
+                    directive = parse_acc_directive(stmt,scope)
                     descend_(
                       directive,
                       "acc " + directive.kind 
@@ -265,19 +265,19 @@ def parse_fortran_code(code,result_name=None,scope=None):
             lbound_str, ubound_str, stride_str) = statement_classifier.parse_result
             if cond != None:
                 do_loop = tree.TTDoWhile([
-                  _parse_arith_expr(cond,scope),
+                  parse_arith_expr(cond,scope),
                   []
                 ])
             elif var != None: 
                 try:
                     begin, end, stride = None, None, None
                     if var != None and lbound_str != None:
-                        begin = _parse_assignment(
+                        begin = parse_assignment(
                           var + "=" + lbound_str,scope)
                     if ubound_str != None:
-                        end = _parse_arith_expr(ubound_str,scope)
+                        end = parse_arith_expr(ubound_str,scope)
                     if stride_str != None and len(stride_str):
-                        stride = _parse_arith_expr(stride_str,scope)
+                        stride = parse_arith_expr(stride_str,scope)
                     do_loop = tree.TTDo([begin, end, stride, []])
                 except pyparsing.ParseException as e:
                     error_("do loop", e)
@@ -302,11 +302,9 @@ def parse_fortran_code(code,result_name=None,scope=None):
               inc_level=False
             )
             try:
-                if_branch = tree.TTIfElseIf([
-                  None,
-                  _parse_arith_expr(cond,scope),
-                  []
-                ])
+                if_branch = tree.TTIf(
+                  [parse_arith_expr(cond,scope),[]]
+                )
             except pyparsing.ParseException as e:
                 error_("if", e)
             descend_(
@@ -318,11 +316,9 @@ def parse_fortran_code(code,result_name=None,scope=None):
             ascend_("if")
             cond = statement_classifier.parse_result
             try:
-                else_if_branch = tree.TTIfElseIf([
-                  "else",
-                  _parse_arith_expr(cond,scope),
-                  []
-                ])
+                else_if_branch = tree.TTElseIf(
+                  [parse_arith_expr(cond,scope),[]]
+                )
                 descend_(
                   else_if_branch,
                   "else-if branch"
@@ -343,7 +339,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             try:
                 descend_(
                   tree.TTSelectCase([
-                    _parse_arith_expr(named_label,scope),
+                    parse_arith_expr(named_label,scope),
                     []
                   ]),
                   "select-case",
@@ -359,7 +355,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
                 descend_(
                   tree.TTCase([
                     ttvalues, 
-                    [_parse_arith_expr(v,scope) for v in values]
+                    [parse_arith_expr(v,scope) for v in values]
                   ]), "case"
                 )
             except pyparsing.ParseException as e:
@@ -421,7 +417,7 @@ def parse_fortran_code(code,result_name=None,scope=None):
             error_("pointer assignment")
         elif statement_classifier.is_assignment(tokens):
             try:
-                assignment_variant = _parse_assignment(
+                assignment_variant = parse_assignment(
                     stmt, scope) 
                 append_(assignment_variant, "assignment")
             except pyparsing.ParseException as e:
@@ -457,112 +453,6 @@ def _contains_custom_ops(tokens):
             if not _p_logic_op.match(tk):
                 return True 
     return False
-
-# API
-def parse_arith_expr(expr_as_str,parse_all=True):
-    """Parse an arithmetic expression, choose the fastest pyparsing
-    parser based on the operators found in the token stream.
-    :param expr_as_str: arithmetic expression expression as string.
-    :return: The root node of the parse tree.
-    """
-    tokens = util.parsing.tokenize(expr_as_str)
-    contains_logic_ops = _contains_logic_ops(tokens)
-    contains_custom_ops = _contains_custom_ops(tokens)
-    if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.arith_expr.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_logic_ops:
-        return tree.grammar_no_logic.arith_expr.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_custom_ops:
-        return tree.grammar_no_custom.arith_expr.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    else:
-        return tree.grammar.arith_expr.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    
-def parse_assignment(expr_as_str,parse_all=True):
-    """Parse an assignment, choose the fastest pyparsing
-    parser based on the operators found in the token stream.
-    :param expr_as_str: assignment expression as string.
-    :return: The root node of the parse tree.
-    """
-    tokens = util.parsing.tokenize(expr_as_str)
-    contains_logic_ops = _contains_logic_ops(tokens)
-    contains_custom_ops = _contains_custom_ops(tokens)
-    if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.assignment.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_logic_ops:
-        return tree.grammar_no_logic.assignment.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_custom_ops:
-        return tree.grammar_no_custom.assignment.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    else:
-        return tree.grammar.assignment.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-
-def parse_rvalue(expr_as_str,parse_all=True):
-    """Parse an rvalue, choose the fastest pyparsing
-    parser based on the operators found in the token stream.
-    :param expr_as_str: rvalue expression as string.
-    :return: The root node of the parse tree.
-    """
-    #:todo: rename
-    tokens = util.parsing.tokenize(expr_as_str)
-    contains_logic_ops = _contains_logic_ops(tokens)
-    contains_custom_ops = _contains_custom_ops(tokens)
-    if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.rvalue.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_logic_ops:
-        return tree.grammar_no_logic.rvalue.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_custom_ops:
-        return tree.grammar_no_custom.rvalue.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    else:
-        return tree.grammar.rvalue.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-
-def parse_acc_directive(expr_as_str,parse_all=True):
-    """Parse an OpenACC directive, choose the fastest pyparsing
-    parser based on the operators found in the token stream.
-    :param expr_as_str: OpenACC directive expression as string.
-    :return: The root node of the parse tree.
-    """
-    tokens = util.parsing.tokenize(expr_as_str)
-    contains_logic_ops = _contains_logic_ops(tokens)
-    contains_custom_ops = _contains_custom_ops(tokens)
-    if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.acc_directive.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_logic_ops:
-        return tree.grammar_no_logic.acc_directive.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    elif not contains_custom_ops:
-        return tree.grammar_no_custom.acc_directive.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
-    else:
-        return tree.grammar.acc_directive.parseString(
-          expr_as_str, parseAll=parse_all
-        )[0]
 
 # API
 # todo: parsing and translation is similar but analysis differs between the different kernel

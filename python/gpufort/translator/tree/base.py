@@ -154,23 +154,34 @@ class TTContainer(TTStatement):
         yield from self.body
 
     def header_cstr(self):
+        """C representation of the header of this container.
+        :note: Intended to be overriden by subclass.
+        :note: Implementation may not open new scope, add indentation,
+               or add line break. This should be done by the render routine.
+        """
         return ""
     
     def footer_cstr(self):
+        """C representation of the footer of this container.
+        :note: Intended to be overriden by subclass.
+        :note: Implementation may not close scope, add indentation, and add line break.
+               This should be done by the render routine.
+        """
         return ""
-
-    def body_cstr(self):
-        result = [make_cstr(child).rstrip() for child in self.body]
-        return textwrap.indent("\n".join(result),self.indent)
-
-    def cstr(self):
-        body_content = self.cstr(self)
-        return "{}{}\n{}".format(\
-            self.header_cstr(),
-            body_content,
-            self.footer_cstr())
 
 class TTRoot(TTContainer):
 
     def __init__(self):
         TTContainer._init(self)
+
+def to_cstr(expr):
+    """:return: a C++ representation if the 
+    expr is an instance of TTNode besides TTContainer.
+    Returns `expr` itself if it is string."""
+    if type(expr) == str:
+        return expr
+    elif isinstance(expr,TTContainer):
+        assert False, "no support for container statements"
+    elif isinstance(expr,TTNode):
+        return expr.cstr()
+    assert False, "no support for type '{}'".format(expr)

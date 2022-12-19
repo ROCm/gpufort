@@ -395,9 +395,10 @@ class IndexVariable(IndexRecordAccessorBase):
         self.record = ivar
         self._tag = tag
         #
-        self._kind_parse_result = None
-        self._rhs_parse_result = None
-        self._bounds_parse_results = None
+        self._bytes_per_element = None
+        self._resolved_kind = None
+        self._resolved_rhs = None
+        self._resolved_bounds = None
          
     @property
     def tag(self):
@@ -509,62 +510,7 @@ class IndexVariable(IndexRecordAccessorBase):
             return IndexVariable.Intent.INOUT # must be variable
         else: # None
             return IndexVariable.Intent.DEFAULT # can be literal
-    
-    def resolve_kind(self,scope=None):
-        """Parse the 'kind' enytry of this record.
-        :param scope: a scope for looking up referenced variables or none.
-        :raise util.error.lookuperror: if a symbol could not be resolved.
-        :raise util.error.syntaxerror: if the expression's syntax is not correct. 
-        :raise util.error.semanticerror: if the expression's semantics are not correct. 
-        """
-        assert self._kind_parse_result == None, "already resolved"
-        kind = self.record["kind"]
-        self._kind_parse_result = translator.parser.parse_arith_expr(kind,scope)
-   
-    def resolve_rhs(self,scope=None):
-        """Parse the right-hand side of variable declaration.
-        :param scope: a scope for looking up referenced variables or none.
-        :raise util.error.LookupError: if a symbol could not be resolved.
-        :raise util.error.SyntaxError: if the expression's syntax is not correct. 
-        :raise util.error.SemanticError: if the expression's semantics are not correct. 
-        """
-        assert self._rhs_parse_result == None, "already resolved"
-        assert self._rhs_parse_result != None
-        rhs = self.record["rhs"]
-        self._rhs_parse_result = translator.parser.parse_arith_expr(rhs,scope)
 
-    def resolve_bounds(self,scope=None):
-        """Parse the array bounds of the variable declaration.
-        :param scope: A scope for looking up referenced variables or None.
-        :raise util.error.LookupError: If a symbol could not be resolved.
-        :raise util.error.SyntaxError: If the expression's syntax is not correct. 
-        :raise util.error.SemanticError: If the expression's semantics are not correct. 
-        """
-        assert self._bounds_parse_results == None, "already resolved"
-        assert False, "not implemented"
-
-    @property
-    def resolved_kind(self):
-        assert self._resolved_kind != None
-        return self._resolved_kind
-    
-    @property
-    def resolved_bounds(self):
-        assert self._bounds_parse_results != None
-        return self._bounds_parse_results
-
-    @property
-    def resolved_rhs(self):
-        assert self._resolved_rhs != None
-        return self._resolved_rhs
-
-    @property
-    def resolved_size(self):
-        """Resolved size in elements if this 
-        an array, otherwise return 1."""
-        assert self._bounds_parse_results != None
-        assert False, "not implemented"
-    
     @property
     def full_type_as_str(self):
         """:return: Fortran string expression for the full data type 
@@ -580,6 +526,50 @@ class IndexVariable(IndexRecordAccessorBase):
             )
         else:
             return self.type
+
+    @property
+    def bytes_per_element(self):
+        assert self._bytes_per_element != None
+        return self._bytes_per_element
+    @property
+    def resolved_kind(self):
+        assert self._resolved_kind != None
+        return self._resolved_kind
+    @property
+    def resolved_rhs(self):
+        assert self._resolved_rhs != None
+        return self._resolved_rhs
+    @property
+    def resolved_bounds(self):
+        assert self._resolved_bounds != None
+        return self._resolved_bounds
+    @property
+    def resolved_size(self):
+        assert self._resolved_num_bytes != None
+        return self._resolved_num_bytes
+    @property
+    def resolved_num_bytes(self):
+        assert self._resolved_num_bytes != None
+        return self._resolved_num_bytes
+    
+    @resolved_kind.setter
+    def resolved_kind(self,resolved_kind):
+        self._resolved_kind = resolved_kind
+    @resolved_rhs.setter
+    def resolved_rhs(self,resolved_rhs):
+        self._resolved_rhs = resolved_rhs
+    @resolved_bounds.setter
+    def resolved_bounds(self,resolved_bounds):
+        self._resolved_bounds = resolved_bounds
+    @bytes_per_element.setter
+    def bytes_per_element(self,bytes_per_element):
+        self.bytes_per_element = bytes_per_element
+    @resolved_bounds.setter
+    def resolved_bounds(self,resolved_bounds):
+        self._resolved_bounds = resolved_bounds
+    @resolved_bounds.setter
+    def resolved_bounds(self,resolved_bounds):
+        self._resolved_bounds = resolved_bounds
 
     @property
     def module(self):

@@ -47,7 +47,8 @@ Warnings:
 
 import pyparsing
 import ast
-
+import enum
+import copy
 import operator
 
 from gpufort import util
@@ -59,8 +60,6 @@ from .. import prepostprocess
 
 from . import base
 from . import traversals
-
-import enum
 
 # literal expressions
     
@@ -329,6 +328,22 @@ class TTIdentifier(Reference):
     def _assign_fields(self, tokens):
         self.name = tokens[0]
         Reference._assign_fields(self,tokens)
+
+    def __copy__(self,memo):
+        """Shallow copy (of `_symbol_info`, rest is immutable.)"""
+        new = TTIdentifier.__new__(TTIdentifier)
+        new._symbol_info = self._symbol_info
+        new._bytes_per_element = self._bytes_per_element
+        new.name = self.name
+        return new
+    
+    def __deepcopy__(self,memo):
+        """:note: Main reason for explicit
+        deep copy implementation is to prevent
+        deep copy of symbol info field as 
+        this should be used as unique identifier.
+        """
+        return self.__copy__(memo)
     
     def walk_variable_references(self):
         yield self
@@ -397,6 +412,31 @@ class TTFunctionCall(Reference):
         else:
             self.args = []
         Reference._assign_fields(self,tokens)
+
+
+    def __copy_ignore_args(self):
+        new = TTFunctionCall.__new__(TTFunctionCall)
+        new._symbol_info = self._symbol_info
+        new._bytes_per_element = self._bytes_per_element
+        new.name = self.name
+        return new
+    
+    def __copy__(self,memo):
+        """Shallow copy (of `_symbol_info` and `args`, rest is immutable.)"""
+        new = self.__copy_ignore_args()
+        #
+        new.args = copy.copy(self.args)
+        return new
+    
+    def __deepcopy__(self,memo):
+        """:note: Main reason for explicit deep copy implementation is to prevent
+        deep copy of symbol info field as this should be used as unique identifier.
+        Performs a deep copy of the objects `args` field.
+        """
+        new = self.__copy_ignore_args()
+        #
+        new.args = copy.deepcopy(self.args)
+        return new 
     
     # override
     def _get_type_defining_record(self):
@@ -766,12 +806,20 @@ class TTFunctionCall(Reference):
             return ""
 
     def cstr(self):
-        return (
-          self.name.lower()
-          + self._args_as_str(
-            traversals.make_cstr
-          )
-        )
+        """:return: C++ representation of this function call.
+        :note: In case of a function call, all arguments are required and must be specified.
+        :raise util.error.LookupError: If an argument is not present in the list.
+        :todo: Checking arguments should be outsourced to semantics check.
+        """
+        if self.is_array_expr:
+            return self.name.lower() + self._args_as_str(traversals.make_cstr)
+        else:
+            result = self.name.lower() + "("
+            specified_args = []
+            for arg_name in self.symbol_info.dummy_args:
+                arg = self.get_actual_argument(arg_name)
+                specified_args.append(arg.cstr())
+            return result + ")"
     
     def fstr(self):
         return (
@@ -2055,7 +2103,7 @@ class TTKeywordArgument(ArithExprNode):
         yield from self.value.walk_values_ignore_args()
 
     def cstr(self):
-        return self.key + "=" + self.value.cstr() + ";\n"
+        assert False, "not implemented"
 
     def fstr(self):
         return self.key + "=" + self.value.fstr()
@@ -2141,9 +2189,9 @@ class TTAssignment(base.TTStatement):
         yield self.lhs
         yield self.rhs
     def cstr(self):
-        return self.lhs.cstr() + "=" + self.rhs.cstr() + ";\n"
+        return self.lhs.cstr() + "=" + self.rhs.cstr() + ";"
     def fstr(self):
-        return self.lhs.fstr() + "=" + self.rhs.fstr() + ";\n"
+        return self.lhs.fstr() + "=" + self.rhs.fstr() + ";"
 
 class TTSubroutineCall(base.TTStatement):
 

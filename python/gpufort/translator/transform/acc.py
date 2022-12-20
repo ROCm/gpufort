@@ -1,5 +1,70 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
+"""
+
+Concepts:
+
+* Private variables are implemented as shown in the snippet below,
+  where the prefix $ indicates the lines that are injected 
+  by transformations.
+  
+  ``` 
+  declare var
+  parallel for i = 1,N
+     $declare var # hides parent var
+     ... do usual stuff with var
+  end loop
+  ```
+
+  The transformation simply inserts a local variable,
+  into the loop that hides the parent scope's variable.
+
+* Firstprivate variables are implemented as shown in the snippet below,
+  where the prefix $ indicates the lines that are injected 
+  by transformations.
+  
+
+  ``` 
+  declare var
+  $declare parent_var_copy = var
+  parallel for i = 1,N
+     $declare var # hides parent var
+     $var = parent_var_copy # copy initial value from parent var's copy
+     ... do usual stuff with var
+  end loop
+  ```
+
+  As for the private variables, the transformation inserts a local variable,
+  into the loop that hides the parent scope's variable.
+
+* Reductions:
+ 
+  Reductions are implemented as shown in the snippet below,
+  where the prefix $ indicates the lines that are injected 
+  by transformations.
+
+  ``` 
+  declare var
+  $declare var_buffer[N] # N is the loop size and the size of the threadblock, for simplicity 
+  parallel for i = 1,N
+     $declare var # hides parent var
+     $var = <init_val>
+     ... do usual stuff with var
+     $var_buffer[i] = reduce(var_buffer[i],var)
+  end loop
+  $for i = 1,N
+     $var = reduce(var_buffer[i],var)    
+  $end for
+  ```
+  
+  The transformation needs to insert a buffer allocation before the parellel loop,
+  a local variable declaration within the loop, a buffer entry update at
+  the end of the loop, and an aggregation loop after the loop, which must be performed
+  by the current gang or worker leader.
+"""
+
+
 from .. import tree
 
 from . import loops
@@ -11,6 +76,9 @@ def _label_array_buffer(name):
 
 def _label_firstprivate_argument(name):
     return "_"+name+"_at_init"
+
+def _label_reduction_argument(name):
+    return "_"+name+"_reduced"
 
 def _derive_private_decl_nodes(var_name,symbol_info):
     if symbol_info.rank > 0:
@@ -28,45 +96,101 @@ def _derive_private_decl_nodes(var_name,symbol_info):
 def _inject_private_var_decls(ttcontainer,var_list):
     """:note: Assumes semantics check has been performed on all variables.
     """
-    new_nodes = []
+    nodes_to_prepend = []
     for ttvalue in var_list:
-        new_nodes += _derive_private_decl_nodes(
+        nodes_to_prepend += _derive_private_decl_nodes(
           ttvalue.name,ttvalue.symbol_info
         )
-    for node in reversed(new_nodes):
+    for node in reversed(nodes_to_prepend):
         ttcontainer.body.insert(0,node)
 
 def _inject_firstprivate_var_decls(ttcontainer,var_list):
     """:note: Assumes semantics check has been performed on all variables.
     """
-    new_nodes = []
-    for ttvalue in ttvalue_list:
-        new_nodes += _derive_private_decl_nodes(
+    nodes_to_prepend = []
+    for ttvalue in var_list:
+        nodes_to_prepend += _derive_private_decl_nodes(
           ttvalue.name,ttvalue.symbol_info
         )
         src_name = _label_firstprivate_argument(ttvalue.name),
         if ttvalue.rank > 0:
-            new_nodes.append(
-              tree.TTCCopyForLoop(# dest,src,idx,n
+            rw_index = label_generator("idx")
+            nodes_to_prepend.append(
+              tree.TTCCopyForLoop(# dest,src,dest_idx,src_idx,n
                 ttvalue.name,
                 src_name,
-                label_generator("idx"),
+                rw_index,
+                rw_index,
                 ttvalue.symbol_info.size_expr.cstr()
               )
             )
         else:
-            new_nodes.append(
+            nodes_to_prepend.append(
               tree.TTCCopyStatement(ttvalue.name,src_name)
             ) 
-    for node in reversed(new_nodes):
+    for node in reversed(nodes_to_prepend):
         ttcontainer.body.insert(0,node)
 
-def _inject_reduction_var_decls(ttcontainer,op,var_list):
-    """:note: Assumes semantics check has been performed on all variables.
+
+def _inject_reduction_var_decl_and_reduction_in_construct(ttloop,op,var_list):
     """
-    new_nodes += _derive_private_decl_nodes(
-      ttvalue.name,ttvalue.symbol_info
-    )
+    """
+    nodes_to_prepend = []
+    for ttvalue in var_list:
+        nodes_to_prepend += _derive_private_decl_nodes(
+          ttvalue.name,ttvalue.symbol_info
+        )
+        result_name = _label_reduction_argument(ttvalue.name)
+        c_type = conv.c_type(
+          self.symbol_info.type,
+          self.bytes_per_element
+        )
+        c_init_val = conv.reduction_c_init_val(self.op,c_type)
+        if ttvalue.rank > 0:
+            nodes_to_prepend.append(
+              tree.TTCCopyForLoop(# dest,src,idx,n
+                ttvalue.name,
+                c_init_val
+                label_generator("idx"),
+                None,
+                ttvalue.symbol_info.size_expr.cstr()
+              )
+            )
+        else:
+            nodes_to_prepend.append(
+              tree.TTCCopyStatement(ttvalue.name,c_init_val)
+            ) 
+    for node in reversed(nodes_to_prepend):
+        ttconstruct.body.insert(0,node)
+
+def _inject_reduction_buffer_decl_and_aggregation_in_construct_parent(
+    ttconstructparent,
+    ttconstruct,
+    block_size,
+    op,
+    var_list
+  ):
+    """
+    :param ttconstructparent: Container that contains the construct
+                         that performs the reduction.
+    :param ttconstruct: acc loop that performs the reduction. 
+    :note: Assumes semantics check has been performed on all variables.
+    """
+    # append first and then prepend to not change the position of the loop
+    nodes_to_prepend = []
+    nodes_to_append = []
+    for ttvalue in var_list:
+        c_type = conv.c_type(
+          self.symbol_info.type,
+          self.bytes_per_element
+        )
+        c_init_val = conv.reduction_c_init_val(self.op,c_type)
+    #
+    loop_pos = ttconstructparent.index(ttconstruct)
+    for node in reversed(nodes_to_append):
+        ttconstructparent.body.insert(loop_pos+1,node)
+    for node in reversed(nodes_to_prepend):
+        ttconstructparent.body.insert(loop_pos,node)
 
 def _traverse_acc_compute_construct(self,ttaccdir,device_type):
     """:note: Syntax checks prevent that num_gangs, num_workers, and
@@ -114,6 +238,9 @@ def unroll_all_acc_directives(ttcontainer,device_type):
     :note: Propagates (assignment, function call) statement filter down from the top
            of the tree to the leaves
     """
+    # TODO augment containers on with artificial nodes on the way down
+    # TODO transform containers to different nodes on the way up
+
     newbody = [] # shallow copy
     statement_filter = "<filter>" # todo
     statement_filter_node = None

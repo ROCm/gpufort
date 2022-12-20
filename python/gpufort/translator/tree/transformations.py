@@ -231,23 +231,28 @@ class TTCCopyStatement(TTInjectedStatement):
         return "{} = {};".format(dest,src)
 
 class TTCCopyForLoop(TTCForLoop):
-    """Emits a for loop that copies from one type with 
-    operator [] to the other.
+    """Emits a for loop that copies from one scalar type or a type with 
+    operator [] to a type with operator [].
     """
 
     def __init__(self,
         dest_name,
         src_name,
-        index,
+        dest_index,
+        src_index,
         num_elements,
       ):
-        """:param str dest_name: Name of the buffer to write to.
-        :param str src_name: Name of the buffer to read from.
-        :param num_elements: The number of elements to copy.
+        """Constructor.
+        :param str dest_name: Name of the buffer to write to.
+        :param str src_name: Name of the buffer/scalar to read from.
+        :param str dest_index: Index for writing to the dest buffer.  
+        :param str src_index: Index for accesing the src buffer, or None.
+                              None indicates that the src is a scalar.
         """
-        TTCForLoop.__init__(self,index,num_elements)
+        assert dest_index != None
+        TTCForLoop.__init__(self,dest_index,num_elements)
         self.body.append(
-          TTCCopyStatement(dest_name,src_name,index,index)
+          TTCCopyStatement(dest_name,src_name,dest_index,src_index)
         )
   
 class TTCVarDecl(TTInjectedStatement):
@@ -326,7 +331,7 @@ class TTCVarDeclFromFortranSymbol(TTCVarDecl):
       TTCVarDecl.cstr(self)
 
 # todo: deprecated
-class TTCReductionVarDeclFromFortranSymbol(TTCVarDeclFromFortranSymbol):
+class TTCReductionVarInitFromFortranSymbol(TTCVarDeclFromFortranSymbol):
     """Injects reduction variable declarations."""
     # before loopnest
 

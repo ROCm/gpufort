@@ -403,7 +403,14 @@ class IndexVariable(IndexRecordAccessorBase):
     @property
     def tag(self):
         """:return: A tag to better identify the variable, 
-                    e.g., if is a derived type member. 
+                    e.g., if it is a derived type member. 
+        Example:
+
+        If this would be derived type member a%b, the `name` field would 
+        return `v` while this field would return `a%b`.
+
+        :note: This field must be set by the routine / parent
+        that instantiates this IndexVariable.
         """
         return self._tag
      
@@ -414,10 +421,27 @@ class IndexVariable(IndexRecordAccessorBase):
     @property
     def kind(self):
         return self.record["kind"]
+   
+    @property
+    def is_numeric(self):
+        return self.type in ["integer","real","complex"]
     
+    @property
+    def is_logical(self):
+        return self.type == "logical"
+    
+    @property
+    def is_character(self):
+        return self.type == "character"
+    
+    @property
+    def is_derived_type(self):
+        return self.type == "type"
+ 
     @property
     def len(self):
         """Length specifier of a character."""
+        assert self.is_character
         return self.record["len"]
     
     @property
@@ -564,12 +588,31 @@ class IndexVariable(IndexRecordAccessorBase):
     @bytes_per_element.setter
     def bytes_per_element(self,bytes_per_element):
         self.bytes_per_element = bytes_per_element
-    @resolved_bounds.setter
-    def resolved_bounds(self,resolved_bounds):
-        self._resolved_bounds = resolved_bounds
-    @resolved_bounds.setter
-    def resolved_bounds(self,resolved_bounds):
-        self._resolved_bounds = resolved_bounds
+    @resolved_size.setter
+    def resolved_size(self,resolved_size):
+        self._resolved_size = resolved_size
+    @resolved_num_bytes.setter
+    def resolved_num_bytes(self,resolved_num_bytes):
+        self._resolved_num_bytes = resolved_num_bytes
+    
+    @property
+    def has_bytes_per_element(self):
+        return self._bytes_per_element != None
+    @property
+    def has_resolved_kind(self):
+        return self._resolved_kind != None
+    @property
+    def has_resolved_rhs(self):
+        return self._resolved_rhs != None
+    @property
+    def has_resolved_bounds(self):
+        return self._resolved_bounds != None
+    @property
+    def has_resolved_size(self):
+        return self._resolved_size != None
+    @property
+    def has_resolved_num_bytes(self):
+        return self._resolved_num_bytes != None
 
     @property
     def module(self):

@@ -297,7 +297,7 @@ class Semantics:
                              ttarg.rank
                            )
                          )
-    
+
     def _compare_actual_and_expected_argument(self,
         ttfunccall,ttarg,expected_arg,
         check_rank = False,
@@ -524,6 +524,7 @@ class Semantics:
               )
             )
         self._check_array_indices(ttnode)
+        ttnode.symbol_info.resolve
  
     def _resolve_function_call_or_array_expr(self,ttnode,scope,name=None):
         """Resolve a function call or array indexing expression.
@@ -694,76 +695,105 @@ class Semantics:
         :todo: Currently only symbol based and does not consider
                that different subarrays of the same arrays may be mapped.
         """
+        def generator_(ttaccdir):
+            for (ttvarexpr,mapping_kind,readonly) in ttaccdir.walk_mapped_variables():
+                yield ttvarexpr 
+            yield from ttvarexpr in ttaccdir.walk_private_variables()
+            yield from ttvarexpr in ttaccdir.walk_firstprivate_variables() # does yield nothing for AccLoop
+            for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # does yield nothing for AccKernels
+                yield ttvarexpr 
         tags = set()
-        def add_tag_(tag):
-            nonlocal tags
+        for ttvarexpr in generator_(ttaccdir):
+            tag = ttvarexpr.tag()
             if tag in tags:
                 raise util.error.SemanticError(
                   "variable reference '{}' is subject to multiple mappings".format(tag)
                 )
             tags.add(tag) 
-        for (ttvarexpr,mapping_kind,readonly) in ttaccdir.walk_mapped_variables():
-            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
-        for ttvarexpr in ttaccdir.walk_private_variables():
-            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
-        for ttvarexpr in ttaccdir.walk_firstprivate_variables(): # note: Does yield nothing for AccLoop
-            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
-        for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # note: Does yield nothing for AccKernels
-            add_tag_(ttvarexpr.type_defining_node.symbol_info.tag)
 
-    def resolve_variable_kind(self,scope=None):
+    def resolve_variable_kind(self,symbol_info,scope):
         """Parse the 'kind' entry of the variable.
-        :param scope: a scope for looking up referenced variables or none.
+        :param scope: Scope for looking up referenced variables.
         :raise util.error.LookupError: if a symbol could not be resolved.
         :raise util.error.SyntaxError: if the expression's syntax is not correct. 
         :raise util.error.SemanticError: if the expression's semantics are not correct. 
         """
-        from . import parser # todo: cross import
-        assert symbol_info.resolved_kind == None, "already resolved"
-        kind = symbol_info.record["kind"]
-        symbol_info.resolved_kind = translator.parser.parse_arith_expr(kind,scope)
+        if not symbol_info.has_resolved_kind:
+            symbol_info.resolved_kind = tree.parse_arith_expr(symbol_info.kind)
+            self.resolve_arith_expr(symbol_info.resolved_kind,scope)
+            if not symbol_info.resolve_kind.yields_parameter:
+                raise util.error.SemanticError(
+                  "'kind' of variable '{}' is no parameter or literal expression".format(
+                    symbol_info.name
+                  )
+                )
    
-    def resolve_variable_rhs(self,scope=None):
+    def resolve_variable_rhs(self,symbol_info,scope):
         """Parse the right-hand side of the variable.
-        :param scope: a scope for looking up referenced variables or none.
+        :param scope: Scope for looking up referenced variables.
         :raise util.error.LookupError: if a symbol could not be resolved.
         :raise util.error.SyntaxError: if the expression's syntax is not correct. 
         :raise util.error.SemanticError: if the expression's semantics are not correct. 
         """
-        from . import parser # todo: cross import
-        assert symbol_info.resolved_rhs == None, "already resolved"
-        assert symbol_info.resolved_rhs != None
-        rhs = symbol_info.record["rhs"]
-        symbol_info.resolved_rhs = translator.parser.parse_arith_expr(rhs,scope)
+        if not symbol_info.has_resolved_rhs:
+            symbol_info.resolved_rhs = tree.parse_arith_expr(symbol_info.rhs)
+            self.resolve_arith_expr(symbol_info.resolved_rhs,scope)
+            # todo: check if RHS and symbol type do agree
 
-    def resolve_variable_bounds(self,scope=None):
+    def resolve_variable_bounds(self,symbol_info,scope):
         """Parse the array bounds of the variable.
-        :param scope: A scope for looking up referenced variables or None.
+        :param scope: Scope for looking up referenced variables.
         :raise util.error.LookupError: If a symbol could not be resolved.
         :raise util.error.SyntaxError: If the expression's syntax is not correct. 
         :raise util.error.SemanticError: If the expression's semantics are not correct. 
         """
-        assert symbol_info.resolved_bounds == None, "already resolved"
-        bounds = symbol_info.record["bounds"]
-        symbol_info.resolved_bounds = []
-        extent_size_exprs = []
-        for bound in bounds:
-            ttextent = tree.parse_extent(bound)
-            if (scope != None):
-                isinstance(ttextent.lbound,tree.TTArithExpr)
-                self.resolve_arith_expr(ttextent)
-                extent_size_exprs.append(ttextent.size_expr())
-            symbol_info.resolved_bounds.append(ttextent)
-            
+        if symbol_info.has_resolved_bounds:
+            symbol_info.resolved_bounds = []
+            all_sizes_fully_specified = True
+            for bound in symbol_info.bounds:
+                ttextent = tree.parse_extent(bound)
+                for child in ttextent.child_nodes():
+                    if isinstance(child,tree.TTArithExpr):
+                        self.resolve_arith_expr(child)
+                if not ttextent.has_specified_size:
+                    all_sizes_fully_specified = False
+                symbol_info.resolved_bounds.append(ttextent,scope)
+            # set a tree representation of the size (in elements) of the product
+            if all_sizes_fully_specified: 
+                size_exprs = []
+                for ttextent in symbol_info.resolved_bounds:
+                     size_expr = tree.TTBinaryOpChain.size_expr(
+                       ttextent.lbound,
+                       ttextent.ubound
+                     )
+                     ttextent.size_expr = size_expr
+                     self.resolve_arith_expr(ttextent.size_expr)
+                     size_exprs.append(size_expr)
+                symbol_info.resolved_size = tree.TTBinaryOpChain.multiply(size_exprs)
+                self.resolve_arith_expr(symbol_info.resolved_size)
 
+    def resolve_num_bytes(self,symbol_info,scope):
+        """Resolve the number of bytes if the bounds/size
+        and the bytes per element have been resolved already.
+        """
+        assert symbol_info.has_bytes_per_element, "number of bytes per element not resolved yet"
+        assert symbol_info.has_resolved_size, "expression for number of elements not resolved yet"
+        symbol_info.resolved_num_bytes = tree.TTBinaryOpChain([
+          TTNumber(["symbol_info.bytes_per_element"]),
+          "*",
+          symbol_info.resolved_size
+        ])
+        
     def _acc_resolve_mapped_variable_bounds(self,ttaccdir,scope):
         """Resolve the bounds of the symbol ."""
-        for ttvarexpr in ttaccdir.walk_private_variables():
-            symbol_info = ttvarexpr.type_defining_node.symbol_info
-        for ttvarexpr in ttaccdir.walk_firstprivate_variables(): # note: Does yield nothing for AccLoop
-            symbol_info = ttvarexpr.type_defining_node.symbol_info
-        for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # note: Does yield nothing for AccKernels
-            symbol_info = ttvarexpr.type_defining_node.symbol_info
+        def generator_(ttaccdir):
+            yield from ttaccdir.walk_private_variables()
+            yield from ttaccdir.walk_firstprivate_variables() # does yield nothing for acc loop
+            for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # does yield nothing for acc kernels
+                yield ttvarexpr
+        for ttvarexpr in generator_(ttaccdir):
+            for ttref in ttvarexpr.walk_variable_references():
+                self.resolve_variable_bounds(ttref.symbol_info,scope)
 
     def _acc_resolve_clauses(self,ttaccdir,scope):
 
@@ -863,7 +893,7 @@ class Semantics:
                 tree.TTAccClauseUpdateSelf,
                 tree.TTAccClauseUpdateDevice,
               )):
-                for child in clause.child_nodes():
+                for child in clause.var_list:
                     self.resolve_value(child,scope)
             if isinstance(clause,(
                 tree.TTAccClauseCopy,
@@ -878,8 +908,16 @@ class Semantics:
                 tree.TTAccClauseUseDevice,
                 tree.TTAccClauseCopyin,
               )):
-                for child in clause.child_nodes():
+                for child in clause.var_list:
                     self.resolve_value(child,scope)
+                    if isinstance(clause,(
+                        tree.TTAccClausePrivate,
+                        tree.TTAccClauseFirstprivate,
+                    )):
+                      if child.is_derived_type_expr:
+                          raise util.error.SemanticError("No derived type expressions allowed in '{}' clause".
+                            format(clause.kind)
+                          )
             if isinstance(clause,(
                 tree.TTAccClauseDefault
               )):
@@ -955,6 +993,6 @@ class Semantics:
     def resolve_acc_directive(self,ttaccdir,scope):
         """Resolves the clauses appearing on the directive."""
         self._acc_resolve_clauses(ttaccdir,scope)
-        if isinstance(ttaccdir,tree.TTAccConstruct):
+        if isinstance(ttaccdir,tree.TTAccConstruct): # note: includes acc loop
             self._acc_check_var_is_not_mapped_twice(ttaccdir)
             self._acc_resolve_mapped_variable_bounds(ttaccdir,scope)

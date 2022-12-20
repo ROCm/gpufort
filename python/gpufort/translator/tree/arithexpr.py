@@ -839,8 +839,10 @@ class TTFunctionCall(Reference):
     __repr__ = __str__
 
 class TTIndexRange(ArithExprNode):
+    """Represents an expression '[lbound] ':' [ubound] [':' stride]'."""
 
     def _assign_fields(self, tokens):
+        """:note: Grammar does suppress ':'."""
         self.lbound, self.ubound, self.stride =\
           None, None, None  # note: all three might be None
         if len(tokens) == 1:
@@ -910,6 +912,7 @@ class TTIndexRange(ArithExprNode):
     @property
     def yields_full_array(self): return self.is_full_array
 
+    # todo: deprecated
     def size(self, converter=traversals.make_cstr):
         result = "{1} - ({0}) + 1".format(
           converter(self.lbound),
@@ -929,23 +932,42 @@ class TTIndexRange(ArithExprNode):
                 pass
         return result
     
-    def size_expr(self):
-        """Produces an tree representation of the size
-        corresponding to the extent specification."""
-        if self._size_expr != None:
-            return self._size_expr
-        else:
-            assert self.has_ubound,"no upper bound specified"
-            # TODO set upper bound from variable via symbol info
-            delta = TTBinaryOpChain(
-              [self.ubound,"-",self.lbound,"+",TTNumber(["1"])] 
-            )
-            if self.step == None:
-                self._size_expr = delta
-            else:
-                self._size_expr = TTBinaryOpChain([delta,"/",self.step])
-            return self._size_expr
+    @property
+    def has_specified_size(self):
+        """:return: If the size has been specified
+                    in terms of runtime or compile time
+                    variables."""
+        return (
+          self.lbound != None 
+          and self.ubound != None
+        )
 
+    @property
+    def has_fixed_size(self):
+        """If the extent describes a fixed size and it evaluates to a 
+        Fortran parameter.
+        :note: Assumes that lbound and ubound have been resolved.
+        """
+        if not self.has_specified_size:
+            return False
+        for child in self.child_nodes():
+            if not child.yields_parameter:
+                return False
+        return True
+    
+    @property
+    def has_literal_fixed_size(self):
+        """If the extent describes a fixed size and it evaluates
+        to a literal without any parameter substitution.
+        :note: Assumes that lbound and ubound have been resolved.
+        """
+        if not self.has_specified_size:
+            return False
+        for child in self.child_nodes():
+            if not child.yields_literal:
+                return False
+        return True
+   
     def cstr(self):
         #return self.size(traversals.make_cstr)
         return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
@@ -1757,6 +1779,87 @@ class TTBinaryOpChain(ArithExprNode):
       ".neqv.": operator.ne,
       ".xor.": operator.xor,
     }
+
+    @staticmethod
+    def new(exprs):
+        """:return: A new binary operator from the expressions.
+        :param exprs: First an arithmetic expression node type, then a Fortran operator as string, and so on.
+                      The operators must all have the same precedence.
+                      There must be one less operator than arithmetic expression node, e.g.:
+                      [TTNumber,'+',TTNumber,"-",TTLiteral,"+",TTInteger]
+        :note: The caller must ensure that the arguments are in correct order and
+               have the right type.
+        :note: Result is fully or partially unresolved. To resolve
+               it and eventually evaluate it, semantics must be checked by caller.
+        :see: translator.semantics
+        """
+        assert len(exprs) > 2, "at least two expressions expected"
+        return TTBinaryOpChain(exprs)
+    
+    @staticmethod
+    def apply_operator(op,operands):
+        """Applies the same operator multiple times between the operands.
+        :param operands: The operands of some arithmetic expression node type. At least two.
+        :param operator: Single Fortran operator.
+        :note: Result is fully or partially unresolved. To resolve
+               it and eventually evaluate it, semantics must be checked by caller.
+        :see: translator.semantics
+        """
+        assert len(operands) > 1, "at least two operands expected."
+        num_operands = len(operands)
+        exprs = [op]*(2*num_operands-1)
+        for i,opd in len(operands):
+            exprs[2*i] = opd
+        return TTBinaryOpChain.new(exprs)
+
+    @staticmethod
+    def multiply(operands):
+        """:return: An instance of TTBinaryOpChain that
+                    represents a product of the operands.
+        :see: TTBinaryOpChain.apply_operator
+        """
+        return TTBinaryOpChain.apply_operator("*",operands)
+    
+    @staticmethod
+    def divide(operands):
+        """:return: An instance of TTBinaryOpChain that
+                    represents division of the operands.
+        :see: TTBinaryOpChain.apply_operator
+        """
+        return TTBinaryOpChain.apply_operator("/",operands)
+    
+    @staticmethod
+    def add(operands):
+        """:return: An instance of TTBinaryOpChain that
+                    represents a product of the operands.
+        :see: TTBinaryOpChain.apply_operator
+        """
+        return TTBinaryOpChain.apply_operator("+",operands)
+   
+    @staticmethod
+    def substract(operands):
+        """:return: An instance of TTBinaryOpChain that
+                    represents a product of the operands.
+        :see: TTBinaryOpChain.new
+        """
+        return TTBinaryOpChain.apply_operator("-",operands)
+    
+    @static_method
+    def size_expr(lbound,ubound,step=None):
+        """:return: A binary operator representing the number
+                    of elements between the INCLUSIVE upper bound and 
+                    the INCLUSIVE lower bound.
+        :param ubound: INCLUSIVE lower bound expr 
+        :param ubound: INCLUSIVE upper bound expr
+        :param step: A step size or None.
+        :see: TTBinaryOpChain.new
+        """
+        delta = TTBinaryOpChain.new([ubound,"-",lbound,"+",TTNumber(["1"])])
+        if step == None:
+            return delta
+        else:
+            return TTBinaryOpChain.new([delta,"/",step])
+ 
     
     def _assign_fields(self, tokens):
         #print([type(tk) for tk in tokens[0]])
@@ -2244,7 +2347,9 @@ def TTExtent(base.TTNode)
         elif len(tokens) == 2: # lb + ':'
             self.lbound = tokens[0]
         else len(tokens) == 1: # ub
-            self.ubound = tokens[1]
+            self.lbound = tokens[0]
+            self.ubound = tokens[0]
+        self._size_expr = None
 
     def child_nodes(self):
         if isinstance(self.lbound,tree.TTNode):
@@ -2264,23 +2369,17 @@ def TTExtent(base.TTNode)
     @property
     def ubound_is_dots(self):
         return self.lbound == ".."
+
     @property
     def has_specified_size(self):
         """:return: If the size has been specified
                     in terms of runtime or compile time
                     variables."""
         return (
-          self.ubound_specified
+          self.lbound_specified
+          and self.ubound_specified
           and not self.ubound_is_asterisk
           and not self.ubound_is_dots 
-        )
-        
-    def size_expr(self):
-        """Produces an tree representation of the size
-        correspondin to the extent specification."""
-        assert self.has_specified_size
-        return TTBinaryOpChain(
-          [self.ubound,"-",self.lbound,"+",TTNumber(["1"])] 
         )
 
     @property
@@ -2291,10 +2390,10 @@ def TTExtent(base.TTNode)
         """
         if not self.has_specified_size:
             return False
-        size_expr = self.size_expr()
-        if size_expr.is_parameter:
-            return True
-        return False
+        for child in self.child_nodes():
+            if not child.yields_parameter:
+                return False
+        return True
     
     @property
     def has_literal_fixed_size(self):
@@ -2304,11 +2403,19 @@ def TTExtent(base.TTNode)
         """
         if not self.has_specified_size:
             return False
-        size_expr = self.size_expr()
-        if size_expr.is_literal:
-            return True
-        return False
-        
+        for child in self.child_nodes():
+            if not child.yields_literal:
+                return False
+        return True
+
+    @property
+    def size_expr(self):
+        assert self._size_expr != None
+        return self._size_expr
+
+    @size_expr.setter
+    def size_expr(self,expr):
+        self._size_expr = expr
 
 def set_arith_expr_parse_actions(grammar):
     grammar.logical.setParseAction(TTLogical)

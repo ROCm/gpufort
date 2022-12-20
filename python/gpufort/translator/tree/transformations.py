@@ -37,18 +37,29 @@ class TTDummy(TTInjectedNode):
 
 class TTDummyStatement(TTInjectedStatement):
     """A node with user-defined C/C++ and Fortran
-    representations, specified as string.
+    representations, specified as string or tree node.
     """
 
-    def __init__(self,cstr,fstr):
-        """:param str cstr: The C/C++ representation.
-        :param str fstr: The Fortran representation."""
-        self._cstr = cstr
-        self._fstr = fstr 
+    def __init__(self,crepr,frepr):
+        """:param crepr: The C/C++ representation.
+        :param str frepr: The Fortran representation."""
+        self._crepr = crepr
+        self._frepr = frepr 
+    def cstr(self):
+        return self._crepr
+    def fstr(self):
+        return self._frepr
+
+class TTCDummyStatement(TTInjectedStatement):
+    """A node with user-defined C/C++ and NO Fortran
+    representations.
+    """
+
+    def __init__(self,crepr):
+        """:param crepr: The C/C++ representation."""
+        self._cstr = crepr
     def cstr(self):
         return self._cstr
-    def fstr(self):
-        return self._fstr
 
 class TTUnrolledArrayAssignment(TTInjectedStatement):
     """Specific assignment class for unrolled array assignments."""
@@ -79,7 +90,7 @@ class TTUnrolledArrayAssignment(TTInjectedStatement):
         assert False, "no Fortran representation"
 
 class TTSubstStatement(TTInjectedStatement):
-    """A statement with original and substituted tree. 
+    """A statement with original and substituted  
     """
 
     def __init__(self,orig,subst):
@@ -148,7 +159,7 @@ class TTCElseIf(TTInjectedContainer):
         self.is_elseif = is_elseif
 
     def child_nodes(self):
-        if isinstance(self.condition,tree.TTNode):
+        if isinstance(self.condition,TTNode):
             yield self.condition
         yield from self.body
     
@@ -167,7 +178,7 @@ class TTCForLoop(TTInjectedContainer):
           index_type = "int"
         ):
           """Except `index_type` all arguments can be 
-          and instance of tree.TTNode or str."""
+          and instance of TTNode or str."""
           self._init()
           self.index = index
           self.excl_ubound = excl_ubound
@@ -192,6 +203,51 @@ for ({prefix}{idx} = {ilb};
           eub = base.to_cstr(self.excl_ubound),
           step_as_str = base.to_cstr(self.step) if base.to_cstr(self.step) != None else "1",
           prefix = (self.index_type+" ") if base.to_cstr(self.declare_index) else ""
+        )
+          
+class TTCCopyStatement(TTInjectedStatement):
+    """Emits a copy statement such as `dest = src;`
+    or `dest[dest_idx] = src[src_idx];`
+    """
+
+    def __init__(self,
+        dest_name,
+        src_name,
+        dest_index = None,
+        src_index = None,
+      ):
+        self.dest_name = dest_name
+        self.src_name = src_name
+        self.dest_index = dest_index
+        self.src_index = src_index
+    
+    def cstr(self):
+        dest = self.dest_name
+        src = self.src_name
+        if self.dest_index != None:
+            dest += "[" + self.dest_index + "]"
+        if self.src_index != None:
+            src += "[" + self.src_index + "]"
+        return "{} = {};".format(dest,src)
+
+class TTCCopyForLoop(TTCForLoop):
+    """Emits a for loop that copies from one type with 
+    operator [] to the other.
+    """
+
+    def __init__(self,
+        dest_name,
+        src_name,
+        index,
+        num_elements,
+      ):
+        """:param str dest_name: Name of the buffer to write to.
+        :param str src_name: Name of the buffer to read from.
+        :param num_elements: The number of elements to copy.
+        """
+        TTCForLoop.__init__(self,index,num_elements)
+        self.body.append(
+          TTCCopyStatement(dest_name,src_name,index,index)
         )
   
 class TTCVarDecl(TTInjectedStatement):
@@ -231,7 +287,7 @@ class TTCArrayVarDecl(TTCVarDecl):
         rhs = None
       ):
         """Except `index_type` all arguments can be 
-        and instance of tree.TTNode or str."""
+        and instance of TTNode or str."""
         TTCVarDecl.__init__(
           ctype,
           base.to_cstr(var_expr) + "["+ base.to_cstr(size_expr) + "]",
@@ -241,9 +297,8 @@ class TTCArrayVarDecl(TTCVarDecl):
 class TTCVarDeclFromFortranSymbol(TTCVarDecl):
 
     def __init__(self,
+      name,
       symbol_info,
-      bytes_per_element,
-      bounds = None,
       rhs = None
     ):
       """
@@ -252,40 +307,25 @@ class TTCVarDeclFromFortranSymbol(TTCVarDecl):
                      or None.
       # TODO: Need resolved bounds when resolving clauses.
       """
-      self.symbol_info = symbol_info
-      self.bytes_per_element = bytes_per_element
       type_as_cstr = conv.c_type(
-        self.symbol_info.type,
-        self.bytes_per_element
+        symbol_info.type,
+        symbol_info.bytes_per_element
       )
-      rhs_as_cstr = base.to_cstr(rhs) 
-      #
-      if bounds == None:
-          if symbol_info.rank > 0:
-              bounds = self.symbol_info.resolved_bounds # TODO resolve bounds
-      elif isinstance(bounds,list) and len(bounds):
-          assert symbol_info.rank > 0, "bound specified for scalar variable" # TODO include to semantics check
-          extents = []
-          for bound in bounds:
-              if isinstance(bound,arithexpr.TTSlice): # TODO ensure that lbound,ubound, are specified and parametric
-                                                        # TODO deeper analysis necessary to understand if the delta between ubound and lbound is parameter/literal
-                  assert False, "not implemented"
-              else: # TODO ensure that array has a fixed size
-                  extents.append(base.to_cstr(bound))
-      elif isinstance(bounds,(base.TTNode,str)):
-          size_expr_as_cstr = base.to_cstr(bounds)
+      if symbol_info.rank > 0:
+          var_expr_as_cstr = name + "["+ base.to_cstr(size_expr) + "]",
       else:
-          assert bounds == None, "not sure what to do with type '{}'".format(type(bounds))
-      TTCVarDecl.__init__(
-        self,
+          var_expr_as_cstr = name
+      #
+      TTCVarDecl.__init__(self,
         type_as_cstr,
-        size_expr_as_cstr,
-        base.to_cstr(rhs)
+        var_expr_as_cstr,
+        base.to_cstr(rhs) if rhs != None else None
       )
     
   def cstr(self):
       TTCVarDecl.cstr(self)
 
+# todo: deprecated
 class TTCReductionVarDeclFromFortranSymbol(TTCVarDeclFromFortranSymbol):
     """Injects reduction variable declarations."""
     # before loopnest
@@ -316,37 +356,34 @@ class TTCReductionOpApplication(TTInjectedStatement):
     # within loopnest, at the end of the inner loop
    
     def __init__(self,
-        var_expr_as_str,
-        buffer_access_expr_as_str,
-        c_type_as_str,
-        fortran_op_as_str,
+        var_expr,
+        buffer_access_expr,
+        c_type,
+        fortran_op,
       ):
         """Constructor.
         :param str op: A Fortran reduction operator. 
-        :param str buffer_access_expr_as_str: Expression for accessing the buffer, including
-                                              reduction variable etc.
+        :param str buffer_access_expr: Expression for accessing the buffer, including
+                                       reduction variable etc.
         """
-        self.var_expr_as_str = var_expr_as_str
-        self.buffer_access_expr_as_str = buffer_access_expr_as_str
-        self.c_type_as_str = c_type_as_str
-        self.fortran_op_as_str = fortran_op_as_str,
-
-    def fstr(self):
-        assert False, "not implemented"
+        self.var_expr = var_expr
+        self.buffer_access_expr = buffer_access_expr
+        self.c_type = c_type
+        self.fortran_op = fortran_op
 
     def cstr(self):
-        c_op = conv.reduction_c_op(self.fortran_op_as_str)
+        c_op = conv.reduction_c_op(self.fortran_op)
         if c_op in  ["min","max"]:
             return "{0} = {1}({0},{2});".format(
-              buffer_access_expr_as_str,
-              self.fortran_op_as_str,
-              var_expr_as_str
+              base.to_cstr(self.buffer_access_expr),
+              c_op,
+              base.to_cstr(self.var_expr)
             )
         else:
             return "{0} = {0} {1} {2};".format(
-              buffer_access_expr_as_str,
-              self.fortran_op_as_str,
-              self.name
+              base.to_cstr(self.buffer_access_expr),
+              c_op,
+              base.to_cstr(self.var_expr)
             )
 
 class TTCSyncThreads(TTInjectedStatement):
@@ -393,6 +430,59 @@ class TTCReductionBlockwiseAggregation(TTInjectedContainer):
           TTCElseIf(mask),
         ]
         self.body[-1].append(aggregate_loop)
+
+def render_gpufort_array_descr_type(rank,ctype):
+    return "gpufort::array_descr{}<{}>".format(rank,ctype)
+
+def render_gpufort_array_type(rank,ctype):
+    return "gpufort::array{}<{}>".format(rank,ctype)
+
+class TTCGpufortArrayPtrDecl(TTCVarDecl):
+    """Emits C++ code such as `gpufort::array_descr1<float> arr;`.
+    """ 
+    def __init__(self,
+        var_name,
+        symbol_info,
+      ):
+        element_type = conv.c_type(
+          symbol_info.type,
+          symbol_info.bytes_per_element
+        )
+        TTCVarDecl.__init__(self,
+          render_gpufort_array_descr_type(symbol_info.rank,element_type),
+          var_name
+        )
+
+class TTCGpufortArrayPtrWrap(TTInjectedStatement):
+    """Emits C++ code such as `arr.wrap(&_buffer[0],n1,n2,l1,l2);`.
+    """ 
+    def __init__(self,
+        var_name,
+        buffer_name
+        symbol_info,
+      ):
+        """
+        :param str buffer_name: Name of the contiguous buffer to access.
+        """
+        self.var_name = var_name
+        self.buffer_name = buffer_name
+        self.resolved_bounds = symbol_info.resolved_bounds
+
+    def cstr(self):
+        lbounds, sizes = [], []
+        for ttextent in self.resolved_bounds:
+            lbounds.append(ttextent.lbound.cstr())
+            size = ttextent.size_expr
+            if size.yields_literal:
+                sizes.append(str(size.eval()))
+            else:
+                sizes.append(size.cstr())
+        return "{var}.wrap(nullptr,&{buf}[0],{sizes},{lbounds});".format(
+          var = self.var_name,
+          buf = self.buffer_name,
+          sizes = ",".join(sizes),
+          lbounds = ",".join(lbounds),
+        )
 
 class TTSubstAccComputeConstruct(TTSubstContainer):
     """Substitution node for an OpenACC compute construct."""

@@ -295,7 +295,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
         log_detection_("contains")
         in_contains_section_stack[-1] = True
         
-        
     def Implicit():
         nonlocal current_node
         nonlocal current_tokens

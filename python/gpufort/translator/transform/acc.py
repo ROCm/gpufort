@@ -4,6 +4,70 @@ from .. import tree
 
 from . import loops
 
+label_generator = loops.unique_label
+
+def _label_array_buffer(name):
+    return "_"+name+"_buffer"
+
+def _label_firstprivate_argument(name):
+    return "_"+name+"_at_init"
+
+def _derive_private_decl_nodes(var_name,symbol_info):
+    if symbol_info.rank > 0:
+        buffer_name = _label_array_buffer(var_name)
+        return [
+          tree.TTCVarDeclFromFortranSymbol(buffer_name,symbol_info),
+          TTCGpufortArrayPtrDecl(var_name,symbol_info),
+          TTCGpufortArrayPtrWrap(var_name,buffer_name,symbol_info),
+        ]
+    else:
+        return [
+          tree.TTCVarDeclFromFortranSymbol(var_name,symbol_info),
+        ]
+
+def _inject_private_var_decls(ttcontainer,var_list):
+    """:note: Assumes semantics check has been performed on all variables.
+    """
+    new_nodes = []
+    for ttvalue in var_list:
+        new_nodes += _derive_private_decl_nodes(
+          ttvalue.name,ttvalue.symbol_info
+        )
+    for node in reversed(new_nodes):
+        ttcontainer.body.insert(0,node)
+
+def _inject_firstprivate_var_decls(ttcontainer,var_list):
+    """:note: Assumes semantics check has been performed on all variables.
+    """
+    new_nodes = []
+    for ttvalue in ttvalue_list:
+        new_nodes += _derive_private_decl_nodes(
+          ttvalue.name,ttvalue.symbol_info
+        )
+        src_name = _label_firstprivate_argument(ttvalue.name),
+        if ttvalue.rank > 0:
+            new_nodes.append(
+              tree.TTCCopyForLoop(# dest,src,idx,n
+                ttvalue.name,
+                src_name,
+                label_generator("idx"),
+                ttvalue.symbol_info.size_expr.cstr()
+              )
+            )
+        else:
+            new_nodes.append(
+              tree.TTCCopyStatement(ttvalue.name,src_name)
+            ) 
+    for node in reversed(new_nodes):
+        ttcontainer.body.insert(0,node)
+
+def _inject_reduction_var_decls(ttcontainer,op,var_list):
+    """:note: Assumes semantics check has been performed on all variables.
+    """
+    new_nodes += _derive_private_decl_nodes(
+      ttvalue.name,ttvalue.symbol_info
+    )
+
 def _traverse_acc_compute_construct(self,ttaccdir,device_type):
     """:note: Syntax checks prevent that num_gangs, num_workers, and
               vector_length can be specified for TTAccSerial.
@@ -38,14 +102,7 @@ def _traverse_acc_compute_construct(self,ttaccdir,device_type):
     #self._result.generated_code += loops.render_hip_kernel_prolog_acc()
     #self._compute_construct = ttaccdir 
     return ... # TODO return subst
-
-def _inject_private_var_decls(ttcontainer,var_list):
-    ""
-    for var in var_list
-    pass
-
-def _inject_firstprivate_var_decls(ttcontainer,var_list):
-    pass
+        
 
 def unroll_all_acc_directives(ttcontainer,device_type):
     """Recursively unrolls all OpenACC constructs,

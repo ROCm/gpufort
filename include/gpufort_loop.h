@@ -66,6 +66,12 @@ namespace gpufort {
         gangs(gangs),
         workers(workers),
         vector_lanes(vector_lanes) {}    
+    
+    /** :return: the threads per block, i.e. the product 
+                 of workers and vector lanes*/
+    __host__ __device__ __forceinline__ int block_num_vector_lanes() const {
+      return this->workers * this->vector_lanes;
+    }
    
     /** :return: the product of all components.*/
     __host__ __device__ __forceinline__ int total_num_vector_lanes() const {

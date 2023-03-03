@@ -83,7 +83,7 @@ class MaskedCodeList:
 def render_private_vars_decl_list(ttvalues,scope):
     decl_list_snippet = ""
     for private_var in ttvalues:
-        var_expr = tree.traversals.make_fstr(private_var)
+        var_expr = tree.to_fstr(private_var)
         var_tag = indexer.scope.create_index_search_tag(var_expr) 
         if "%" in var_tag:
             # todo: get rid of this limitation,  if necessary
@@ -121,16 +121,16 @@ def render_reduction_vars_decl_list(value_op_pairs,scope):
     """
     decl_list_snippet = ""
     for (private_var, op) in value_op_pairs:
-        var_expr = tree.traversals.make_fstr(private_var)
+        var_expr = tree.to_fstr(private_var)
         var_tag = indexer.scope.create_index_search_tag(var_expr) 
         assert not "%" in var_tag, "reduction var must not be derived type member"
         tavar = analysis.create_analysis_var(scope,var_expr) 
         c_type = tavar["kind"] if tavar["f_type"]=="type" else tavar["c_type"]
-        assert tavar["rank"] == 0:
+        assert tavar["rank"] == 0
         decl_list_snippet += "{c_prefix}{c_type} {c_name} = {rhs};\n".format(
           c_prefix=c_prefix,
           c_type=c_type,
-          c_name = tavar["c_name"]
+          c_name = tavar["c_name"],
           rhs = conv.get_operator_name(reduction_op)
         )
     return decl_list_snippet

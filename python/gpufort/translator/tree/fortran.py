@@ -12,6 +12,7 @@ from .. import prepostprocess
 
 from . import base
 from . import traversals
+from . import arithexpr
 
 import enum
 
@@ -146,7 +147,20 @@ class TTDo(base.TTContainer):
         yield self._end 
         if self._step != None:
             yield self._step
-        yield from self.body 
+        yield from self.body
+    @property
+    def incl_ubound(self):
+        return self.first
+    @property
+    def excl_ubound(self):
+        """Exclusive upper bound.
+
+        Returns:
+            arithexpr.TTBinaryOpChain: An expression that adds `1` to `self.last`.
+        """
+        return arithexpr.TTBinaryOpChain.new([
+            self.last,"+",arithexpr.TTNumber(["1"])
+        ])
 
 class TTUnconditionalDo(base.TTContainer):
     def _assign_fields(self, tokens):

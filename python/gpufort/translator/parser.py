@@ -438,22 +438,6 @@ def parse_fortran_code(code,result_name=None,scope=None):
 
     return ttree
     
-_p_logic_op = re.compile(r"<=?|=?>|[/=]=|\.(eq|ne|not|and|or|xor|eqv|neqv|[gl][te])\.|\.not\.",re.IGNORECASE)
-_p_custom_op = re.compile(r"\.[a-zA-Z]+\.") # may detect logic ops too
-
-def _contains_logic_ops(tokens):
-    for tk in tokens:
-        if _p_logic_op.match(tk):
-            return True 
-    return False
-
-def _contains_custom_ops(tokens):
-    for tk in tokens:
-        if _p_custom_op.match(tk):
-            if not _p_logic_op.match(tk):
-                return True 
-    return False
-
 # API
 # todo: parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)

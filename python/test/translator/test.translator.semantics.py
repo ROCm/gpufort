@@ -124,7 +124,7 @@ class TestSemantics(unittest.TestCase):
 
     def test_02_parse_arith_expr(self):
         for i,test in enumerate(TestSemantics.parse_arith_expr_testdata):
-            ttarithexpr = translator.parser.parse_arith_expr(test)
+            ttarithexpr = translator.tree.parse_arith_expr(test)
             TestSemantics.parse_arith_expr_parse_results.append(ttarithexpr)
     
     def test_03_resolve_arith_expr(self):
@@ -203,7 +203,7 @@ class TestSemantics(unittest.TestCase):
     
     def test_04_parse_rvalue(self):
         for i,test in enumerate(TestSemantics.parse_rvalue_testdata):
-            ttrvalue = translator.parser.parse_rvalue(test)
+            ttrvalue = translator.tree.parse_rvalue(test)
             TestSemantics.parse_rvalue_parse_results.append(ttrvalue)
 
     def test_05_resolve_rvalue(self):
@@ -291,7 +291,7 @@ class TestSemantics(unittest.TestCase):
     def test_06_parse_function_call(self):
         for i,test in enumerate(TestSemantics.parse_function_call_testdata):
             #print(test)
-            ttrvalue = translator.parser.parse_rvalue(test)
+            ttrvalue = translator.tree.parse_rvalue(test)
             TestSemantics.parse_function_call_parse_results.append(ttrvalue)
     
     def test_07_resolve_function_call(self):
@@ -321,7 +321,7 @@ class TestSemantics(unittest.TestCase):
       "!$acc kernels loop",
       "!$acc kernels loop gang(10) worker vector",
       "!$acc kernels loop gang(10) worker vector_length(32)",
-      "!$acc kernels loop gang(10) worker vector_length(32) reduction(min:x)",
+      "!$acc kernels loop gang(10) worker vector_length(32) reduction(min:k)",
     ]
 
     acc_directive_testdata_wrong_syntax = [
@@ -339,7 +339,7 @@ class TestSemantics(unittest.TestCase):
     def _acc_assert_fails_to_parse(self,test):
         passed = True
         try:
-            translator.parser.parse_acc_directive(test)
+            translator.tree.parse_acc_directive(test)
         except util.error.SyntaxError as e: 
             passed = False
             pass
@@ -360,11 +360,11 @@ class TestSemantics(unittest.TestCase):
             self._acc_assert_fails_to_parse(test)
         for i,test in enumerate(TestSemantics.acc_directive_testdata):
             #print(test)
-            ttaccdir = translator.parser.parse_acc_directive(test)
+            ttaccdir = translator.tree.parse_acc_directive(test)
             TestSemantics.acc_directive_parse_results.append(ttaccdir)
         for i,test in enumerate(TestSemantics.acc_directive_testdata_wrong_semantics):
             #print(test)
-            ttaccdir = translator.parser.parse_acc_directive(test)
+            ttaccdir = translator.tree.parse_acc_directive(test)
             TestSemantics.acc_directive_parse_results_wrong_semantics.append(ttaccdir)
     
     def test_09_resolve_acc_directive(self):

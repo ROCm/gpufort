@@ -316,7 +316,6 @@ class Reference(ArithExprNode):
     def bytes_per_element(self):
         assert self._bytes_per_element != None
         return self._bytes_per_element
-    
     @bytes_per_element.setter
     def bytes_per_element(self,bytes_per_element):
         self._bytes_per_element = bytes_per_element 
@@ -1053,11 +1052,13 @@ class TTDerivedTypePart(ArithExprNode):
 
     @property
     def name(self):
+        converter = traversals.make_fstr
         result = converter(self._derived_type)
         current = self._element
         while isinstance(current,TTDerivedTypePart):
             current = current.element
             result += "%"+converter(current.derived_type)
+        # last element:
         if isinstance(current,TTFunctionCall):
             result += "%"+converter(current.name)
         else: # TTIdentifier
@@ -1837,14 +1838,14 @@ class TTBinaryOpChain(ArithExprNode):
         return TTBinaryOpChain.apply_operator("+",operands)
    
     @staticmethod
-    def substract(operands):
+    def subtract(operands):
         """:return: An instance of TTBinaryOpChain that
                     represents a product of the operands.
         :see: TTBinaryOpChain.new
         """
         return TTBinaryOpChain.apply_operator("-",operands)
     
-    @static_method
+    @staticmethod
     def size_expr(lbound,ubound,step=None):
         """:return: A binary operator representing the number
                     of elements between the INCLUSIVE upper bound and 
@@ -2327,7 +2328,7 @@ class TTSubroutineCall(base.TTStatement):
         return self._subroutine.cstr() + ";"
 
 # Declarations
-def TTExtent(base.TTNode)
+class TTExtent(base.TTNode):
     """Extent specifier such as
     '..',
     '*',
@@ -2346,7 +2347,7 @@ def TTExtent(base.TTNode)
             self.ubound = tokens[2]
         elif len(tokens) == 2: # lb + ':'
             self.lbound = tokens[0]
-        else len(tokens) == 1: # ub
+        elif len(tokens) == 1: # ub
             self.lbound = tokens[0]
             self.ubound = tokens[0]
         self._size_expr = None

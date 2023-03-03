@@ -9,11 +9,12 @@ from . import tree
 from . import opts
 from . import conv
 
+
 class Semantics:
     """Class for performing semantics checks.
-   
+
     Configurable class members:
-    
+
     * **allow_array_index_to_be_array**:
       Allow array indices to be arrays itself, defaults to False.
     * **allow_array_index_to_be_real**:
@@ -24,7 +25,7 @@ class Semantics:
       Supported ACC device types, defaults to ["host","nohost","nvidia","radeon","hip]
     * **acc_allow_unchecked_mapping_of_subarrays**:
       Supported ACC device types, defaults to ["host","nohost","nvidia","radeon","hip]
-    
+
     Concepts:
 
     * Uses the walk_postorder method from the tree.TTNode class
@@ -48,84 +49,86 @@ class Semantics:
         self.allow_array_index_to_be_real = False
         self.allow_interface_calls = False
         self.acc_allow_unchecked_mapping_of_subarrays = True
-        self.acc_supported_device_types = ["host","nohost","nvidia","radeon","hip"]
+        self.acc_supported_device_types = [
+            "host", "nohost", "nvidia", "radeon", "hip"]
         #
         self.warnings = []
-    
-    def _lookup_bytes_per_element(self,ttnode):
+
+    def _lookup_bytes_per_element(self, ttnode):
         """Shortcut for nodes with (resolved) kind attribute."""
-        return conv.bytes_per_element(ttnode.type,ttnode.kind)
+        return conv.bytes_per_element(ttnode.type, ttnode.kind)
 
     def _default_integer_bytes_per_element(self):
-        return conv.bytes_per_element(tree.FortranType.INTEGER,None)
-        
-    def _check_yields_expected_rank(self,ttnode,expected_rank,errmsg):
-        """Checks if the expression has/yields the expected rank."""
-        if ( expected_rank != ttnode.rank ):
-            raise util.error.SemanticError(errmsg) 
+        return conv.bytes_per_element(tree.FortranType.INTEGER, None)
 
-    def _yields_expected_type(self,ttnode,expected_type,expected_kind):
+    def _check_yields_expected_rank(self, ttnode, expected_rank, errmsg):
+        """Checks if the expression has/yields the expected rank."""
+        if (expected_rank != ttnode.rank):
+            raise util.error.SemanticError(errmsg)
+
+    def _yields_expected_type(self, ttnode, expected_type, expected_kind):
         """:return: If the arithmetic expression node yields the expected type."""
         actual_type = ttnode.type
-        #actual_kind = ttnode.kind
-        #actual_bytes = conv.bytes_per_element(actual_type,actual_kind)
-        actual_bytes = ttnode.bytes_per_element 
-        expected_bytes = conv.bytes_per_element(expected_type,expected_kind)
-        return (actual_type == expected_type 
-               or actual_bytes == expected_bytes)
+        # actual_kind = ttnode.kind
+        # actual_bytes = conv.bytes_per_element(actual_type,actual_kind)
+        actual_bytes = ttnode.bytes_per_element
+        expected_bytes = conv.bytes_per_element(expected_type, expected_kind)
+        return (actual_type == expected_type
+                or actual_bytes == expected_bytes)
 
-    def _yields_default_integer_type(self,ttnode):
+    def _yields_default_integer_type(self, ttnode):
         """:return: if the arithmetic expression node yields the default integer type."""
         return self._yields_expected_type(
-          ttnode,errmsg,tree.FortranType.INTEGER,None
+            ttnode, errmsg, tree.FortranType.INTEGER, None
         )
 
-    def _yields_default_real_type(self,ttnode):
+    def _yields_default_real_type(self, ttnode):
         return self._yields_expected_type(
-          ttnode,errmsg,tree.FortranType.REAL,None
+            ttnode, errmsg, tree.FortranType.REAL, None
         )
 
-    def _yields_default_logical_type(self,ttnode):
+    def _yields_default_logical_type(self, ttnode):
         return self._yields_expected_type(
-          ttnode,errmsg,tree.FortranType.LOGICAL,None
+            ttnode, errmsg, tree.FortranType.LOGICAL, None
         )
 
-    def _check_yields_expected_type(self,ttnode,errmsg,expected_type,expected_kind):
+    def _check_yields_expected_type(self, ttnode, errmsg, expected_type, expected_kind):
         """Checks if the expression has/yields the expected type (and kind).
         :raise util.error.SemanticError: If a type or kind mismatch was detected.
         """
-        if not self._yields_expected_type(ttnode,expected_type,expected_kind):
-            raise util.error.SemanticError(errmsg) 
-    
-    def _check_yields_integer_type_of_kind(self,ttnode,errmsg,expected_kind):
+        if not self._yields_expected_type(ttnode, expected_type, expected_kind):
+            raise util.error.SemanticError(errmsg)
+
+    def _check_yields_integer_type_of_kind(self, ttnode, errmsg, expected_kind):
         self._check_yields_expected_type(
-          ttnode,errmsg,tree.FortranType.INTEGER,expected_kind
-        )
-    
-    def _check_yields_default_integer_type(self,ttnode,errmsg):
-        self._check_yields_integer_type_of_kind(ttnode,errmsg,None)
-    
-    def _check_yields_real_type_of_kind(self,ttnode,errmsg,expected_kind):
-        self._check_yields_expected_type(
-          ttnode,errmsg,tree.FortranType.REAL,expected_kind
-        )
-    
-    def _check_yields_default_real_type(self,ttnode,errmsg):
-        self._check_yields_real_type_of_kind(ttnode,errmsg,None)
-   
-    def _check_yields_acc_handle_type(self,ttnode,errmsg):
-        self._check_yields_integer_type_of_kind(ttnode,errmsg,"acc_handle_kind")
-    
-    def _check_yields_default_logical_type(self,ttnode,errmsg):
-        self._check_yields_expected_type(
-          ttnode,errmsg,tree.FortranType.LOGICAL,expected_kind
+            ttnode, errmsg, tree.FortranType.INTEGER, expected_kind
         )
 
-    def _resolve_literal(self,ttnode,scope):
+    def _check_yields_default_integer_type(self, ttnode, errmsg):
+        self._check_yields_integer_type_of_kind(ttnode, errmsg, None)
+
+    def _check_yields_real_type_of_kind(self, ttnode, errmsg, expected_kind):
+        self._check_yields_expected_type(
+            ttnode, errmsg, tree.FortranType.REAL, expected_kind
+        )
+
+    def _check_yields_default_real_type(self, ttnode, errmsg):
+        self._check_yields_real_type_of_kind(ttnode, errmsg, None)
+
+    def _check_yields_acc_handle_type(self, ttnode, errmsg):
+        self._check_yields_integer_type_of_kind(
+            ttnode, errmsg, "acc_handle_kind")
+
+    def _check_yields_default_logical_type(self, ttnode, errmsg):
+        self._check_yields_expected_type(
+            ttnode, errmsg, tree.FortranType.LOGICAL, expected_kind
+        )
+
+    def _resolve_literal(self, ttnode, scope):
         """Looks up the bytes per element for the literal type."""
         ttnode.bytes_per_element = self._lookup_bytes_per_element(ttnode)
-    
-    def _check_array_constructor(self,ttnode,scope):
+
+    def _check_array_constructor(self, ttnode, scope):
         """Checks that the elements all yield the same numeric, logical,
         or character type. Unlike in case of the complex constructor,
         different numeric (and other) types and kinds, 
@@ -139,11 +142,11 @@ class Semantics:
             if (entry.type != first_entry_type
                or entry.bytes_per_element != first_entry_bytes_per_element):
                 raise util.error.SyntaxError(errmsg.format(
-                  first_entry_type,first_entry_bytes_per_element,
-                  entry.type,entry.bytes_per_element 
+                    first_entry_type, first_entry_bytes_per_element,
+                    entry.type, entry.bytes_per_element
                 ))
-    
-    def _check_complex_constructor(self,ttnode,scope):
+
+    def _check_complex_constructor(self, ttnode, scope):
         """Checks that the components yield numeric types
         and derives the bytes per element of the complex-yielding
         expression.
@@ -152,19 +155,19 @@ class Semantics:
         errmsg = "complex constructor components must be integer or real"
         current_type = ttnode.real.type
         current_bytes_per_element = ttnode.real.bytes_per_element
-        for component in ttnode.child_nodes(): # ttnode.real, ttnode.imag
+        for component in ttnode.child_nodes():  # ttnode.real, ttnode.imag
             if (not component.yields_numeric_type
                or component.yields_complex):
                 raise util.error.SyntaxError(errmsg)
-    
-    def _resolve_identifier(self,ttnode,scope,name=None):
+
+    def _resolve_identifier(self, ttnode, scope, name=None):
         if name == None:
             name = ttnode.name
-        ttnode.symbol_info = indexer.scope.search_scope_for_var(scope,name)
+        ttnode.symbol_info = indexer.scope.search_scope_for_var(scope, name)
         ttnode.bytes_per_element = self._lookup_bytes_per_element(ttnode)
         ttnode.symbol_info.bytes_per_element = ttnode.bytes_per_element
- 
-    def _compare_operand_and_operator(self,ttop,ttopd):
+
+    def _compare_operand_and_operator(self, ttop, ttopd):
         """Checks if operand and operator type agree.
         I.e. numeric operators cannot be applied to logical and character
         operands while logical operators cannot be applied to character and 
@@ -172,26 +175,26 @@ class Semantics:
         :param ttop: TTUnaryOp or TTBinaryOpChain
         :param ttopd: An arithmetic expression constitutent.
         :raise util.error.SemanticError: If the operator is not applicable to the operand.
-        """  
+        """
         if ttop.operator_type.is_logical and not ttopd.yields_logical:
             raise util.error.SemanticError(
-              "cannot apply logical operator '{}' on operand of type '{}'".format(
-                ttop.op, ttopd.type
-              )
+                "cannot apply logical operator '{}' on operand of type '{}'".format(
+                    ttop.op, ttopd.type
+                )
             )
         elif ttop.operator_type.is_numeric and not ttopd.yields_numeric_type:
             raise util.error.SemanticError(
-              "cannot apply numeric operator '{}' on operand of type '{}'".format(
-                ttop.op, ttopd.type
-              )
+                "cannot apply numeric operator '{}' on operand of type '{}'".format(
+                    ttop.op, ttopd.type
+                )
             )
- 
+
     def _compare_type(self,
-          this_type,
-          this_bytes_per_element,
-          other_type,
-          other_bytes_per_element,
-      ):
+                      this_type,
+                      this_bytes_per_element,
+                      other_type,
+                      other_bytes_per_element,
+                      ):
         """Type casting rules.
         :note: It must be ensured that the types are compatible
         before calling this routine.
@@ -199,16 +202,16 @@ class Semantics:
         if this_type == tree.FortranType.COMPLEX:
             if other_type == tree.FortranType.COMPLEX:
                 this_bytes_per_element = max(
-                  this_bytes_per_element,other_bytes_per_element
-                ) # else
+                    this_bytes_per_element, other_bytes_per_element
+                )  # else
         elif this_type == tree.FortranType.REAL:
             if other_type == tree.FortranType.COMPLEX:
                 this_type = other_type
                 this_bytes_per_element = other_bytes_per_element
             elif other_type == tree.FortranType.REAL:
                 this_bytes_per_element = max(
-                  this_bytes_per_element,other_bytes_per_element
-                ) # else
+                    this_bytes_per_element, other_bytes_per_element
+                )  # else
         elif this_type == tree.FortranType.INTEGER:
             if other_type == tree.FortranType.COMPLEX:
                 this_type = other_type
@@ -218,17 +221,17 @@ class Semantics:
                 this_bytes_per_element = other_bytes_per_element
             elif other_type == tree.FortranType.INTEGER:
                 this_bytes_per_element = max(
-                  this_bytes_per_element,other_bytes_per_element
-                ) # else
+                    this_bytes_per_element, other_bytes_per_element
+                )  # else
         elif other_type == tree.FortranType.LOGICAL:
             this_bytes_per_element = max(
-              this_bytes_per_element,other_bytes_per_element
-            ) # else
-        return this_type, this_bytes_per_element 
-    
+                this_bytes_per_element, other_bytes_per_element
+            )  # else
+        return this_type, this_bytes_per_element
+
     def _compare_binary_op_operand_ranks(self,
-        ttopds,
-      ):
+                                         ttopds,
+                                         ):
         """Checks if the ranks of the operands agree, i.e. 
         if all operands are of the same rank or scalars.
         :return: Maximum rank of the operands.
@@ -239,38 +242,39 @@ class Semantics:
         for opd in ttopds[1:]:
             other_rank = opd.rank
             if max_rank == 0 or other_rank == 0:
-                max_rank = max(max_rank,other_rank)
+                max_rank = max(max_rank, other_rank)
             elif max_rank != other_rank:
                 raise util.error.SemanticError(
-                  "operands have incompatible rank, rank {} vs. rank {}".format(
-                    max_rank,other_rank
-                  )
+                    "operands have incompatible rank, rank {} vs. rank {}".format(
+                        max_rank, other_rank
+                    )
                 )
         return max_rank
 
-    def _check_array_index(self,ttarg):
+    def _check_array_index(self, ttarg):
         """Checks if the array index is an integer -- or real
         if legacy extensions are enabled. Issues warnings
         if the index is not of default integer type.
         :raise util.error.SemanticError: If the type is not an integer -- or real
                                          if legacy extensions are enabled."""
         if ttarg.yields_real and self.allow_array_index_to_be_real:
-            self.warnings.append("legacy extension: array index is of type real")
+            self.warnings.append(
+                "legacy extension: array index is of type real")
         elif ttarg.yields_integer:
             if ttarg.bytes_per_element != self._default_integer_bytes_per_element():
                 self.warnings.append("array index is not default integer")
         else:
             raise util.error.SemanticError("array index must be integer")
 
-    def _resolve_index_range(self,ttnode):
+    def _resolve_index_range(self, ttnode):
         """Check the type of index range components (lbound, ubound, stride),
         if specified, and derive the type and kind (bytes per element) of the
         overall expression.
         """
         for component in ttnode.child_nodes():
             self._check_array_index(component)
- 
-    def _check_array_indices(self,ttnode):
+
+    def _check_array_indices(self, ttnode):
         """Checks that all indices are integer (or real if legacy extensions are enabled).
         Check that the rank of array indices is 1.
         :note: Accepts real indices if self.allow_array_index_to_be_real is set to True.
@@ -278,31 +282,31 @@ class Semantics:
         :raise util.error.SemanticError:
         """
         for ttarg in ttnode.args:
-            if isinstance(ttarg,tree.TTKeywordArgument):
+            if isinstance(ttarg, tree.TTKeywordArgument):
                 raise util.error.SyntaxError(
-                  "illegal keyword argument '{}' in argument list of array".format(
-                    ttarg.key
-                  )
+                    "illegal keyword argument '{}' in argument list of array".format(
+                        ttarg.key
+                    )
                 )
-            elif not isinstance(ttarg,tree.TTIndexRange):
-                 self._check_array_index(ttarg)
-                 if ttarg.rank > 0:
-                     if not self.allow_array_index_to_be_array:
-                         raise util.error.LimitationError(
-                           "array index is array itself"
-                         )
-                     elif ttarg.rank > 1:
-                         raise util.error.SemanticError(
-                           "array index is an array with rank {}".format(
-                             ttarg.rank
-                           )
-                         )
+            elif not isinstance(ttarg, tree.TTIndexRange):
+                self._check_array_index(ttarg)
+                if ttarg.rank > 0:
+                    if not self.allow_array_index_to_be_array:
+                        raise util.error.LimitationError(
+                            "array index is array itself"
+                        )
+                    elif ttarg.rank > 1:
+                        raise util.error.SemanticError(
+                            "array index is an array with rank {}".format(
+                                ttarg.rank
+                            )
+                        )
 
     def _compare_actual_and_expected_argument(self,
-        ttfunccall,ttarg,expected_arg,
-        check_rank = False,
-        check_bytes_per_element = False
-      ):
+                                              ttfunccall, ttarg, expected_arg,
+                                              check_rank=False,
+                                              check_bytes_per_element=False
+                                              ):
         """Compare actual and expected argument's type, bytes per element and rank.
         :param bool check_rank: Ensure expected rank and argument rank match.
         :param bool check_bytes_per_element: Ensure expected bytes per element 
@@ -312,40 +316,39 @@ class Semantics:
             print(ttarg.type)
             if not expected_arg.matches_any_type:
                 raise util.error.SemanticError(
-                  "{}: argument '{}' has wrong type, expected {}".format(
-                    ttfunccall.name,expected_arg.name,
-                    expected_arg.full_type_as_str
-                  )
+                    "{}: argument '{}' has wrong type, expected {}".format(
+                        ttfunccall.name, expected_arg.name,
+                        expected_arg.full_type_as_str
+                    )
                 )
         # rank
         if check_rank:
             if not expected_arg.matches_rank(ttarg.rank):
                 # todo: Use min rank if it differs from rank, in error message
                 raise util.error.SemanticError(
-                  "{}: argument '{}' has wrong rank, expected rank {}".format(
-                    ttfunccall.name,expected_arg.name,
-                    ttarg.rank
-                  )
+                    "{}: argument '{}' has wrong rank, expected rank {}".format(
+                        ttfunccall.name, expected_arg.name,
+                        ttarg.rank
+                    )
                 )
         # bytes per element
         if check_bytes_per_element:
             if not expected_arg.matches_any_type:
                 expected_bytes_per_element = conv.bytes_per_element(
-                  expected_arg.type,expected_arg.kind 
+                    expected_arg.type, expected_arg.kind
                 )
                 if ttarg.bytes_per_element != expected_bytes_per_element:
                     raise util.error.SemanticError(
-                      "{}: argument '{}' has wrong kind, expected {} bytes".format(
-                        ttfunccall.name,expected_arg.name,
-                        expected_bytes_per_element
-                      )
+                        "{}: argument '{}' has wrong kind, expected {} bytes".format(
+                            ttfunccall.name, expected_arg.name,
+                            expected_bytes_per_element
+                        )
                     )
-    
 
     def _resolve_function_call(self,
-        ttfunccall,
-        symbol_info
-      ):
+                               ttfunccall,
+                               symbol_info
+                               ):
         """Checks the order, type and rank of function call arguments.
 
         * Check that no positional argument appears after the first keyword argument.
@@ -362,66 +365,66 @@ class Semantics:
         func_result_kind = func_result.kind
         present_args = []
         max_rank = 0
-        for pos,ttarg in enumerate(ttfunccall.args):
-            if isinstance(ttarg,tree.TTIndexRange):
+        for pos, ttarg in enumerate(ttfunccall.args):
+            if isinstance(ttarg, tree.TTIndexRange):
                 raise util.error.SyntaxError(
-                  "{}: no index range allowed as function call argument".format(
-                    ttfunccall.name
-                  )
+                    "{}: no index range allowed as function call argument".format(
+                        ttfunccall.name
+                    )
                 )
-            elif isinstance(ttarg,tree.TTKeywordArgument):
+            elif isinstance(ttarg, tree.TTKeywordArgument):
                 found_keyword_arg = True
                 arg_name = ttarg.key.lower()
                 if arg_name not in dummy_args:
                     raise util.error.SemanticError(
-                      "{}: keyword '{}' does match any dummy argument name".format(
-                         ttfunccall.name,ttarg.key
-                       )
+                        "{}: keyword '{}' does match any dummy argument name".format(
+                            ttfunccall.name, ttarg.key
+                        )
                     )
             else:
                 if found_keyword_arg:
                     raise util.error.SemanticError(
-                      "{}: positional argument after keyword argument".format(
-                         ttfunccall.name,ttarg.key
-                      )
+                        "{}: positional argument after keyword argument".format(
+                            ttfunccall.name, ttarg.key
+                        )
                     )
                 arg_name = dummy_args[pos]
             present_args.append(arg_name)
-        
+
             # compare type, bytes per element, and rank for non-elemental functions
             expected_arg = symbol_info.get_argument(arg_name)
             self._compare_actual_and_expected_argument(
-              ttfunccall,ttarg,expected_arg,
-              check_rank = not symbol_info.is_elemental, 
-              check_bytes_per_element = True
+                ttfunccall, ttarg, expected_arg,
+                check_rank=not symbol_info.is_elemental,
+                check_bytes_per_element=True
             )
             # func has kind arg that modifies result kind
-            if (arg_name.lower() == "kind" 
+            if (arg_name.lower() == "kind"
                and symbol_info.result_depends_on_kind):
-                if isinstance(ttarg,tree.TTKeywordArgument):
-                    func_result_kind = ttarg.value.fstr().replace(" ","")
+                if isinstance(ttarg, tree.TTKeywordArgument):
+                    func_result_kind = ttarg.value.fstr().replace(" ", "")
                 else:
-                    func_result_kind = ttarg.fstr().replace(" ","")
-            max_rank = max(max_rank,ttarg.rank)
+                    func_result_kind = ttarg.fstr().replace(" ", "")
+            max_rank = max(max_rank, ttarg.rank)
         # set bytes per element
         ttfunccall.bytes_per_element = conv.bytes_per_element(
-          func_result_type,func_result_kind
+            func_result_type, func_result_kind
         )
- 
+
         # check if all non-optional arguments are specified
-        self._check_required_arguments_are_present(symbol_info,present_args)
+        self._check_required_arguments_are_present(symbol_info, present_args)
         if symbol_info.is_elemental:
             if max_rank > 0:
                 self._check_elemental_function_argument_rank(
-                  ttfunccall,symbol_info,max_rank
+                    ttfunccall, symbol_info, max_rank
                 )
             if symbol_info.is_conversion:
-                self._check_conversion_arguments(ttfunccall,symbol_info)
+                self._check_conversion_arguments(ttfunccall, symbol_info)
 
     def _check_required_arguments_are_present(self,
-        symbol_info,
-        present_args,
-      ):
+                                              symbol_info,
+                                              present_args,
+                                              ):
         """Check if all non-optional arguments are specified.
         :raise util.error.SemanticError: If a required argument is not specified.
         """
@@ -430,40 +433,40 @@ class Semantics:
             if not expected_arg.is_optional:
                 if arg_name not in present_args:
                     raise util.error.SemanticError(
-                      "{}: required argument '{}' not specified".format(
-                         ttfunccall.name,arg_name
-                      )
+                        "{}: required argument '{}' not specified".format(
+                            ttfunccall.name, arg_name
+                        )
                     )
-                    
+
     def _check_elemental_function_argument_rank(self,
-        ttfunccall,
-        symbol_info,
-        max_rank
-      ):
+                                                ttfunccall,
+                                                symbol_info,
+                                                max_rank
+                                                ):
         """Checks that all arguments have the same rank 'max_rank' or are scalars,
         ignoring the kind argument if it is present.
         """
-        for name,ttarg in ttfunccall.iter_actual_arguments():
+        for name, ttarg in ttfunccall.iter_actual_arguments():
             expected_arg = symbol_info.get_argument(name.lower())
             if not (
-                name.lower() == "kind" 
+                name.lower() == "kind"
                 and ttfunccall.result_depends_on_kind
-              ):
+            ):
                 rank = ttarg.rank
                 if rank > 0 and rank != max_rank:
                     raise util.error.SyntaxError(
-                      "{}: incompatible elemental function argument ranks, {} vs {}".
+                        "{}: incompatible elemental function argument ranks, {} vs {}".
                         format(
-                          ttfunccall.name,
-                          max_rank,
-                          rank
+                            ttfunccall.name,
+                            max_rank,
+                            rank
                         )
-                      )
+                    )
 
     def _check_conversion_arguments(self,
-        ttfunccall,
-        symbol_info
-      ):
+                                    ttfunccall,
+                                    symbol_info
+                                    ):
         """Performs the following checks:
         * Checks that the main arguments x and y of
           REAL(x,kind), INT(x,kind), and CMPLX(x,y,kind) are numeric, 
@@ -475,13 +478,13 @@ class Semantics:
         """
         if symbol_info.name == "cmplx":
             one_arg_is_complex = False
-            num_args = 1 
-            for name,ttarg in ttfunccall.iter_actual_arguments():
+            num_args = 1
+            for name, ttarg in ttfunccall.iter_actual_arguments():
                 if not ttarg.yields_numeric_type:
                     raise util.error.SemanticError(
-                      "cmplx: '{}' argument is not numeric".format(
-                        name
-                      ) 
+                        "cmplx: '{}' argument is not numeric".format(
+                            name
+                        )
                     )
                 if ttarg.yields_complex:
                     one_arg_is_complex = True
@@ -489,44 +492,52 @@ class Semantics:
                     num_args += 1
             if one_arg_is_complex and num_args > 1:
                 raise util.error.SemanticError(
-                  "cmplx: two arguments specified while one is complex"
+                    "cmplx: two arguments specified while one is complex"
                 )
-        elif symbol_info.name in ["real","int"]:
-            for name,ttarg in ttfunccall.iter_actual_arguments():
-                if not ttarg.yields_numeric_type: # kind must yield numeric too
+        elif symbol_info.name in ["real", "int"]:
+            for name, ttarg in ttfunccall.iter_actual_arguments():
+                if not ttarg.yields_numeric_type:  # kind must yield numeric too
                     raise util.error.SemanticError(
-                      "{}: '{}' argument is not numeric".format(
-                        symbol_info.name,
-                        name
-                      ) 
+                        "{}: '{}' argument is not numeric".format(
+                            symbol_info.name,
+                            name
+                        )
                     )
         elif symbol_info.name == "logical":
-            for name,ttarg in ttfunccall.iter_actual_arguments():
-                if not ttarg.yields_numeric_type: # kind must yield numeric too
+            for name, ttarg in ttfunccall.iter_actual_arguments():
+                if not ttarg.yields_numeric_type:  # kind must yield numeric too
                     raise util.error.SemanticError(
-                      "{}: '{}' argument is not logical".format(
-                        symbol_info.name,
-                        name
-                      ) 
+                        "{}: '{}' argument is not logical".format(
+                            symbol_info.name,
+                            name
+                        )
                     )
         else:
-              raise util.error.LimitationError(
-                "handling of conversion '{}' is not implemented".format(ttfunccall.name)
-              )
-   
-    def _resolve_array_expr(self,ttnode):
-        ttnode.bytes_per_element = self._lookup_bytes_per_element(ttnode)
-        ttnode.symbol_info.bytes_per_element = ttnode.bytes_per_element
+            raise util.error.LimitationError(
+                "handling of conversion '{}' is not implemented".format(
+                    ttfunccall.name)
+            )
+
+    def _resolve_array_expr(self, ttnode):
+        """Resolves an array expression.
+        Performs the following operations:
+        1. Sets the bytes per element if the type is a basic datatype, i.e. not of type 'type'.
+        2. Compares the number of array indices with the array variable's rank.
+        3. Checks the type and rank of all array indices.
+        :see: _check_array_indices
+        """
+        if ttnode.type != "type":
+            ttnode.bytes_per_element = self._lookup_bytes_per_element(ttnode)
+            ttnode.symbol_info.bytes_per_element = ttnode.bytes_per_element
         if ttnode.symbol_info.rank != len(ttnode.args):
             raise util.error.SemanticError(
-              "'{}': rank mismatch in array reference, expected only {} indices".format(
-                ttnode.name,ttnode.symbol_info.rank
-              )
+                "'{}': rank mismatch in array reference, expected only {} indices".format(
+                    ttnode.name, ttnode.symbol_info.rank
+                )
             )
         self._check_array_indices(ttnode)
-        ttnode.symbol_info.resolve
- 
-    def _resolve_function_call_or_array_expr(self,ttnode,scope,name=None):
+
+    def _resolve_function_call_or_array_expr(self, ttnode, scope, name=None):
         """Resolve a function call or array indexing expression.
         In Fortran, often it is necessary, to rely on the symbol table to distinguish
         a function call from an array indexing expression.
@@ -540,16 +551,16 @@ class Semantics:
         """
         if name == None:
             name = ttnode.name
-        symbol_info = indexer.scope.search_scope_for_value_expr(scope,name)
-        if isinstance(symbol_info,indexer.indexertypes.IndexVariable):
+        symbol_info = indexer.scope.search_scope_for_value_expr(scope, name)
+        if isinstance(symbol_info, indexer.indexertypes.IndexVariable):
             ttnode.symbol_info = symbol_info
             self._resolve_array_expr(ttnode)
         else:
-            ttnode.symbol_info = symbol_info # todo
+            ttnode.symbol_info = symbol_info  # todo
             # :todo: support checking multiple candidates, think interfaces
-            self._resolve_function_call(ttnode,ttnode.symbol_info)
-    
-    def _resolve_derived_type_expr(self,ttnode,scope):
+            self._resolve_function_call(ttnode, ttnode.symbol_info)
+
+    def _resolve_derived_type_expr(self, ttnode, scope):
         """Resolve a derived type lvalue or rvalue expression.
         Assigns each part symbol information from the scope. 
         Ensures that not more than one part of the derived
@@ -563,39 +574,40 @@ class Semantics:
         for ttpart in ttnode.walk_derived_type_parts_preorder():
             identifier_parts.append(ttpart.derived_type.name)
             var_name = "%".join(identifier_parts)
-            if isinstance(ttpart.derived_type,tree.TTFunctionCall):
+            if isinstance(ttpart.derived_type, tree.TTFunctionCall):
                 ttpart.derived_type.symbol_info = indexer.scope.search_scope_for_var(
-                  scope,var_name
+                    scope, var_name
                 )
-                self._resolve_array_expr(ttpart.derived_type) 
-            else: #if isinstance(ttpart.derived_type,tree.TTIdentifier):
+                self._resolve_array_expr(ttpart.derived_type)
+            else:  # if isinstance(ttpart.derived_type,tree.TTIdentifier):
                 self._resolve_identifier(
-                  ttpart.derived_type,scope,var_name
-                ) 
+                    ttpart.derived_type, scope, var_name
+                )
             if ttpart.derived_type.rank > 0:
                 parts_with_nonzero_rank += 1
         # note: ttpart points to innermost part after loop
         identifier_parts.append(ttpart.element.name)
         var_name = "%".join(identifier_parts)
-        if isinstance(ttpart.element,tree.TTFunctionCall):
+        if isinstance(ttpart.element, tree.TTFunctionCall):
             self._resolve_function_call_or_array_expr(
-              ttpart.element,scope,var_name
-            ) 
-        else: #if isinstance(ttpart.element,tree.TTIdentifier):
+                ttpart.element, scope, var_name
+            )
+        else:  # if isinstance(ttpart.element,tree.TTIdentifier):
             self._resolve_identifier(
-              ttpart.element,scope,var_name
-            ) 
+                ttpart.element, scope, var_name
+            )
         if ttpart.element.rank > 0:
             parts_with_nonzero_rank += 1
         if parts_with_nonzero_rank > 1:
-            raise util.error.SemanticError("two or more part references with nonzero rank")
-    
-    def _check_unary_op(self,ttunaryop):
+            raise util.error.SemanticError(
+                "two or more part references with nonzero rank")
+
+    def _check_unary_op(self, ttunaryop):
         """Checks that operator and operand type are compatible.
         """
-        self._compare_operand_and_operator(ttunaryop,ttunaryop.opd)
+        self._compare_operand_and_operator(ttunaryop, ttunaryop.opd)
 
-    def _resolve_binary_op_chain(self,ttbinaryop):
+    def _resolve_binary_op_chain(self, ttbinaryop):
         """Resolve the type and rank of an binary operation.
         Implemented rules:
         * type in {COMPLEX,REAL,INTEGER}, i.e. numeric type, cannot appear with type in {CHARACTER,LOGICAL}
@@ -611,36 +623,37 @@ class Semantics:
         result_type = opds[0].type
         result_bytes_per_element = self._lookup_bytes_per_element(opds[0])
         for opd in opds[1:]:
-            self._compare_operand_and_operator(ttbinaryop,opd)
+            self._compare_operand_and_operator(ttbinaryop, opd)
             # below is ensured that numeric types are not mixed with logical or character
             (result_type, result_bytes_per_element) = self._compare_type(
-              result_type,result_bytes_per_element,
-              opd.type,opd.bytes_per_element
+                result_type, result_bytes_per_element,
+                opd.type, opd.bytes_per_element
             )
-        ttbinaryop.rank = self._compare_binary_op_operand_ranks(ttbinaryop.operands)
-        ttbinaryop.type = result_type 
+        ttbinaryop.rank = self._compare_binary_op_operand_ranks(
+            ttbinaryop.operands)
+        ttbinaryop.type = result_type
         ttbinaryop.bytes_per_element = result_bytes_per_element
 
     # API
-    def resolve_value(self,ttnode,scope):
+    def resolve_value(self, ttnode, scope):
         """Resolve lvalue and rvalue expressions.
         :param ttnode: The assignment tree node.
         :param scope: Scope for looking up variables and procedures.
         """
-        if isinstance(ttnode.value,tree.Literal):
-            self._resolve_literal(ttnode.value,scope)
-        elif isinstance(ttnode.value,tree.TTIdentifier):
-            self._resolve_identifier(ttnode.value,scope)
-        elif isinstance(ttnode.value,tree.TTFunctionCall):
-            self._resolve_function_call_or_array_expr(ttnode.value,scope)
-        elif isinstance(ttnode.value,tree.TTDerivedTypePart):
-            self._resolve_derived_type_expr(ttnode.value,scope)
-        elif isinstance(ttnode.value,tree.TTArrayConstructor):
-            self._check_array_constructor(ttnode.value,scope) 
-        elif isinstance(ttnode.value,tree.TTComplexConstructor):
-            self._check_complex_constructor(ttnode.value,scope) 
+        if isinstance(ttnode.value, tree.Literal):
+            self._resolve_literal(ttnode.value, scope)
+        elif isinstance(ttnode.value, tree.TTIdentifier):
+            self._resolve_identifier(ttnode.value, scope)
+        elif isinstance(ttnode.value, tree.TTFunctionCall):
+            self._resolve_function_call_or_array_expr(ttnode.value, scope)
+        elif isinstance(ttnode.value, tree.TTDerivedTypePart):
+            self._resolve_derived_type_expr(ttnode.value, scope)
+        elif isinstance(ttnode.value, tree.TTArrayConstructor):
+            self._check_array_constructor(ttnode.value, scope)
+        elif isinstance(ttnode.value, tree.TTComplexConstructor):
+            self._check_complex_constructor(ttnode.value, scope)
 
-    def resolve_arith_expr(self,ttarithexpr,scope):
+    def resolve_arith_expr(self, ttarithexpr, scope):
         """Resolve an arithmetic expressions and its child nodes.
         :param ttnode: The arithmetic expression  tree node.
         :param scope: Scope for looking up variables and procedures.
@@ -650,43 +663,43 @@ class Semantics:
               rvalues before binary operators.
         """
         for ttnode in ttarithexpr.walk_postorder():
-            if isinstance(ttnode,tree.TTValue):
-                self.resolve_value(ttnode,scope)
-            elif isinstance(ttnode,tree.TTIndexRange):
-                self._resolve_index_range(ttnode) 
-            elif isinstance(ttnode,tree.TTUnaryOp):
+            if isinstance(ttnode, tree.TTValue):
+                self.resolve_value(ttnode, scope)
+            elif isinstance(ttnode, tree.TTIndexRange):
+                self._resolve_index_range(ttnode)
+            elif isinstance(ttnode, tree.TTUnaryOp):
                 self._check_unary_op(ttnode)
-            elif isinstance(ttnode,tree.TTBinaryOpChain):
+            elif isinstance(ttnode, tree.TTBinaryOpChain):
                 self._resolve_binary_op_chain(ttnode)
 
-    def resolve_assignment(self,ttnode,scope):
+    def resolve_assignment(self, ttnode, scope):
         """Resolve the left-hand side (LHS) and right-hand side (RHS) of an assignment.
         :param ttnode: The assignment tree node.
         :param scope: Scope for looking up variables and procedures.
         Further ensure type and rank of LHS and RHS are compatible.
         """
-        self.resolve_arith_expr(ttnode.lhs,scope)
-        self.resolve_arith_expr(ttnode.rhs,scope)
+        self.resolve_arith_expr(ttnode.lhs, scope)
+        self.resolve_arith_expr(ttnode.rhs, scope)
         lhs_bytes_per_element = ttnode.lhs.bytes_per_element
         rhs_bytes_per_element = ttnode.rhs.bytes_per_element
         # check type
         if ttnode.lhs.yields_numeric_type:
             if not ttnode.rhs.yields_numeric_type:
                 raise util.error.SemanticError(
-                  "LHS is numeric but RHS is not numeric"
+                    "LHS is numeric but RHS is not numeric"
                 )
         elif ttnode.lhs.yields_character:
             if not ttnode.rhs.yields_character:
                 raise util.error.SemanticError(
-                  "LHS is character but RHS is not character"
+                    "LHS is character but RHS is not character"
                 )
         elif ttnode.lhs.yields_logical:
             if not ttnode.rhs.yields_logical:
                 raise util.error.SemanticError(
-                  "LHS is logical but RHS is not logical"
+                    "LHS is logical but RHS is not logical"
                 )
 
-    def _acc_check_var_is_not_mapped_twice(self,ttaccdir):
+    def _acc_check_var_is_not_mapped_twice(self, ttaccdir):
         """Checks that no variable appears twice across
         all OpenACC mapping clauses, private and first_private clauses,
         and reduction clauses.
@@ -696,22 +709,24 @@ class Semantics:
                that different subarrays of the same arrays may be mapped.
         """
         def generator_(ttaccdir):
-            for (ttvarexpr,mapping_kind,readonly) in ttaccdir.walk_mapped_variables():
-                yield ttvarexpr 
-            yield from ttvarexpr in ttaccdir.walk_private_variables()
-            yield from ttvarexpr in ttaccdir.walk_firstprivate_variables() # does yield nothing for AccLoop
-            for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # does yield nothing for AccKernels
-                yield ttvarexpr 
+            for (ttvarexpr, mapping_kind, readonly) in ttaccdir.walk_mapped_variables():
+                yield ttvarexpr
+            yield from ttaccdir.walk_private_variables()
+            yield from ttaccdir.walk_firstprivate_variables()  # does yield nothing for AccLoop
+            # does yield nothing for AccKernels
+            for (ttvarexpr, reduction_op) in ttaccdir.walk_reduction_variables():
+                yield ttvarexpr
         tags = set()
         for ttvarexpr in generator_(ttaccdir):
-            tag = ttvarexpr.tag()
-            if tag in tags:
+            name = ttvarexpr.name.lower()
+            if name in tags:
                 raise util.error.SemanticError(
-                  "variable reference '{}' is subject to multiple mappings".format(tag)
+                    "variable reference '{}' is subject to multiple mappings".format(
+                        name)
                 )
-            tags.add(tag) 
+            tags.add(name)
 
-    def resolve_variable_kind(self,symbol_info,scope):
+    def resolve_variable_kind(self, symbol_info, scope):
         """Parse the 'kind' entry of the variable.
         :param scope: Scope for looking up referenced variables.
         :raise util.error.LookupError: if a symbol could not be resolved.
@@ -720,15 +735,15 @@ class Semantics:
         """
         if not symbol_info.has_resolved_kind:
             symbol_info.resolved_kind = tree.parse_arith_expr(symbol_info.kind)
-            self.resolve_arith_expr(symbol_info.resolved_kind,scope)
+            self.resolve_arith_expr(symbol_info.resolved_kind, scope)
             if not symbol_info.resolve_kind.yields_parameter:
                 raise util.error.SemanticError(
-                  "'kind' of variable '{}' is no parameter or literal expression".format(
-                    symbol_info.name
-                  )
+                    "'kind' of variable '{}' is no parameter or literal expression".format(
+                        symbol_info.name
+                    )
                 )
-   
-    def resolve_variable_rhs(self,symbol_info,scope):
+
+    def resolve_variable_rhs(self, symbol_info, scope):
         """Parse the right-hand side of the variable.
         :param scope: Scope for looking up referenced variables.
         :raise util.error.LookupError: if a symbol could not be resolved.
@@ -737,10 +752,10 @@ class Semantics:
         """
         if not symbol_info.has_resolved_rhs:
             symbol_info.resolved_rhs = tree.parse_arith_expr(symbol_info.rhs)
-            self.resolve_arith_expr(symbol_info.resolved_rhs,scope)
+            self.resolve_arith_expr(symbol_info.resolved_rhs, scope)
             # todo: check if RHS and symbol type do agree
 
-    def resolve_variable_bounds(self,symbol_info,scope):
+    def resolve_variable_bounds(self, symbol_info, scope):
         """Parse the array bounds of the variable.
         :param scope: Scope for looking up referenced variables.
         :raise util.error.LookupError: If a symbol could not be resolved.
@@ -753,56 +768,58 @@ class Semantics:
             for bound in symbol_info.bounds:
                 ttextent = tree.parse_extent(bound)
                 for child in ttextent.child_nodes():
-                    if isinstance(child,tree.TTArithExpr):
+                    if isinstance(child, tree.TTArithExpr):
                         self.resolve_arith_expr(child)
                 if not ttextent.has_specified_size:
                     all_sizes_fully_specified = False
-                symbol_info.resolved_bounds.append(ttextent,scope)
+                symbol_info.resolved_bounds.append(ttextent, scope)
             # set a tree representation of the size (in elements) of the product
-            if all_sizes_fully_specified: 
+            if all_sizes_fully_specified:
                 size_exprs = []
                 for ttextent in symbol_info.resolved_bounds:
-                     size_expr = tree.TTBinaryOpChain.size_expr(
-                       ttextent.lbound,
-                       ttextent.ubound
-                     )
-                     ttextent.size_expr = size_expr
-                     self.resolve_arith_expr(ttextent.size_expr)
-                     size_exprs.append(size_expr)
-                symbol_info.resolved_size = tree.TTBinaryOpChain.multiply(size_exprs)
+                    size_expr = tree.TTBinaryOpChain.size_expr(
+                        ttextent.lbound,
+                        ttextent.ubound
+                    )
+                    ttextent.size_expr = size_expr
+                    self.resolve_arith_expr(ttextent.size_expr)
+                    size_exprs.append(size_expr)
+                symbol_info.resolved_size = tree.TTBinaryOpChain.multiply(
+                    size_exprs)
                 self.resolve_arith_expr(symbol_info.resolved_size)
 
-    def resolve_num_bytes(self,symbol_info,scope):
+    def resolve_num_bytes(self, symbol_info, scope):
         """Resolve the number of bytes if the bounds/size
         and the bytes per element have been resolved already.
         """
         assert symbol_info.has_bytes_per_element, "number of bytes per element not resolved yet"
         assert symbol_info.has_resolved_size, "expression for number of elements not resolved yet"
         symbol_info.resolved_num_bytes = tree.TTBinaryOpChain([
-          TTNumber(["symbol_info.bytes_per_element"]),
-          "*",
-          symbol_info.resolved_size
+            tree.TTNumber([str(symbol_info.bytes_per_element)]),
+            "*",
+            symbol_info.resolved_size
         ])
-        
-    def _acc_resolve_mapped_variable_bounds(self,ttaccdir,scope):
+
+    def _acc_resolve_mapped_variable_bounds(self, ttaccdir, scope):
         """Resolve the bounds of the symbol ."""
         def generator_(ttaccdir):
             yield from ttaccdir.walk_private_variables()
-            yield from ttaccdir.walk_firstprivate_variables() # does yield nothing for acc loop
-            for (ttvarexpr,reduction_op) in ttaccdir.walk_reduction_variables(): # does yield nothing for acc kernels
+            # does yield nothing for acc loop
+            yield from ttaccdir.walk_firstprivate_variables()
+            # does yield nothing for acc kernels
+            for (ttvarexpr, reduction_op) in ttaccdir.walk_reduction_variables():
                 yield ttvarexpr
         for ttvarexpr in generator_(ttaccdir):
             for ttref in ttvarexpr.walk_variable_references():
-                self.resolve_variable_bounds(ttref.symbol_info,scope)
+                self.resolve_variable_bounds(ttref.symbol_info, scope)
 
-    def _acc_resolve_clauses(self,ttaccdir,scope):
-
+    def _acc_resolve_clauses(self, ttaccdir, scope):
         """Resolve the clauses of an OpenACC directive.
         :param ttaccdir: The directive tree node.
         :param scope: Scope for looking up variables and procedures.
         """
         for clause in ttaccdir.walk_clauses():
-            if isinstance(clause,(
+            if isinstance(clause, (
                 tree.TTAccClauseSeq,
                 tree.TTAccClauseAuto,
                 tree.TTAccClauseIndependent,
@@ -813,89 +830,95 @@ class Semantics:
                 tree.TTAccClauseNohost,
                 tree.TTAccClauseFinalize,
                 tree.TTAccClauseIfPresent,
-              )):
-                pass # no argument, nothing to resolve
-            if isinstance(clause,(
+            )):
+                pass  # no argument, nothing to resolve
+            if isinstance(clause, (
                 tree.TTAccClauseGang,
                 tree.TTAccClauseWorker,
                 tree.TTAccClauseVector,
-              )):
+            )):
                 if clause.arg_specified:
-                    self.resolve_arith_expr(clause.arg,scope)
+                    self.resolve_arith_expr(clause.arg, scope)
                     self._check_yields_default_integer_type(
-                      clause.arg,
-                      "argument to '{}' clause is not default integer kind".format(
-                        clause.kind
-                      )
+                        clause.arg,
+                        "argument to '{}' clause is not default integer kind".format(
+                            clause.kind
+                        )
                     )
-                    if not isinstance(clause,tree.TTAccClauseGang):
+                    if not isinstance(clause, tree.TTAccClauseGang):
                         if not clause.arg.yields_literal:
                             raise util.error.LimitationError(
-                              "'{}' clause argument must be literal integer expression".format(clause.kind)
+                                "'{}' clause argument must be literal integer expression".format(
+                                    clause.kind)
                             )
-            if isinstance(clause,(
+            if isinstance(clause, (
                 tree.TTAccClauseNumGangs,
                 tree.TTAccClauseNumWorkers,
                 tree.TTAccClauseVectorLength,
-              )):
-                 self.resolve_arith_expr(clause.arg,scope)
-                 self._check_yields_default_integer_type(
-                   clause.arg,
-                   "argument to '{}' clause is not default integer kind".format(
-                     clause.kind
-                   )
-                 )
-                 if not clause.arg.yields_scalar:
-                     raise util.error.SemanticError(
-                       "'{}' clause argument must be scalar".format(clause.kind)
-                     )
-                 if not isinstance(clause,tree.TTAccClauseNumGangs):
-                     if not clause.arg.yields_literal:
-                         raise util.error.LimitationError(
-                           "'{}' clause argument must be literal integer expression".format(clause.kind)
-                         )
-            if isinstance(clause,(
+            )):
+                self.resolve_arith_expr(clause.arg, scope)
+                self._check_yields_default_integer_type(
+                    clause.arg,
+                    "argument to '{}' clause is not default integer kind".format(
+                        clause.kind
+                    )
+                )
+                if not clause.arg.yields_scalar:
+                    raise util.error.SemanticError(
+                        "'{}' clause argument must be scalar".format(
+                            clause.kind)
+                    )
+                if not isinstance(clause, tree.TTAccClauseNumGangs):
+                    if not clause.arg.yields_literal:
+                        raise util.error.LimitationError(
+                            "'{}' clause argument must be literal integer expression".format(
+                                clause.kind)
+                        )
+            if isinstance(clause, (
                 tree.TTAccClauseDeviceNum
-              )):
-                 self.resolve_arith_expr(clause.arg,scope)
-                 self._check_yields_default_integer_type(
-                   clause.arg,
-                   "argument to '{}' clause is not default integer kind".format(
-                     clause.kind
-                   )
-                 )
-                 if not clause.arg.yields_scalar:
-                     raise util.error.SemanticError(
-                       "'{}' clause argument must be scalar".format(clause.kind)
-                     )
-            if isinstance(clause,(
+            )):
+                self.resolve_arith_expr(clause.arg, scope)
+                self._check_yields_default_integer_type(
+                    clause.arg,
+                    "argument to '{}' clause is not default integer kind".format(
+                        clause.kind
+                    )
+                )
+                if not clause.arg.yields_scalar:
+                    raise util.error.SemanticError(
+                        "'{}' clause argument must be scalar".format(
+                            clause.kind)
+                    )
+            if isinstance(clause, (
                 tree.TTAccClauseDeviceType
-              )):
+            )):
                 for dtype in clause.named_device_types(lower_case=False):
                     if dtype.lower() not in self.acc_supported_device_types:
                         raise util.error.SemanticError(
-                          "device type '{}' not supported, must be '{}', or '{}'".format(
-                            dtype,"', '".join(self.acc_supported_device_types[0:-1]),
-                            self.acc_supported_device_types[-1]
-                          )
+                            "device type '{}' not supported, must be '{}', or '{}'".format(
+                                dtype, "', '".join(
+                                    self.acc_supported_device_types[0:-1]),
+                                self.acc_supported_device_types[-1]
+                            )
                         )
-                        
-            if isinstance(clause,(
+
+            if isinstance(clause, (
                 tree.TTAccClauseIf,
                 tree.TTAccClauseSelf,
-              )):
-                 self.resolve_arith_expr(clause.arg,scope)
-                 self._check_yields_default_logical_type(
-                   clause.arg,
-                   "arguments of '{}' clause must be of default logical kind".format(clause.kind)
-                 )
-            if isinstance(clause,(
+            )):
+                self.resolve_arith_expr(clause.arg, scope)
+                self._check_yields_default_logical_type(
+                    clause.arg,
+                    "arguments of '{}' clause must be of default logical kind".format(
+                        clause.kind)
+                )
+            if isinstance(clause, (
                 tree.TTAccClauseUpdateSelf,
                 tree.TTAccClauseUpdateDevice,
-              )):
+            )):
                 for child in clause.var_list:
-                    self.resolve_value(child,scope)
-            if isinstance(clause,(
+                    self.resolve_value(child, scope)
+            if isinstance(clause, (
                 tree.TTAccClauseCopy,
                 tree.TTAccClauseCopyout,
                 tree.TTAccClauseCreate,
@@ -907,92 +930,94 @@ class Semantics:
                 tree.TTAccClauseFirstprivate,
                 tree.TTAccClauseUseDevice,
                 tree.TTAccClauseCopyin,
-              )):
+            )):
                 for child in clause.var_list:
-                    self.resolve_value(child,scope)
-                    if isinstance(clause,(
+                    self.resolve_value(child, scope)
+                    if isinstance(clause, (
                         tree.TTAccClausePrivate,
                         tree.TTAccClauseFirstprivate,
                     )):
-                      if child.is_derived_type_expr:
-                          raise util.error.SemanticError("No derived type expressions allowed in '{}' clause".
-                            format(clause.kind)
-                          )
-            if isinstance(clause,(
+                        if child.is_derived_type_member_expr:
+                            raise util.error.SemanticError("No derived type expressions allowed in '{}' clause".
+                                                           format(clause.kind)
+                                                           )
+            if isinstance(clause, (
                 tree.TTAccClauseDefault
-              )):
-                pass # nothing to check
-            if isinstance(clause,(
+            )):
+                pass  # nothing to check
+            if isinstance(clause, (
                 tree.TTAccClauseReduction
-              )):
-                supported_operators=[
-                  "+","*","max","min", # arithmetic
-                  "iand","ior","ieor", # bitwise 
-                  ".and.",".or.",".eqv.",".neqv." # logical
+            )):
+                supported_operators = [
+                    "+", "*", "max", "min",  # arithmetic
+                    "iand", "ior", "ieor",  # bitwise
+                    ".and.", ".or.", ".eqv.", ".neqv."  # logical
                 ]
                 if not clause.op.lower() in supported_operators:
                     raise util.error.SemanticError(
-                      "unsupported reduction operator: '{}'".format(clause.op) 
+                        "unsupported reduction operator: '{}'".format(
+                            clause.op)
                     )
                 for child in clause.child_nodes():
-                    self.resolve_value(child,scope)
-                    if not ( 
-                        child.is_scalar 
+                    self.resolve_value(child, scope)
+                    if not (
+                        child.is_scalar
                         and child.is_identifier_expr
                     ):
-                      raise util.error.LimitationError(
-                        "arguments to 'reduction' clause must be scalar identifiers"
-                      )
-            if isinstance(clause,(
+                        raise util.error.LimitationError(
+                            "arguments to 'reduction' clause must be scalar identifiers"
+                        )
+            if isinstance(clause, (
                 tree.TTAccClauseBind
-              )):
-                pass # :todo: allow string in grammar
-            if isinstance(clause,(
+            )):
+                pass  # :todo: allow string in grammar
+            if isinstance(clause, (
                 tree.TTAccClauseTile
-              )):
+            )):
                 for arg in clause.child_nodes():
-                    self.resolve_arith_expr(arg,scope)
+                    self.resolve_arith_expr(arg, scope)
                     self._check_yields_default_integer_type(
-                      arg,"arguments of 'tile' clause must be of default integer kind"
+                        arg, "arguments of 'tile' clause must be of default integer kind"
                     )
-            if isinstance(clause,(
+            if isinstance(clause, (
                 tree.TTAccClauseCollapse
-              )):
-                self.resolve_arith_expr(clause.arg,scope)
+            )):
+                self.resolve_arith_expr(clause.arg, scope)
                 self._check_yields_default_integer_type(
-                  clause.arg,"'collapse' clause argument must be of default integer kind"
+                    clause.arg, "'collapse' clause argument must be of default integer kind"
                 )
                 if not clause.arg.yields_scalar:
                     raise util.error.SemanticError(
-                      "'collapse' clause argument must be scalar"
+                        "'collapse' clause argument must be scalar"
                     )
                 if not clause.arg.yields_literal:
-                    raise util.error.LimitationError("'collapse' clause argument must be literal integer expression")
+                    raise util.error.LimitationError(
+                        "'collapse' clause argument must be literal integer expression")
                 # :todo: parameters should be supported too.
-            if isinstance(clause,(
+            if isinstance(clause, (
                 tree.TTAccClauseWait
-              )):
-                self.resolve_arith_expr(clause.devnum,scope)
+            )):
+                self.resolve_arith_expr(clause.devnum, scope)
                 self._check_yields_default_integer_type(
-                  clause.devnum,"'wait' clause 'devnum' must be of default integer kind"
+                    clause.devnum, "'wait' clause 'devnum' must be of default integer kind"
                 )
                 for queue in clause.queues:
-                    self.resolve_arith_expr(clause.arg,scope)
+                    self.resolve_arith_expr(clause.arg, scope)
                     self._check_yields_acc_handle_type(
-                      queue,"'wait' clause queues must be integers of 'acc_handle_kind'"
+                        queue, "'wait' clause queues must be integers of 'acc_handle_kind'"
                     )
-            if isinstance(clause,(
-                tree.TTAccClauseAsync  
-              )):
+            if isinstance(clause, (
+                tree.TTAccClauseAsync
+            )):
                 for queue in clause.queues:
-                    self.resolve_arith_expr(clause.arg,scope)
+                    self.resolve_arith_expr(clause.arg, scope)
                     self._check_yields_default_integer_type(
-                      queue,"'async' clause queues must be integers of 'acc_handle_kind'"
+                        queue, "'async' clause queues must be integers of 'acc_handle_kind'"
                     )
-    
-    def resolve_acc_directive(self,ttaccdir,scope):
+
+    def resolve_acc_directive(self, ttaccdir, scope):
         """Resolves the clauses appearing on the directive."""
-        self._acc_resolve_clauses(ttaccdir,scope)
-        if isinstance(ttaccdir,tree.TTAccConstruct): # note: includes acc loop
+        self._acc_resolve_clauses(ttaccdir, scope)
+        if isinstance(ttaccdir, tree.TTAccConstruct):  # note: includes acc loop
             self._acc_check_var_is_not_mapped_twice(ttaccdir)
-            self._acc_resolve_mapped_variable_bounds(ttaccdir,scope)
+            self._acc_resolve_mapped_variable_bounds(ttaccdir, scope)

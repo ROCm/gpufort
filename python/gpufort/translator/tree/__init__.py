@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import re
+
 from .base import *
 from .arithexpr import *
 from .transformations import *
@@ -53,17 +55,33 @@ set_arith_expr_parse_actions(grammar_no_logic_no_custom)
 set_acc_parse_actions(grammar_no_logic_no_custom)
 set_cuf_parse_actions(grammar_no_logic_no_custom)
 
+_p_logic_op = re.compile(r"<=?|=?>|[/=]=|\.(eq|ne|not|and|or|xor|eqv|neqv|[gl][te])\.|\.not\.",re.IGNORECASE)
+_p_custom_op = re.compile(r"\.[a-zA-Z]+\.") # may detect logic ops too
+
+def _contains_logic_ops(tokens):
+    for tk in tokens:
+        if _p_logic_op.match(tk):
+            return True 
+    return False
+
+def _contains_custom_ops(tokens):
+    for tk in tokens:
+        if _p_custom_op.match(tk):
+            if not _p_logic_op.match(tk):
+                return True 
+    return False
+
 def parse_extent(expr_as_str,parse_all=True):
     """Parse an extent expression."""
     tokens = util.parsing.tokenize(expr_as_str)
     contains_logic_ops = _contains_logic_ops(tokens)
     contains_custom_ops = _contains_custom_ops(tokens)
     if not contains_custom_ops:
-        return tree.grammar_no_logic_no_custom.extent.parseString(
+        return grammar_no_logic_no_custom.extent.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     else:
-        return tree.grammar_no_logic.extent.parseString(
+        return grammar_no_logic.extent.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
 
@@ -77,19 +95,19 @@ def parse_arith_expr(expr_as_str,parse_all=True):
     contains_logic_ops = _contains_logic_ops(tokens)
     contains_custom_ops = _contains_custom_ops(tokens)
     if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.arith_expr.parseString(
+        return grammar_no_logic_no_custom.arith_expr.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_logic_ops:
-        return tree.grammar_no_logic.arith_expr.parseString(
+        return grammar_no_logic.arith_expr.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_custom_ops:
-        return tree.grammar_no_custom.arith_expr.parseString(
+        return grammar_no_custom.arith_expr.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     else:
-        return tree.grammar.arith_expr.parseString(
+        return grammar.arith_expr.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     
@@ -103,19 +121,19 @@ def parse_assignment(expr_as_str,parse_all=True):
     contains_logic_ops = _contains_logic_ops(tokens)
     contains_custom_ops = _contains_custom_ops(tokens)
     if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.assignment.parseString(
+        return grammar_no_logic_no_custom.assignment.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_logic_ops:
-        return tree.grammar_no_logic.assignment.parseString(
+        return grammar_no_logic.assignment.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_custom_ops:
-        return tree.grammar_no_custom.assignment.parseString(
+        return grammar_no_custom.assignment.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     else:
-        return tree.grammar.assignment.parseString(
+        return grammar.assignment.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
 
@@ -130,19 +148,19 @@ def parse_rvalue(expr_as_str,parse_all=True):
     contains_logic_ops = _contains_logic_ops(tokens)
     contains_custom_ops = _contains_custom_ops(tokens)
     if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.rvalue.parseString(
+        return grammar_no_logic_no_custom.rvalue.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_logic_ops:
-        return tree.grammar_no_logic.rvalue.parseString(
+        return grammar_no_logic.rvalue.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_custom_ops:
-        return tree.grammar_no_custom.rvalue.parseString(
+        return grammar_no_custom.rvalue.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     else:
-        return tree.grammar.rvalue.parseString(
+        return grammar.rvalue.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
 
@@ -156,18 +174,18 @@ def parse_acc_directive(expr_as_str,parse_all=True):
     contains_logic_ops = _contains_logic_ops(tokens)
     contains_custom_ops = _contains_custom_ops(tokens)
     if not contains_custom_ops and not contains_logic_ops:
-        return tree.grammar_no_logic_no_custom.acc_directive.parseString(
+        return grammar_no_logic_no_custom.acc_directive.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_logic_ops:
-        return tree.grammar_no_logic.acc_directive.parseString(
+        return grammar_no_logic.acc_directive.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     elif not contains_custom_ops:
-        return tree.grammar_no_custom.acc_directive.parseString(
+        return grammar_no_custom.acc_directive.parseString(
           expr_as_str, parseAll=parse_all
         )[0]
     else:
-        return tree.grammar.acc_directive.parseString(
+        return grammar.acc_directive.parseString(
           expr_as_str, parseAll=parse_all
         )[0]

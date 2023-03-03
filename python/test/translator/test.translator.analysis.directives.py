@@ -12,7 +12,7 @@ from gpufort import translator
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
 def tostr(opt_single_val):
-    return translator.tree.traversals.make_fstr(
+    return translator.tree.to_fstr(
       opt_single_val.value
     ) if opt_single_val.specified else None
         
@@ -213,7 +213,7 @@ class TestAnalysisAcc(unittest.TestCase):
                 tostr(acc_loop_info.worker),
                 tostr(acc_loop_info.vector),
                 tostr(acc_loop_info.collapse),
-                [translator.tree.traversals.make_fstr(e)
+                [translator.tree.to_fstr(e)
                 for e in acc_loop_info.tile.value],
               ],
               results[i]

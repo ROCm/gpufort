@@ -799,6 +799,7 @@ class Loopnest:
         return self._loops[key]
     def append(self,loop):
         self._loops.append(loop) 
+
     def collapse(self):
         """Collapse all loops in the loopnest."""
         assert len(self._loops)
@@ -809,81 +810,83 @@ class Loopnest:
             loop_lengths_vars = []
             # Preamble before loop
             prolog = ""
-            for i,loop in enumerate(self._loops):
+            for i, loop in enumerate(self._loops):
                 if loop.prolog != None:
                     prolog += loop.prolog
                 loop_lengths_vars.append(unique_label("len"))
                 prolog += render_const_int_decl(
-                  loop_lengths_vars[-1],
-                  loop.length()
+                    loop_lengths_vars[-1],
+                    loop.length()
                 )
             total_len_var = unique_label("total_len")
             prolog += render_const_int_decl(
-              total_len_var,
-              "*".join(loop_lengths_vars)
+                total_len_var,
+                "*".join(loop_lengths_vars)
             )
             collapsed_index_var = unique_label("idx")
+            #
             prolog += "int {};\n".format(collapsed_index_var)
             # Preamble within loop body
             body_prolog = ""
-            remainder_var = unique_label("rem");
-            denominator_var= unique_label("denom")
+            remainder_var = unique_label("rem")
+            denominator_var = unique_label("denom")
             # template, idx remains as placeholder
             # we use $idx$ and simple str.replace as the
             # { and } of C/C++ scopes could cause issues
             # with str.format
             body_prolog += "int {rem} = $idx$;\n".format(rem=remainder_var)
             body_prolog += "int {denom} = {total_len};\n".format(
-              denom=denominator_var,total_len=total_len_var
+                denom=denominator_var, total_len=total_len_var
             )
             # index recovery
-            for i,loop in enumerate(self._loops):
+            for i, loop in enumerate(self._loops):
                 if loop.step != None:
                     body_prolog += "{} = {};\n".format(
-                      loop.index,
-                      "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{},{})".format(
-                        remainder_var,
-                        denominator_var,
-                        loop.first,
-                        loop_lengths_vars[i],
-                        loop.step
-                      )
+                        loop.index,
+                        "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{},{})".format(
+                            remainder_var,
+                            denominator_var,
+                            loop.first,
+                            loop_lengths_vars[i],
+                            loop.step
+                        )
                     )
                 else:
                     body_prolog += "{} = {};\n".format(
-                      loop.index,
-                      "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{})".format(
-                        remainder_var,
-                        denominator_var,
-                        loop.first,
-                        loop_lengths_vars[i]
-                      )
+                        loop.index,
+                        "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{})".format(
+                            remainder_var,
+                            denominator_var,
+                            loop.first,
+                            loop_lengths_vars[i]
+                        )
                     )
             # add body prolog & epilog of individual loops
             body_epilog = ""
             indent = ""
             for loop in self._loops:
                 if loop.body_prolog != None:
-                    body_prolog += textwrap.indent(loop.body_prolog,indent)
+                    body_prolog += textwrap.indent(loop.body_prolog, indent)
                 if loop.body_epilog != None:
-                    body_epilog = textwrap.indent(loop.body_epilog,indent) + body_epilog
+                    body_epilog = textwrap.indent(
+                        loop.body_epilog, indent) + body_epilog
                 indent += loop.body_extra_indent
             collapsed_loop = Loop(
-              index = collapsed_index_var,
-              first = "0",
-              length = total_len_var,
-              excl_ubound = total_len_var,
-              step = None,
-              gang_partitioned = first_loop.gang_partitioned,
-              worker_partitioned = first_loop.worker_partitioned,
-              vector_partitioned = first_loop.vector_partitioned,
-              num_gangs = first_loop.num_gangs,
-              num_workers = first_loop.num_workers,
-              vector_length = first_loop.vector_length,
-              prolog = prolog, 
-              body_prolog = body_prolog,
-              body_epilog = body_epilog,
-              body_extra_indent = indent)
+                index=collapsed_index_var,
+                first="0",
+                length=total_len_var,
+                excl_ubound=total_len_var,
+                step=None,
+                gang_partitioned=first_loop.gang_partitioned,
+                worker_partitioned=first_loop.worker_partitioned,
+                vector_partitioned=first_loop.vector_partitioned,
+                num_gangs=first_loop.num_gangs,
+                num_workers=first_loop.num_workers,
+                vector_length=first_loop.vector_length,
+                prolog=prolog,
+                body_prolog=body_prolog,
+                body_epilog=body_epilog,
+                body_extra_indent=indent)
             return collapsed_loop
 
     def tile(self,tile_sizes,

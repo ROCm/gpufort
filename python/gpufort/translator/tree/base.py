@@ -77,22 +77,6 @@ class TTNode(object):
 
     #__repr__ = __str__
 
-class TTNone(TTNode):
-    """Node modelling non-existing nodes or empty lists."""
-    def __init__(self, tokens=[]):
-        self.parent = None
-        pass
-    def __len__(self):
-        return 0
-    def __iter__(self):
-        return None
-    def child_nodes(self):
-        return []
-    def cstr(self):
-        return "" 
-    def fstr(self):
-        return ""
-
 class TTStatement(TTNode):
 
     def child_statements(self):
@@ -146,6 +130,11 @@ class TTContainer(TTStatement):
 
     def __iter__(self):
         return iter(self.body)
+    
+    @property
+    def has_single_child(self):
+        """If this container only has a single child."""
+        return len(self.body) == 1
  
     def append(self, node):
         self.body.append(node)
@@ -184,4 +173,16 @@ def to_cstr(expr):
         assert False, "no support for container statements"
     elif isinstance(expr,TTNode):
         return expr.cstr()
+    assert False, "no support for type '{}'".format(expr)
+    
+def to_fstr(expr):
+    """:return: a C++ representation if the 
+    expr is an instance of TTNode besides TTContainer.
+    Returns `expr` itself if it is string."""
+    if type(expr) == str:
+        return expr
+    elif isinstance(expr,TTContainer):
+        assert False, "no support for container statements"
+    elif isinstance(expr,TTNode):
+        return expr.fstr()
     assert False, "no support for type '{}'".format(expr)

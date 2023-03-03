@@ -117,6 +117,13 @@ end do
 """,
 ]
 
+testdata_private_vars = [
+"""\
+!$acc parallel private(b)
+!$acc end parallel
+"""
+]
+
 class TestTransformAcc(unittest.TestCase):
     def setUp(self):
         global PROFILING_ENABLE
@@ -138,7 +145,7 @@ class TestTransformAcc(unittest.TestCase):
     def test_01_transform(self):
         device_type = "radeon"
         #for i,test in enumerate(testdata):
-        for i,test in enumerate(testdata[0:9]):
+        for i,test in enumerate(testdata_private_vars):
             print(">>>>>>>\n"+test+"<<<<<<<\n")
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
@@ -156,7 +163,7 @@ class TestTransformAcc(unittest.TestCase):
               "operator_max", # type: str
               "operator_loop_len", # type: str
               "operator_div_round_up", # type: str
-              translator.tree.traversals.make_fstr
+              translator.tree.to_fstr
             ))
 
 if __name__ == '__main__':

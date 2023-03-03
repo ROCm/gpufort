@@ -13,6 +13,7 @@ from .. import tree
 from .. import optvals
 
 from . import loops
+from . import acc
 from . import assignments
 from . import loopmgr
 from . import resulttypes
@@ -149,9 +150,9 @@ class HIPKernelBodyGenerator:
                     self._result.max_vector_length = clause.arg
             elif isinstance(clause,tree.TTAccClausePrivate):
                 self._result.private_vars = clause.var_list 
-                self._result.generated_code += render.render_private_vars_decl_list(
-                  ttvalues,scope
-                )
+                #self._result.generated_code += render.render_private_vars_decl_list(
+                #  ttvalues,scope
+                #)
             elif isinstance(clause,tree.TTAccClauseFirstprivate):
                 self._result.firstprivate_vars = clause.var_list
         self._result.generated_code += loops.render_hip_kernel_prolog_acc()
@@ -457,6 +458,8 @@ def map_to_hip_cpp(
     codegen.map_to_flat_scalars = opts.map_to_flat_scalars
     # todo: copy, reduction, hipblas detection must go here?
     assignments.unroll_all_array_assignments(ttroot)
+    acc.unroll_all_acc_directives(ttroot,device_type)
+    
     # insert artificial acc loop node if first compute construct child is
     # a substituted array expression
     for ttstmt in ttroot.body:

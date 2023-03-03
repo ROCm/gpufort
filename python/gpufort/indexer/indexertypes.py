@@ -587,7 +587,7 @@ class IndexVariable(IndexRecordAccessorBase):
         self._resolved_bounds = resolved_bounds
     @bytes_per_element.setter
     def bytes_per_element(self,bytes_per_element):
-        self.bytes_per_element = bytes_per_element
+        self._bytes_per_element = bytes_per_element
     @resolved_size.setter
     def resolved_size(self,resolved_size):
         self._resolved_size = resolved_size

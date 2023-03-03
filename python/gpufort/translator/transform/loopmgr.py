@@ -33,7 +33,7 @@ class LoopManager:
         """:return: Expression to compute the length of the loop.
         :param str operator_loop_len: The function to use
                                      for calculating the loop length.
-        :param converter: One of tree.traversals.make_fstr or ~.make_cstr
+        :param converter: One of tree.to_fstr or ~.make_cstr
         :note: As the step size can be a runtime value,
                one requires a Fortran/C++ function to compute it.
         """
@@ -73,7 +73,7 @@ class LoopnestManager:
     
     def _convert_collapse_expr_to_int(self,expr):
         try:
-            return int(ast.literal_eval(tree.traversals.make_cstr(expr)))
+            return int(ast.literal_eval(tree.to_cstr(expr)))
         except:
             raise util.error.LimitationError("expected expression that can be evaluated to int for 'collapse'")
 
@@ -92,9 +92,9 @@ class CufLoopnestManager(LoopnestManager):
 #    def _create_loop(self,ttdo,cuf_loop_info):
 #        loop = create_simple_loop(ttdo)
 #        if cuf_loop_info != None:
-#            loop.num_gangs = tree.traversals.make_cstr(cuf_loop_info.gang.value)
-#            loop.num_workers = tree.traversals.make_cstr(cuf_loop_info.worker.value)
-#            loop.vector_length = tree.traversals.make_cstr(cuf_loop_info.vector.value)
+#            loop.num_gangs = tree.to_cstr(cuf_loop_info.gang.value)
+#            loop.num_workers = tree.to_cstr(cuf_loop_info.worker.value)
+#            loop.vector_length = tree.to_cstr(cuf_loop_info.vector.value)
 #            loop.gang_partitioned = cuf_loop_info.gang.specified
 #            loop.worker_partitioned = cuf_loop_info.worker.specified
 #            loop.vector_partitioned = cuf_loop_info.vector.specified
@@ -215,7 +215,7 @@ class AccLoopnestManager(LoopnestManager):
         (collapse, _) = util.kwargs.get_value("collapse","1",**kwargs)
         self.collapse = self._convert_collapse_expr_to_int(collapse)
         (tile, found) = util.kwargs.get_value("tile",[],**kwargs)
-        self.tile = [tree.traversals.make_cstr(e) for e in tile]
+        self.tile = [tree.to_cstr(e) for e in tile]
         (self.gang, self.gang_specified) = util.kwargs.get_value("gang",None,**kwargs)
         (self.worker, self.worker_specified) = util.kwargs.get_value("worker",None,**kwargs)
         (self.vector, self.vector_specified) = util.kwargs.get_value("vector",None,**kwargs)
@@ -238,11 +238,11 @@ class AccLoopnestManager(LoopnestManager):
     def _create_loop(self,ttdo):
         loop = create_simple_loop(ttdo)
         if self.gang != None:
-            loop.num_gangs = tree.traversals.make_cstr(self.gang)
+            loop.num_gangs = tree.to_cstr(self.gang)
         if self.worker != None:
-            loop.num_workers = tree.traversals.make_cstr(self.worker)
+            loop.num_workers = tree.to_cstr(self.worker)
         if self.vector != None:
-            loop.vector_length = tree.traversals.make_cstr(self.vector)
+            loop.vector_length = tree.to_cstr(self.vector)
         loop.gang_partitioned = self.gang_specified
         loop.worker_partitioned = self.worker_specified
         loop.vector_partitioned = self.vector_specified
@@ -318,7 +318,7 @@ class AccLoopnestManager(LoopnestManager):
             elif parallelism == [True ,False,False]:
                 assert False, "not implemented"
             elif parallelism == [True ,False,True ]: 
-                
+                assert False, "not implemented"
             elif parallelism == [True ,True ,False]: 
                 assert False, "not implemented"
             elif parallelism == [True ,True ,True ]:

@@ -32,10 +32,10 @@ def _analyze_directive_action(ttnode,parents,result):
 
 def analyze_directive(ttcufkerneldo):
     result = CufKernelDoInfo()
-    tree.traversals.traverse(
-        ttcufkerneldo,
-        _analyze_directive_action,
-        tree.traversals.no_action,
-        tree.traversals.no_crit,
-        result)
+    #tree.traversals.traverse(
+    #    ttcufkerneldo,
+    #    _analyze_directive_action,
+    #    tree.traversals.no_action,
+    #    tree.traversals.no_crit,
+    #    result)
     return result

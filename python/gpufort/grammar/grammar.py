@@ -284,7 +284,7 @@ class Grammar:
         """
         # note: ':' has meaning here as separator, is not suppressed.
         self.extent = ( 
-          ( self.arith_expr + pyp.Literal(":") + pyp.Optional( arith_expr | pyp.Literal("*") ) )
+          ( self.arith_expr + pyp.Literal(":") + pyp.Optional( self.arith_expr | pyp.Literal("*") ) )
           | self.arith_expr
           | pyp.Literal("..") 
           | pyp.Literal("*")

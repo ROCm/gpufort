@@ -87,15 +87,14 @@ def get_operator_name(op):
         return op
     
 def reduction_c_init_val(fortran_op,c_type):
-    """:return: Initial value for the given Fortran reduction op
-    and the given C type."""
+    """:return: Initial value for the given Fortran reduction op and the given C type.
+    :note: There is no unsigned int in Fortran.
+    """
     fortran_op = fortran_op.lower()
     if fortran_op == "max":
         return "-std::numeric_limits<{}>::max()".format(c_type)
     elif fortran_op == "min":
         return "+std::numeric_limits<{}>::max()".format(c_type)
-    elif:
-        return "-1" # must be integer, no unsigned int in Fortran
     else:
         mappings = {
           "+": "0",
@@ -107,7 +106,7 @@ def reduction_c_init_val(fortran_op,c_type):
           ".eqv.": "true",
           ".neqv.": "false",
         }
-            return mappings[fortran_op]
+        return mappings[fortran_op]
    
 def reduction_c_op(fortran_op):
     mappings = {

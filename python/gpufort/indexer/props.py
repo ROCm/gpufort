@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 
 def has_any_attribute(irecord,attributes):
     """Checks if the index record has any of the provided

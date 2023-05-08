@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 """This module contains functions for 
 determinig the input and output variables
 of a loop nest or procedure that is mapped
@@ -14,6 +13,22 @@ from gpufort import util
 from . import tree
 from . import conv
 from . import opts
+
+def append_c_type_deal_rkind(tavar, scope):
+    f_type = tavar["f_type"]
+    kind = tavar["kind"]
+    if f_type == "type":
+        tavar["c_type"] = tavar["kind"]
+    elif f_type == "character":
+        tavar["c_type"] = "char"
+        # TODO more carefully check if len or kind is specified for characters
+    elif f_type == "real":
+        tavar["c_type"] = conv.convert_to_c_type_deal_rkind(f_type, kind, scope, "TODO unknown")
+    elif f_type == "integer":
+        tavar["c_type"] = conv.convert_to_c_type_deal_rkind(f_type, kind, scope, "TODO unknown")
+    elif f_type != ("character" and "real" and "integer"):
+        tavar["c_type"] = conv.convert_to_c_type(f_type, kind, "TODO unknown")
+    tavar["bytes_per_element"] = conv.num_bytes(f_type, kind, default=None)
 
 def append_c_type(tavar):
     f_type = tavar["f_type"]
@@ -35,7 +50,8 @@ def _create_analysis_var(scope, var_expr):
     tavar["c_name"] = tavar["name"] 
     tavar["c_rank"] = tavar["rank"]
     tavar["op"]   = ""
-    append_c_type(tavar)
+    #append_c_type(tavar)
+    append_c_type_deal_rkind(tavar, scope)
     if tavar["rank"] > 0:
         tavar["lbounds"]    = []
         tavar["ubounds"]    = []

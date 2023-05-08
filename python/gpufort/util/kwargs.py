@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 def get_value(key, default, **kwargs):
     kwarg_not_found_result = "ARGUMENT NOT FOUND"
     value = next((v for k, v in kwargs.items() if key == k),

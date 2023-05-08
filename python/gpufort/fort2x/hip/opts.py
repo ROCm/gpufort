@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 # Defaults
 def GET_DEFAULT_BLOCK_DIMS(kernel_name, dim):
     block_dims = {1: [128], 2: [128, 1, 1], 3: [128, 1, 1]}

@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 from .cufnodes import *
 # just execute, "_" makes module private in namespace
 from . import cuf2hip as _1

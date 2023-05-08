@@ -1,26 +1,60 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT                                                 
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 GPUFORT_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+
+# check python3 version 
+ U_V1=`python3 -V 2>&1|awk '{print $2}'|awk -F '.' '{print $1}'`
+ U_V2=`python3 -V 2>&1|awk '{print $2}'|awk -F '.' '{print $2}'`
+ U_V3=`python3 -V 2>&1|awk '{print $2}'|awk -F '.' '{print $3}'`
+ if (($U_V1 != 3 )); then
+    echo "gpufort need python3!"
+    exit 20
+ fi
+
+ if (($U_V2 != 8)); then
+    echo "gpufort need python3.8!"
+    exit 21
+ fi
+
+ if (($U_V3 != 10 && $U_V3 != 11 && $U_V3 != 12 && $U_V3 != 13 && $U_V3 != 14 && $U_V3 != 15 && $U_V3 != 16)); then
+    echo "gpufort need python3.8.10--python3.8.16"
+    exit 22
+ fi
 
 # check if required python packages are installed
 requirements=$(grep -v "^\s*#" $GPUFORT_BIN_DIR/../python/requirements.txt | grep "^\w\+")
-declare -i requirements_missing 
-requirements_missing=0 # 0: 'false', >0: true
-for m in $requirements; do 
+
+for m in $requirements; do
   python3 -c "import $m" &> /dev/null
   retval="$(echo $?)"
-  requirements_missing="$requirements_missing + $retval" 
-  if (( retval > 0 )); then
-    echo "ERROR: Could not find python3 module '$m'. Please install or add to path."
+
+  if (( retval > 0 ))
+  then
+    echo "Could not find python3 module '$m'. begin install '$m'"
+    if [[ "$m" == "pyparsing" ]]
+    then
+        cd ${GPUFORT_BIN_DIR}/../requirements_whl/
+        echo "pip3 install pyparsing-3.0.9-py3-none-any.whl"
+        pip3 install ./pyparsing-3.0.9-py3-none-any.whl
+
+    elif [[ "$m" == "orjson" ]]
+    then
+        cd ${GPUFORT_BIN_DIR}/../requirements_whl/
+        echo "pip3 install orjson-3.8.7-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+        pip3 install ./orjson-3.8.7-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+
+    elif [[ "$m" == "jinja2" ]]
+    then
+        cd ${GPUFORT_BIN_DIR}/../requirements_whl/
+        echo "pip3 install MarkupSafe-2.1.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+        pip3 install ./MarkupSafe-2.1.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+        echo "pip3 install Jinja2-3.1.2-py3-none-any.whl"
+        pip3 install ./Jinja2-3.1.2-py3-none-any.whl
+    fi
   fi
 done
-if (( requirements_missing > 0 )); then
-  echo "Please install missing python3 packages e.g. via:"
-  echo "python3 -m pip install -r ${GPUFORT_BIN_DIR}/../python/requirements.txt"
-  echo "(you might need to be root)"
-  exit 20
-fi
+
 
 # all dependencies are met and we can continue
 

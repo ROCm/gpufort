@@ -1,5 +1,5 @@
-{# SPDX-License-Identifier: MIT                                              #}
-{# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
+{#- GPUFORT -#}
+{#- GPUFORT -#}
 {########################################################################################}
 {%- import "common.macros.f03" as cm -%}
 {########################################################################################}

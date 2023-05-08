@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 #!/usr/bin/env python3
 # NOTE: Everything relevant for the host is prefixed with HOST_
 from .cuda_enums import *

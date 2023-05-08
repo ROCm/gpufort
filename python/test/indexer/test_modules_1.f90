@@ -1,5 +1,4 @@
-! SPDX-License-Identifier: MIT
-! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 ! 1. simple_base and base: arrays, scalars, types, device attributes, and use statements
 module simple_base
   integer :: z1, z2

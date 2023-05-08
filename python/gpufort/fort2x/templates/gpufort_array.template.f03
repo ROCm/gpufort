@@ -1,5 +1,5 @@
-{# SPDX-License-Identifier: MIT                                         #}
-{# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
+{#- GPUFORT -#}
+{#- GPUFORT -#}
 {% import "gpufort_array.macros.f03" as gam %}
 module gpufort_array
   use iso_c_binding

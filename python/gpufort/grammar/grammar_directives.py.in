@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 PRAGMA               = Regex(r"[!c\*]\$").suppress()
 generic_pragma        = Regex(r"[!c\*]\$\w+")
 generic_pragma_newline = Regex(r"[!c\*]\$\w+\&")

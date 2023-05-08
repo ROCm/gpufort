@@ -1,5 +1,4 @@
-        # SPDX-License-Identifier: MIT
-        # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
         # configurable parameters
 log_prefix = "indexer"
 
@@ -64,6 +63,7 @@ module_ignore_list = [ # these modules are ignored when checking dependencies
     "hipfort_rocsparse",
     "hipfort_rocsparse_enums",
     "hipfort_types",
+    "netcdf",
 ]
 
 pretty_print_index_file = False # Pretty print index before writing it to disk.

@@ -16,7 +16,7 @@ include src/obj.mk
 
 build: lib/$(LIBGPUFORTRT)
 
-lib/$(LIBGPUFORTRT): | codegen $(LIBGPUFORTRT)
+lib/$(LIBGPUFORTRT): | $(LIBGPUFORTRT)
 	mkdir -p lib/
 	mkdir -p include/
 	mv *.mod include/

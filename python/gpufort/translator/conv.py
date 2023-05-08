@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 from . import opts
 
 def num_bytes(f_type, kind, default=None):
@@ -18,6 +17,26 @@ def num_bytes(f_type, kind, default=None):
         return "2*(" + kind_lower + ")"
     else:
         return "(" + kind_lower + ")"
+
+
+def convert_to_c_type_deal_rkind(f_type, kind, scope, default=None):
+    assert type(f_type) is str
+    if kind is None:
+        kind = ""
+    assert type(kind) is str, "{}, {}".format(kind, type(kind))
+    result = None
+    if kind not in opts.fortran_2_c_type_map.get(f_type.lower(), {kind.lower: default}):
+        for var in scope["variables"]:
+            if var["name"] == kind.lower():
+                result_f = var["rhs"]
+                result = opts.fortran_2_c_type_map.get(f_type.lower(), {result_f: default}).get(result_f, None)
+    else:
+        kind_lower = kind.lower()
+        result = opts.fortran_2_c_type_map.get(f_type.lower(), {kind_lower: default}).get(kind_lower, None)
+    if result == None:
+        raise ValueError("Fortran type '{}' of kind '{}' could not be translated to C type.".format(\
+            str(f_type),str(kind)))
+    return result
 
 
 def convert_to_c_type(f_type, kind, default=None):

@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 # Semi-auto generated; list may not be complete
 CUDA_RUNTIME_ENUMS = """cudaRoundNearest
 cudaRoundZero

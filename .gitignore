@@ -13,3 +13,4 @@ gpufort.h
 gpufort_reductions.h
 render*.template.*
 render.py.in
+.DS_Store

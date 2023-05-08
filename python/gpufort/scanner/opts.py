@@ -1,5 +1,4 @@
-        # SPDX-License-Identifier: MIT
-        # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 log_prefix = "scanner" # log prefix
 
 translation_enabled_by_default = True

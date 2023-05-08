@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 # derived from https://www.openacc.org/sites/default/files/inline-images/Specification/OpenACC-3.1-final.pdf (07/25/2022)
 acc_clauses = {
   "parallel": [

@@ -1,5 +1,5 @@
-{# SPDX-License-Identifier: MIT                                                 #}
-{# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
+{#- GPUFORT -#}
+{#- GPUFORT -#}
 {# jinja2 macros #}
 {% macro binop_internal(op,n,result,prefix,print_vars) -%}
 {%- if n == 1 -%}

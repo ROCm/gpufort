@@ -1,5 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 import os
 import copy
 import tempfile
@@ -83,7 +82,8 @@ class NamespaceGenerator():
             if self.__consider_parameter(ivar1,already_considered):
                 already_considered.add(ivar1["name"])
                 ivar = copy.deepcopy(ivar1)
-                translator.analysis.append_c_type(ivar)
+                #translator.analysis.append_c_type(ivar)
+                translator.analysis.append_c_type_deal_rkind(ivar, self.scope)
                 # TODO apply post-processing to rhs expression
                 #  get rid of selected_real_kind statements and so on
                 # TODO consider parameter arrays and complex kinds
@@ -96,6 +96,7 @@ class NamespaceGenerator():
                             ivar["rhs"],parseAll=True)[0].c_str()
                 tokens += [" ",ivar["name"]," = ",rhs_expr,";"]
                 body.append("".join(tokens))
+        body.reverse()
         return body
 
     @util.logging.log_entry_and_exit(opts.log_prefix)

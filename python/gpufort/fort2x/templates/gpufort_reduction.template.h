@@ -1,5 +1,5 @@
-{# SPDX-License-Identifier: MIT                                                 #}
-{# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
+{#- GPUFORT -#}
+{#- GPUFORT -#}
 // This file was generated from a template via gpufort --gpufort-create-headers
 #ifndef _GPUFORT_REDUCTIONS_H_
 #define _GPUFORT_REDUCTIONS_H_

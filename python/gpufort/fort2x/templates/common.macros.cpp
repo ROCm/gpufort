@@ -1,5 +1,5 @@
-{#- SPDX-License-Identifier: MIT                                        -#}
-{#- Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.-#}
+{#- GPUFORT -#}
+{#- GPUFORT -#}
 {########################################################################################}
 {%- macro render_global_param_decl(tavar,is_device_routine=False,is_kernel=False) -%}
 {%- set c_type = tavar.kind if tavar.f_type=="type" else tavar.c_type -%}

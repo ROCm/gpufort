@@ -34,7 +34,9 @@ lib/$(LIBGPUFORT): | gpufort_templates gpufort_headers gpufort_sources make_dire
 	make -C $(GPUFORT_DIR)/src clean
 
 lib/$(LIBGPUFORTRT): | gpufort_templates make_directories
-	make -C $(GPUFORTRT_DIR)/ clean_all build clean
+	make -C $(GPUFORTRT_DIR)/ clean_all 
+	make -C $(GPUFORTRT_DIR)/ codegen
+	make -C $(GPUFORTRT_DIR)/ build clean
 	mv $(GPUFORTRT_DIR)/lib/$(LIBGPUFORTRT)\
 	    $(GPUFORT_DIR)/lib/
 	mv $(GPUFORTRT_DIR)/include/*.mod\

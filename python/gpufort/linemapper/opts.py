@@ -1,5 +1,4 @@
-        # SPDX-License-Identifier: MIT
-        # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+
 log_prefix = "linemapper" # prefix for logging
 pretty_print_linemaps_dump = False
         # Prettify linemaps JSON files.

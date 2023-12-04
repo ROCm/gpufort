@@ -32,12 +32,14 @@ build the GPUFORT static libraries and/or
 offloading runtime for AMD and/or NVIDIA devices.
 Assuming HIPFORT is installed, you can compile them via:
 
+NOTE: The project uses `hipfort`. If you are not using the AMD flang compiler, it is recommended to build it from source so that the `hipfort` `*.mod` files are compatible with your compiler.
+
 ```bash
 HIP_PLATFORM=amd FC=hipfc make clean_all all # use HIP_PLATFORM=nvidia for NVIDIA devices
 
 # or without hipfc:
 
-FC="gfortran" HIPFORT_INC="/home/wrf/Builds/hipfort/install/include/hipfort/amdgcn" HIP_PLATFORM="amd" make clean_all all
+FC="/opt/rocm/bin/flang" HIPFORT_INC="/opt/rocm/include/hipfort/amdgcn" HIP_PLATFORM="amd" make clean_all all
 ```
 
 After compiling successfully, take a look at the 

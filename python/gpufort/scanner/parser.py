@@ -6,7 +6,10 @@ import copy
 import argparse
 import itertools
 import hashlib
-from collections import Iterable # < py38
+try:
+    from collections import Iterable # < py38
+except:
+    from collections.abc import Iterable
 import importlib
 
 import re

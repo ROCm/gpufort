@@ -1,28 +1,35 @@
+! SPDX-License-Identifier: MIT
+! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 program main 
-
 ! numbers        
 #if 0
 #error should not be entered
 #endif
 
 #if 1
-print *, "if 1"
+print *, "#if 1"
 #else
 #error should not be entered
 #endif
 
 #if 24
-print *, "if 24"
+print *, "#if 24"
 #else
 #error should not be entered
 #endif
 
 #if 2*2==8/2
-print *, "if 2*2==8/2"
+print *, "#if 2*2==8/2"
 #elif 2*2==8/2 || 1
 #error should not be entered
 #else
 #error should not be entered
+#endif
+
+! symbols
+! b is undefined
+#if b == 0 
+print *, "#if b==0"
 #endif
 
 #define x 4
@@ -33,7 +40,7 @@ print *, "#define x 4"
 #if x==5
 #error should not be entered
 #elif x==4*4/4*1+2-3+1
-print *, "elif x==4*4/4*1+2-3+1"
+print *, "#elif x==4*4/4*1+2-3+1"
 #endif
 
 #undef x
@@ -42,17 +49,17 @@ print *,"#undef x"
 print *,"#define x(a,b) (a)*(b)"
 
 #if x(1,5)==5
-print *,"x(1,5)==5"
+print *,"#if x(1,5)==5"
 #endif
 
 #define y 3
 
 #if x(1,y)==3
-print *,"x(1,y)==y"
+print *,"#if x(1,y)==3"
 #endif
 
 #if defined(x)
-print *,"defined(x)"
+print *,"#if defined(x)"
 #endif
 
 

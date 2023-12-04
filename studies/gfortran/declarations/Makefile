@@ -1,18 +1,3 @@
-TEST     ?= legal-declarations
-DEPS     ?= 
-SOURCES  ?= $(TEST).f90 $(DEPS)
-DEPS_OBJ  = $(DEPS:.f90=.o)
+TEST     ?= legal-declarations legal-character-declarations implicit-declarations-1 implicit-declarations-2
 
-.PHONY: $(TEST) run clean
-
-$(TEST): %: %.f90 $(DEPS_OBJ)
-	gfortran -cpp $^ -o $@
-
-run: test
-	./$(TEST)
-
-$(DEPS_OBJ): %.o: %.f90
-	gfortran -cpp -c $^
-
-clean:
-	rm -rf *.o *.mod $(TEST)
+include ../Makefile.in

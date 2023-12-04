@@ -1,12 +1,14 @@
-TEST     ?= nested-types callbacks
-DEPS     ?= nested-types.cpp 
-SOURCES  ?= $(TEST).f90 $(DEPS)
-DEPS_OBJ  = $(DEPS:.cpp=.o)
-LDFLAGS   = -lstdc++
+TEST ?= callbacks
+TEST_W_DEPS ?= reference-members nested-types bindcpp alter-ego
+DEPS_OBJ = $(addsuffix .o, $(TEST_W_DEPS))
+LDFLAGS  = -lstdc++
 
 .PHONY: $(TEST) run clean
 
-$(TEST): %: %.f90 $(DEPS_OBJ)
+$(TEST): %: %.f90
+	gfortran -cpp $^ -o $@ $(LDFLAGS)
+
+$(TEST_W_DEPS): %: %.f90 %.o
 	gfortran -cpp $^ -o $@ $(LDFLAGS)
 
 run: test
@@ -16,4 +18,4 @@ $(DEPS_OBJ): %.o: %.cpp
 	g++ -c $^
 
 clean:
-	rm -rf *.o *.mod $(TEST)
+	rm -rf *.o *.mod $(TEST) $(TEST_W_DEPS)

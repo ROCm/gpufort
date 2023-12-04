@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 ###############################################################################
 # config file for dynamico (python script)
 ###############################################################################
@@ -33,10 +33,10 @@ scanner.HIP_MATH_MODULE_PREFIX = scanner.HIP_MODULE_NAME+"_"
 scanner.ACC_DEV_PREFIX=""
 scanner.ACC_DEV_SUFFIX="_d"
 
-translator.FORTRAN_2_C_TYPE_MAP["complex"]["cstd"] = "hipDoubleComplex"
-translator.FORTRAN_2_C_TYPE_MAP["complex"]["rstd"] = "hipDoubleComplex"
-translator.FORTRAN_2_C_TYPE_MAP["real"]["rstd"]    = "double"
-translator.FORTRAN_2_C_TYPE_MAP["complex"]["istd"] = "int"
+translator.fortran_2_c_type_map["complex"]["cstd"] = "hipDoubleComplex"
+translator.fortran_2_c_type_map["complex"]["rstd"] = "hipDoubleComplex"
+translator.fortran_2_c_type_map["real"]["rstd"]    = "double"
+translator.fortran_2_c_type_map["complex"]["istd"] = "int"
 
 translator.LOOP_COLLAPSE_STRATEGY="collapse-always"
 

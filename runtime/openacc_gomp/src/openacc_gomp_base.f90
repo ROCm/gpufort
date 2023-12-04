@@ -1,5 +1,5 @@
 ! SPDX-License-Identifier: MIT                                                
-! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 ! This module is stateless to prevent data races when OpenMP is enabled.
 module openacc_gomp_base
   use iso_c_binding

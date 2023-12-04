@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+# Combine expressions from all grammar definitions
+loop_annotation = acc_parallel_loop | acc_kernels_loop | acc_loop | cuf_kernel_do
+
+offload_region_start = acc_serial | acc_parallel | acc_kernels

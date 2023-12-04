@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import time
 import unittest
 import cProfile,pstats,io
@@ -6,39 +8,38 @@ import re
 import ast
 
 import addtoplevelpath
-import linemapper.grammar as grammar
-import linemapper.linemapper as linemapper
+from gpufort import linemapper
 
-#import utils.logging
+#import gpufort.util.logging
 #
 #LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-#utils.logging.VERBOSE    = False
+#gpufort.util.logging.opts.verbose    = False
 
 PROFILING_ENABLE = False
 
 class TestPreprocessorGrammar(unittest.TestCase):
     def setUp(self):
-        self._started_at = time.time()
-        self._extra      = ""
+        self.started_at = time.time()
+        self.extra      = ""
         if PROFILING_ENABLE:
-            self._profiler = cProfile.Profile()
-            self._profiler.enable()
+            self.profiler = cProfile.Profile()
+            self.profiler.enable()
     def tearDown(self):
         if PROFILING_ENABLE:
-            self._profiler.disable() 
+            self.profiler.disable() 
             s = io.StringIO()
             sortby = 'cumulative'
-            stats = pstats.Stats(self._profiler, stream=s).sort_stats(sortby)
+            stats = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
             stats.print_stats(10)
             print(s.getvalue())
-        elapsed = time.time() - self._started_at
-        print('{} ({}s{})'.format(self.id(), round(elapsed, 6),self._extra))
+        elapsed = time.time() - self.started_at
+        print('{} ({}s{})'.format(self.id(), round(elapsed, 6),self.extra))
     def test_1_compiler__options(self):
         options = "-Dflag0 -Dflag1=value1 -Dflag2=1 -Dflag3=.TRUE. -Dflag4=1.012E-23"
         names   = ["flag"+str(i) for i in range(0,4+1)]
         values  = [None, "value1", "1", ".TRUE.", "1.012E-23"]
         n = 0
-        for result,_,__ in grammar.pp_compiler_option.scanString(options):
+        for result,_,__ in linemapper.grammar.pp_compiler_option.scanString(options):
             self.assertEqual(values[n],result.value,"Parsing value for name '"+result.name+"' failed") 
             n += 1
     def test_2_definitions(self):
@@ -51,10 +52,10 @@ class TestPreprocessorGrammar(unittest.TestCase):
         names = ["a","a1","_a_b_c","a","a"]
         n = 0
         for text in testdata:
-            for result,_,__ in grammar.pp_dir_undef.scanString(text):
+            for result,_,__ in linemapper.grammar.pp_dir_undef.scanString(text):
                 self.assertEqual(names[n],result.name) 
             n += 1
-        #define 
+        #define
         testdata = [
             "#define a",
             "#define a1 5",
@@ -66,7 +67,7 @@ class TestPreprocessorGrammar(unittest.TestCase):
         substitutions = ["", "5", "6", "text", "(b)*(c)*(d)"]
         n = 0
         for text in testdata:
-            for result,_,__ in grammar.pp_dir_define.scanString(text):
+            for result,_,__ in linemapper.grammar.pp_dir_define.scanString(text):
                 self.assertEqual(names[n],result.name) 
                 if result.args:
                     result_args = result.args.replace(" ","").split(",")
@@ -81,14 +82,14 @@ class TestPreprocessorGrammar(unittest.TestCase):
             "#      ifdef a",
         ]
         for text in testdata:
-            for result,_,__ in grammar.pp_dir_ifdef.scanString(text):
+            for result,_,__ in linemapper.grammar.pp_dir_ifdef.scanString(text):
                 self.assertEqual("a",result.name) 
         testdata = [
             "#ifndef a",
             "#      ifndef a",
         ]
         for text in testdata:
-            for result,_,__ in grammar.pp_dir_ifndef.scanString(text):
+            for result,_,__ in linemapper.grammar.pp_dir_ifndef.scanString(text):
                 self.assertEqual("a",result.name) 
     def test_4_include(self):
         files = [
@@ -109,72 +110,9 @@ class TestPreprocessorGrammar(unittest.TestCase):
         ]
         n = 0
         for text in testdata:
-            for result,_,__ in grammar.pp_dir_include.scanString(text):
+            for result,_,__ in linemapper.grammar.pp_dir_include.scanString(text):
                 self.assertEqual(files[n],result.filename)
             n += 1
-    def test_5_arithm_logic_expr(self):
-        numSuccess = 0
-        # basic checks
-        testdata = [
-            "a",
-            "!a",
-        ]
-        binops      = ["==","!=","<",">","<=",">=","*","/","%","&&","||",".and.",".or."]
-        expressions = ["a","1","0",".true.","a(b,c,d)"]
-        for op in binops:
-            for a in expressions:
-                for b in expressions:
-                    testdata.append("{} {} {}".format(a,op,b))
-        numTests = len(testdata)
-        for text in testdata:
-            try:
-                result = grammar.pp_arithm_logic_expr.parseString(text,parseAll=True)
-                numSuccess += 1
-            except:
-                pass
-        # some more complicated checks
-        testdata.clear()
-        testdata = [
-          "( a == b ) || ( ( a*b <= 4 ) && defined(x) )",
-          "defined(a) && macro(a*b+c,c+d-e%5) <= N%3",
-          "defined(a) && macro1(macro2(a*b+macro3(c)),c+d-e%5) <= N%3",
-        ]
-        numTests += len(testdata)
-        for text in testdata:
-            try:
-                result = grammar.pp_arithm_logic_expr.parseString(text,parseAll=True)
-                numSuccess += 1
-            except Exception as e:
-                print(text)
-                raise e
-        self._extra = ", performed {} checks".format(numTests)
-        self.assertEqual(numSuccess,numTests)
-    def test_6_macro_substitution(self):
-        macro_stack = [
-          { "name": "b", "args": [], "subst": "5" },
-          { "name": "a", "args": ["x"], "subst": "(5*x)" },
-        ]
-        
-        testdata_true = [
-          "defined(a)",
-          "!!defined(a)",
-          "!defined(x)",
-          "defined(a) && !defined(x) && a(b) > 4"
-        ]
-        testdata_false = [
-          "!defined(a)",
-          "!!defined(x)",
-          "!defined(a) || defined(x) || a(5) < 1",
-          "!(defined(a) && !defined(x) && a(b) > 4)"
-        ]
-        for text in testdata_true:
-            condition = linemapper.evaluate_condition(text,macro_stack)
-            self.assertTrue(condition)
-        for text in testdata_false:
-            condition = linemapper.evaluate_condition(text,macro_stack)
-            self.assertFalse(condition)
-        numTests = len(testdata_true) + len(testdata_false)
-        self._extra = ", performed {} checks".format(numTests)
       
 if __name__ == '__main__':
     unittest.main() 

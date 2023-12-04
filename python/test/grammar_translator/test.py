@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from pyparsing import *
 import sys
 
@@ -23,11 +23,6 @@ def run(expression,testdata,tag,raiseException=False):
                    print("Error in line {}: '{}'".format(e._intrnl_getattr___("lineno"),e._intrnl_getattr___("line"))) 
                    #if isinstance(e,ParseException):
                    raise e
-    if not tag is None: 
-        with open("testoutput/{}-success.txt".format(tag),"w") as output:
-             output.writelines(successfullyParsed)
-        with open("testoutput/{}-fail.txt".format(tag),"w") as output:
-            output.writelines(failedToParse)
     if not len(failedToParse):
         print("PASSED")
     else:

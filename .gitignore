@@ -5,5 +5,11 @@ __pycache__
 *.kernels.f08
 *.kernels.hip.cpp
 *.hipified.*
+*-gpufort.cpp
+*-gpufort.f*
+*-fort2x.cpp
+*-fort2x.f*
 gpufort.h
 gpufort_reductions.h
+render*.template.*
+render.py.in

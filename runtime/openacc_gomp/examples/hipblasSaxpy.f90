@@ -1,5 +1,5 @@
 ! SPDX-License-Identifier: MIT                                                
-! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 program test_acc
   use openacc_gomp
   use hipfort_check

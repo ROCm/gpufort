@@ -1,3 +1,5 @@
+! SPDX-License-Identifier: MIT
+! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 program main
   use cudafor
   implicit none
@@ -5,8 +7,6 @@ program main
   real :: x(N), y(N), a
   real, device, allocatable :: x_d(:)
   real, allocatable :: y_d(:)
-  !real, device :: x_d(N), y_d(N) ! fixed-size arrays are not fully 
-                       ! supported yet as alloc/dealloc are not generated yet
   type(dim3) :: grid, tBlock
   integer :: i
 

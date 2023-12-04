@@ -1,0 +1,482 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import textwrap
+
+import pyparsing
+
+from gpufort import indexer
+from gpufort import util
+
+from .. import prepostprocess
+from .. import opts
+
+from . import base
+from . import fortran
+from . import grammar
+
+class ILoopAnnotation():
+
+    def num_collapse(self):
+        return grammar.CLAUSE_NOT_FOUND
+
+    def tile_sizes(self):
+        return [grammar.CLAUSE_NOT_FOUND]
+
+    def grid_expr_f_str(self):
+        """ only CUF """
+        return None
+
+    def block_expr_f_str(self):
+        """ only CUF """
+        return None
+
+    def num_gangs_teams_blocks(self):
+        return [grammar.CLAUSE_NOT_FOUND]
+
+    def num_threads_in_block(self):
+        return [grammar.CLAUSE_NOT_FOUND]
+
+    def num_workers(self):
+        """ only ACC """
+        return grammar.CLAUSE_NOT_FOUND
+
+    def simdlen_vector_length(self):
+        return grammar.CLAUSE_NOT_FOUND
+
+    def data_independent_iterations(self):
+        return True
+
+    def private_vars(self, converter=base.make_f_str):
+        """ CUF,ACC: all scalars are private by default """
+        return []
+
+    def lastprivate_vars(self, converter=base.make_f_str):
+        """ only OMP """
+        return []
+
+    def discover_reduction_candidates(self):
+        return False
+
+    def reductions(self, converter=base.make_f_str):
+        """ CUF: Scalar lvalues are reduced by default """
+        return {}
+
+    def shared_vars(self, converter=base.make_f_str):
+        """ only OMP """
+        return []
+
+    #def map_to_blocks(self):
+    #    """If the (collapsed) outer loop should be mapped to blocks.
+    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
+    #          routines may return True."""
+    #    return False
+    #
+    #def map_to_wavefronts(self):
+    #    """If the (collapsed) outer loop should be mapped to warps/wavefronts.
+    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
+    #          routines may return True."""
+    #    return False
+
+    #def map_to_threads(self):
+    #    """If the (collapsed) outer loop should be mapped to threads.
+    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
+    #          routines may return True."""
+    #    return True
+
+    def all_arrays_are_on_device(self):
+        """ only True for CUF kernel do directive """
+        return False
+
+
+class TTDo(base.TTContainer):
+
+    def _assign_fields(self, tokens):
+        # Assignment, number | variable
+        self.annotation, self._begin, self._end, self._step, self.body = tokens
+        if self.annotation == None:
+            self.annotation = ILoopAnnotation()
+        self.thread_index = None # "z","y","x"
+
+    def child_nodes(self):
+        return [self.annotation, self.body, self._begin, self._end, self._step]
+
+    def begin_c_str(self):
+        return base.make_c_str(self._begin._rhs)
+    
+    def end_c_str(self):
+        return base.make_c_str(self._end)
+   
+    def has_step(self):
+        return self._step != None
+
+    def step_c_str(self):
+        return base.make_c_str(self._step)
+
+    # TODO clean up
+    def hip_thread_index_c_str(self):
+        idx = self.loop_var()
+        begin = base.make_c_str(
+            self._begin._rhs) # array indexing is corrected in index macro
+        end = base.make_c_str(self._end)
+        if self._step != None:
+            step = base.make_c_str(self._step)
+        else:
+            step = "1"
+        return "int {idx} = {begin} + ({step})*(threadIdx.{tidx} + blockIdx.{tidx} * blockDim.{tidx});\n".format(\
+                idx=idx,begin=begin,tidx=self.thread_index,step=step)
+
+    def collapsed_loop_index_c_str(self):
+        idx = self.loop_var()
+        args = [
+          self.thread_index,
+          base.make_c_str(self._begin._rhs),
+          base.make_c_str(self._end),
+        ]
+        if self._step != None:
+            args.append(base.make_c_str(self._step))
+        else:
+            args.append("1")
+        return "int {idx} = outermost_index({args});\n".format(\
+               idx=idx,args=", ".join(args))
+
+    def problem_size(self, converter=base.make_f_str):
+        if self._step == None:
+            step = "1"
+        else:
+            step = converter(self._step)
+        return "gpufort_loop_len(int({begin},c_int),int({end},c_int),int({step},c_int))".format(\
+            begin=converter(self._begin._rhs),end=converter(self._end),step=step)
+    
+    def problem_size_c_str(self):
+        converter = base.make_c_str
+        if self._step == None:
+            step = "1"
+        else:
+            step = converter(self._step)
+        return "loop_len({begin},{end},{step})".format(\
+            begin=converter(self._begin._rhs),end=converter(self._end),step=step)
+
+    # TODO rename
+    def hip_thread_bound_c_str(self):
+        args = [
+          self.loop_var(),
+          base.make_c_str(self._end),
+        ]
+        if self._step != None:
+            args.append(base.make_c_str(self._step))
+        else:
+            args.append("1")
+        return "loop_cond({})".format(",".join(args))
+
+    def loop_var(self, converter=base.make_c_str):
+        return converter(self._begin._lhs)
+
+    def c_str(self):
+        body = textwrap.dedent(base.TTContainer.c_str(self))
+        if self.thread_index == None:
+            idx = self.loop_var()
+            begin = base.make_c_str(
+                self._begin._rhs) # array indexing is corrected in index macro
+            end = base.make_c_str(self._end)
+            condition = self.hip_thread_bound_c_str()
+            step = None
+            if self._step != None:
+                step = base.make_c_str(self._step)
+                try: # check if step is an integer number
+                    ival = int(step)
+                    step = str(ival)
+                    if ival > 0:
+                        condition = "{} <= {}".format(idx,end)
+                    else:
+                        condition = "{} >= {}".format(idx,end)
+                except:
+                    pass
+            else:
+                condition = "{} <= {}".format(idx,end)
+                step = "1"
+            return textwrap.dedent("""\
+                for ({idx}={begin}; {condition}; {idx} += {step}) {{
+                {body}
+                }}""").format(\
+                    idx=idx, begin=begin, condition=condition, step=step, body=textwrap.indent(body," "*2))
+        else:
+            return textwrap.indent(body," "*2)
+
+
+class IComputeConstruct():
+
+    def num_collapse(self):
+        return grammar.CLAUSE_NOT_FOUND
+
+    def num_dimensions(self):
+        return 1
+
+    def discover_reduction_candidates(self):
+        return False
+
+    def grid_expr_f_str(self):
+        """ only CUF """
+        return None
+
+    def block_expr_f_str(self):
+        """ only CUF """
+        return None
+    
+    def num_gangs_teams_blocks_specified(self):
+        return next((el for el in self.num_gangs_teams_blocks()
+                    if el != grammar.CLAUSE_NOT_FOUND),None) != None
+    
+    def num_threads_in_block_specified(self):
+        return next((el for el in self.num_gangs_teams_blocks() 
+                    if el != grammar.CLAUSE_NOT_FOUND),None) != None
+
+    def num_gangs_teams_blocks(self):
+        return [grammar.CLAUSE_NOT_FOUND]
+
+    def num_threads_in_block(self):
+        return [grammar.CLAUSE_NOT_FOUND]
+
+    def gang_team_private_vars(self, converter=base.make_f_str):
+        """ CUF,ACC: all scalars are private by default """
+        return []
+
+    def gang_team_firstprivate_vars(self, converter=base.make_f_str):
+        return []
+
+    def gang_team_reductions(self, converter=base.make_f_str):
+        return {}
+
+    def gang_team_shared_vars(self, converter=base.make_f_str):
+        return []
+
+    def local_scalars(self):
+        return []
+
+    def reduction_candidates(self):
+        return []
+
+    def async_nowait():
+        """value != grammar.CLAUSE_NOT_FOUND means True"""
+        return grammar.CLAUSE_NOT_FOUND
+
+    def stream(self, converter=base.make_f_str):
+        return "c_null_ptr"
+
+    def sharedmem(self, converter=base.make_f_str):
+        return "0"
+
+    def use_default_stream(self):
+        return True
+
+    def depend(self):
+        """ only OMP """
+        #return { "in":[], "out":[], "inout":[], "inout":[], "mutexinoutset":[], "depobj":[] }
+        return {}
+
+    def device_types(self):
+        return "*"
+
+    def if_condition(self):
+        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+
+    def self_condition(self):
+        """ OMP,ACC: run on current CPU / device (and do not offload) """
+        return ""
+
+    def deviceptrs(self):
+        return []
+
+    def create_alloc_vars(self):
+        return []
+
+    def no_create_vars(self):
+        """ only ACC"""
+        return []
+
+    def present_vars(self):
+        """ only ACC"""
+        return []
+
+    def delete_release_vars(self):
+        return []
+
+    def copy_map_tofrom_vars(self):
+        return []
+
+    def copyin_map_to_vars(self):
+        return []
+
+    def copyout_map_from_vars(self):
+        return []
+
+    def attach_vars(self):
+        """ only ACC """
+        return []
+
+    def detach_vars(self):
+        """ only ACC """
+        return []
+
+    def all_mapped_vars(self):
+        """:return: Name of all mapped variables. """
+        result = []
+        result += self.deviceptrs()
+        result += self.create_alloc_vars()
+        result += self.no_create_vars()
+        result += self.present_vars()
+        result += self.delete_release_vars()
+        result += self.copy_map_tofrom_vars()
+        result += self.copyin_map_to_vars()
+        result += self.copyout_map_from_vars()
+        result += self.attach_vars()
+        result += self.detach_vars()
+        return result
+
+    def present_by_default(self):
+        """ only ACC parallel """
+        return True
+    
+    def is_serial_construct(self):
+        return False 
+
+    def c_str(self):
+        return ""
+
+
+class TTComputeConstruct(base.TTContainer, IComputeConstruct):
+
+    def _assign_fields(self, tokens):
+        self._parent_directive, self.body = tokens
+        self.scope = indexer.types.EMPTY_SCOPE
+
+    def child_nodes(self):
+        return [self._parent_directive, self.body]
+
+    def __first_loop_annotation(self):
+        if isinstance(self.body[0],TTDo):
+            return self.body[0].annotation
+        else:
+            return None
+
+    def parent_directive(self):
+        if self._parent_directive == None:
+            return self._first_loop_annotation()
+        else:
+            return self._parent_directive
+
+    def async_nowait():
+        """value != grammar.CLAUSE_NOT_FOUND means True"""
+        return self.parent_directive().async_nowait()
+
+    def depend(self):
+        return self.parent_directive().depend()
+
+    def device_types(self):
+        return self.parent_directive().device_types()
+
+    def if_condition(self):
+        return self.parent_directive().if_condition()
+
+    def self_condition(self):
+        return self.parent_directive().self_condition
+
+    def all_arrays_are_on_device(self):
+        return self.parent_directive().all_arrays_are_on_device()
+
+    def create_alloc_vars(self):
+        return self.parent_directive().create_alloc_vars()
+
+    def no_create_vars(self):
+        return self.parent_directive().no_create_vars()
+
+    def present_vars(self):
+        return self.parent_directive().present_vars()
+
+    def delete_release_vars(self):
+        return self.parent_directive().delete_release_vars()
+
+    def copy_map_tofrom_vars(self):
+        return self.parent_directive().copy_map_tofrom_vars()
+
+    def copyin_map_to_vars(self):
+        return self.parent_directive().copyin_map_to_vars()
+
+    def copyout_map_from_vars(self):
+        return self.parent_directive().copyout_map_from_vars()
+
+    def attach_vars(self):
+        return self.parent_directive().attach_vars()
+
+    def detach_vars(self):
+        return self.parent_directive().detach_vars()
+
+    def present_by_default(self):
+        return self.parent_directive().present_by_default()
+
+    def is_serial_construct(self):
+        return self.parent_directive().is_serial_construct()
+    # TODO move to analysis
+    #def map_outer_loop_to_blocks(self):
+    #    return self.parent_directive().map_outer_loop_to_blocks()
+    #
+    #def map_outer_loop_to_wavefronts(self):
+    #    return self.parent_directive().map_outer_loop_to_wavefronts()
+
+    #def map_outer_loop_to_threads(self):
+    #    return self.parent_directive().map_outer_loop_to_threads()
+
+    def grid_expr_f_str(self):
+        """ only CUF """
+        return self.parent_directive().grid_expr_f_str()
+
+    def block_expr_f_str(self):
+        """ only CUF """
+        return self.parent_directive().block_expr_f_str()
+
+    def gang_team_private_vars(self, converter=base.make_f_str):
+        result = self.parent_directive().gang_team_private_vars(converter)
+        return result
+
+    def gang_team_firstprivate_vars(self, converter=base.make_f_str):
+        return self.parent_directive().gang_team_firstprivate_vars(converter)
+
+    # TODO move into analysis
+    def gang_team_reductions(self, converter=base.make_f_str):
+        if self.__first_loop_annotation() != None:
+            if self.__first_loop_annotation().discover_reduction_candidates():
+                return {
+                    "UNKNOWN": self.reduction_candidates()
+                } # TODO default reduction type should be configurable
+            else:
+                return self.__first_loop_annotation().reductions(converter)
+        else:
+            return {}
+        
+
+    def stream(self, converter=base.make_f_str):
+        return self.parent_directive().stream(converter)
+
+    def sharedmem(self, converter=base.make_f_str):
+        return self.parent_directive().sharedmem(converter)
+
+class TTProcedureBody(base.TTContainer):
+
+    def _assign_fields(self, tokens):
+        self.body = tokens
+        self.scope = []
+        self.result_name = ""
+
+# TODO move to different place
+def format_directive(directive_line, max_line_width):
+    result = ""
+    line = ""
+    tokens = directive_line.split(" ")
+    sentinel = tokens[0]
+    for tk in tokens:
+        if len(line + tk) > max_line_width - 1:
+            result += line + "&\n"
+            line = sentinel + " "
+        line += tk + " "
+    result += line.rstrip()
+    return result

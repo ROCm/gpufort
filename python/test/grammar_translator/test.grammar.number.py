@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-import addtoplevelpath
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os,sys
 import time
 import unittest
-import grammar.grammar as grammar
+import addtoplevelpath
+from gpufort import grammar
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
-class TestGrammarNummber(unittest.TestCase):
+class TestGramarNummber(unittest.TestCase):
     def setUp(self):
         global index
-        self._started_at = time.time()
+        self.started_at = time.time()
     def tearDown(self):
-        elapsed = time.time() - self._started_at
+        elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_0_type_start_pass(self):
         testdata = """-1
@@ -35,7 +37,7 @@ class TestGrammarNummber(unittest.TestCase):
          -12.3d-1.5_dp
          -12.3d-1.5_4
          .5e-4_w
-         .5_w4""".split("\n")
+         .5_w4""".splitlines()
         for snippet in testdata:
             try:
                 grammar.number.parseString(snippet)

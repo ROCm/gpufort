@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 from kerneltranslator import * 
 
@@ -45,7 +47,7 @@ LIST_OF_TENSORS.clear()
 #!$cuf kernel do(3) <<<*,*, 0, dfft%a2a_comp>>>
 #!$cuf kernel do(3) <<<*,*,0,dfft%a2a_comp>>>
 #!$cuf kernel do(3) <<<*,(16,16,1), 0, stream>>>
-#!$cuf kernel do(4)""".split("\n")
+#!$cuf kernel do(4)""".splitlines()
 
 #for v in cufKernelDoVariants:
 #  try:
@@ -108,7 +110,7 @@ do j=1,n
 enddo
 enddo"""
 
-#parse_result = cuf_loop_kernel.parseString(testCufLoopKernel) 
+#parse_result = cuf_loop_kernel.parseString(testCufLoopKernel)
 #print(testCufLoopKernel)
 
 #import inspect
@@ -172,7 +174,7 @@ implicit none
    call show_consts() 
    
    #print*, "e raised to the power of 2.0 = ", ePowerx
-   #print*, "Area of a circle with radius 7.0 = ", area  
+   #print*, "Area of a circle with radius 7.0 = ", area
    
 end program module_example"""
 
@@ -187,8 +189,8 @@ implicit none
    
 contains      
    subroutine show_consts()          
-      #print*, "Pi = ", pi          
-      #print*,  "e = ", e     
+      #print*, "Pi = ", pi
+      #print*,  "e = ", e
    end subroutine show_consts 
    
 end module testmodule 
@@ -206,7 +208,7 @@ implicit none
    call show_consts() 
    
    #print*, "e raised to the power of 2.0 = ", ePowerx
-   #print*, "Area of a circle with radius 7.0 = ", area  
+   #print*, "Area of a circle with radius 7.0 = ", area
    
 end program module_example"""
 #for el in program.scanString(testFortranFile):

@@ -1,29 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT                                                 
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-# check if required software installed
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 GPUFORT_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-declare -i retval
-requirements=$(grep -v "^\s*#" $GPUFORT_BIN_DIR/../os-requirements.txt | grep "^\w\+")
-for p in $requirements; do 
-  command -v $p > /dev/null
-  retval=$(echo $?)
-  if (( retval > 0 )); then
-    echo "ERROR: Could not find program '$p'. Please install or add to path."
-    exit 10
-  fi
-done
-
-declare -i clang_format_version # major version
-clang_format_version=$(clang-format --version | grep -o "clang-format version [0-9]\+\.[0-9]\+\.[0-9]\+" | grep -o "\s\+[0-9]\+")
-if (( clang_format_version < 7 )); then
-  echo "ERROR: Minimum required clang-format version is 7.0.0"
-  exit 11
-fi
-
 # check if required python packages are installed
-requirements=$(grep -v "^\s*#" $GPUFORT_BIN_DIR/../python3-requirements.txt | grep "^\w\+")
+requirements=$(grep -v "^\s*#" $GPUFORT_BIN_DIR/../python/requirements.txt | grep "^\w\+")
 declare -i requirements_missing 
 requirements_missing=0 # 0: 'false', >0: true
 for m in $requirements; do 
@@ -36,7 +17,7 @@ for m in $requirements; do
 done
 if (( requirements_missing > 0 )); then
   echo "Please install missing python3 packages e.g. via:"
-  echo "python3 -m pip install -r <gpufort_root>/python3-requirements.txt"
+  echo "python3 -m pip install -r ${GPUFORT_BIN_DIR}/../python/requirements.txt"
   echo "(you might need to be root)"
   exit 20
 fi
@@ -63,5 +44,5 @@ for a in "$@"; do
 done 
 
 if [ -z ${USED_DEVELOPER_TOOL} ]; then
-  python3 $GPUFORT_BIN_DIR/../python/gpufort.py --working-dir $(pwd) "${@}"
+  python3 $GPUFORT_BIN_DIR/../python/converter.py --working-dir $(pwd) "${@}" ${GPUFORT_FLAGS_APPEND}
 fi

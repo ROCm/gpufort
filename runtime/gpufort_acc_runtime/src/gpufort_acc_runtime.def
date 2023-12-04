@@ -1,4 +1,0 @@
-#define __PRESENT_OPTIONALS_DUMMY_ARGS   async,module_var,create,copy,copyin,copyout
-#define __PRESENT_OPTIONALS_DECLARATIONS  integer,intent(in),optional  :: async\
-      logical,intent(in),optional  :: module_var\
-      logical,intent(in),optional  :: copy, copyin, copyout, create

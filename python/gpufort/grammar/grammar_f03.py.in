@@ -1,0 +1,180 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+LPAR,RPAR = map(Suppress, "()")
+EQ,ELEM,COMMA,DOT,UNDERSCORE = map(Suppress, "=%,._")
+PEQ=Suppress("=>")
+COLONS=Suppress("::")
+OPTCOMMA = Optional(COMMA)
+
+CALL,ATTRIBUTES,LEN,KIND,DIM = makeCaselessLiteral("call,attributes,len,kind,dim",suppress=True)
+
+# basic
+
+identifier = pyparsing_common.identifier.copy()
+integer    = pyparsing_common.integer.copy()
+number     = Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
+logical    = Regex(r"\.(true|false)\.", re.IGNORECASE)
+character  = QuotedString('"', escQuote='\\') | QuotedString("'", escQuote="\\")
+OPTSIGN    = Optional(Regex("[-+]|\.not\.",re.IGNORECASE),default="")
+
+# arithmetic logical expressions and assignments
+arithmetic_expression = Forward()
+func_rvalue = Forward()
+func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # emits one token # TODO generalize to named args
+arglist   = Optional(Group(delimitedList(func_rvalue)),default=[]) #  emits one token
+func_call = identifier + LPAR + arglist + RPAR # emits 2 tokens: *,
+
+# derived_types
+simple_struct_rvalue = Forward()
+simple_derived_type_member   = identifier + ELEM + simple_struct_rvalue
+simple_struct_rvalue <<= simple_derived_type_member | identifier
+#
+derived_type_rvalue = Forward()
+derived_type_elem = (( func_call | identifier ) + ELEM + derived_type_rvalue )
+derived_type_rvalue <<= derived_type_elem | func_call | identifier
+
+complex_arithmetic_expression = Forward()
+conversion      = Forward()
+inquiry_function = Forward()
+
+#rvalue = OPTSIGN + (conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is important
+
+# |: ordered OR, order is import
+# somehow adding the Group is import to prevent that the expression is inlined 
+rvalue = Group(conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is import
+# Add Group to have same structure as rvalue
+lvalue           = Group(derived_type_elem | func_call | identifier)
+lvalueList       = Group(delimitedList(lvalue))
+
+fortran_subroutine_call = CALL + func_call
+
+# assignments
+l_arith_operator_1 = Regex(r"[+-]")
+l_arith_operator_2 = Regex(r"[+\-*/]")
+condition_op_1 = Regex(r"\.not\.",re.IGNORECASE)
+condition_op_2 = Regex(r"[<>=/]=|[<>]|\.(eqv|neqv|eq|ne|lt|gt|le|ge|and|or|xor)\.",re.IGNORECASE)
+arithmetic_expression <<= infixNotation(rvalue,
+    [
+      (l_arith_operator_1, 1, opAssoc.RIGHT),
+      (l_arith_operator_2, 2, opAssoc.LEFT),
+    ],
+)
+arithmetic_logical_expression = infixNotation(arithmetic_expression, #NOTE: Slower because of the additional operators
+    [
+      (condition_op_1, 1, opAssoc.RIGHT),
+      (condition_op_2, 2, opAssoc.LEFT),
+    ],
+)
+
+# use in preprocessing step
+power_value1 = rvalue
+power_value2 = LPAR + arithmetic_expression + RPAR
+power_value  = power_value2 | rvalue
+power        = power_value + Suppress("**") + power_value
+
+assignment_begin = lvalue + EQ
+assignment       = lvalue + EQ + arithmetic_logical_expression # ! emits 2 tokens: *,*
+
+MATLPAR = Regex(r"\(\/|\[").suppress()
+MATRPAR = Regex(r"\/\)|\]").suppress()
+matrix_arithmetic_expression = MATLPAR + Group(delimitedList(arithmetic_logical_expression)) + MATRPAR
+matrix_assignment            = lvalue + EQ + matrix_arithmetic_expression
+
+complex_arithmetic_expression <<= LPAR + Group(arithmetic_expression + COMMA + arithmetic_expression) + RPAR 
+complex_assignment = lvalue + EQ + complex_arithmetic_expression
+
+fortran_assignment = matrix_assignment | complex_assignment | assignment
+
+single_colon  = (Literal(":") + ~Literal(":")).suppress()
+stride        = single_colon + arithmetic_expression
+array_range0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
+array_range1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
+array_range1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
+array_range2  = (arithmetic_expression + single_colon + arithmetic_expression)
+array_range   = (array_range2 | array_range1b | array_range1a | array_range0) + Optional(stride,default=None)
+# define forward declared tokens
+func_rvalue <<= array_range | arithmetic_logical_expression
+
+# conversion functions
+# TODO check type of variable when translating
+# see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
+# for now, always assume conversion between complex and float types
+REAL,FLOAT,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,float,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
+single_arg_plus_kind = LPAR + (~func_kind+arithmetic_expression) + Optional(func_kind,default=None) + RPAR # emits 2 tokens: *,*,*
+double_arg_plus_kind = LPAR + (~func_kind+arithmetic_expression) + Optional(COMMA + (~func_kind+arithmetic_expression),default="0") +\
+                           Optional(func_kind,default=None) + RPAR # emits 2 tokens: *,*,*
+
+convert_to_extract_real   = ( REAL | FLOAT ) + single_arg_plus_kind # emits 2 tokens,
+convert_to_double         = DBLE   + single_arg_plus_kind # emits 2 tokens,
+convert_to_complex        = CMPLX  + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
+convert_to_double_complex = DCMPLX + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
+extract_imag              = AIMAG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> y
+conjugate                 = CONJG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+conjugate_double_complex  = DCONJG + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+
+conversion <<= convert_to_extract_real | convert_to_double | convert_to_complex | convert_to_double_complex | extract_imag | conjugate | conjugate_double_complex
+
+# inquiry functions
+SIZE,LBOUND,UBOUND = makeCaselessLiteral("size,lbound,ubound",suppress=True)
+inquiry_dim_arg  = ( integer | arithmetic_expression ) 
+inquiry_kind_arg = ( integer | arithmetic_expression ) 
+inquiry_function_arg = lvalue + Optional(COMMA + Optional(DIM + EQ) + inquiry_dim_arg,default=None) + Optional(COMMA + Optional(KIND + EQ) + inquiry_kind_arg,default=None)
+size_inquiry   = SIZE   + LPAR + inquiry_function_arg + RPAR  
+lbound_inquiry = LBOUND + LPAR + inquiry_function_arg + RPAR 
+ubound_inquiry = UBOUND + LPAR + inquiry_function_arg + RPAR 
+inquiry_function <<= size_inquiry | lbound_inquiry | ubound_inquiry
+
+## Condition
+### If statement
+WHILE,IF,ELSE,THEN,DO,END,SELECT,CASE,DEFAULT,WHERE,FORALL,FOREACH = makeCaselessLiteral(
+ "while,if,else,then,do,end,select,case,default,where,forall,foreach",suppress=True)
+
+block = Forward() # forward declaration
+
+# Example:
+#
+#  IF (x < 50) THEN
+#     Grade = 'f'
+#  ELSE IF (x < 60) THEN
+#     Grade = 'd'
+#  ELSEIF (x < 70) THEN
+#     Grade = 'c'
+#  ELSE IF (x < 80) THEN
+#     Grade = 'b'
+#  ELSE
+#     Grade = 'a'
+#  END IF
+fortran_if_else_if = Optional(CASELESS_LITERAL("else"),default="") + IF + LPAR + arithmetic_logical_expression + RPAR + THEN
+fortran_else       = ELSE
+
+#[name:] select case (expression)
+#   case (selector1)
+#   ! some statements
+#   ... case (selector2)
+#   ! other statements
+#   ...
+#   case default
+#   ! more statements
+#   ...
+#end select [name]
+fortran_select_case     = Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
+fortran_case            = Regex(r"case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
+fortran_case_default    = Regex(r"case\s+default",re.IGNORECASE).suppress() # TODO not sure if still needed
+fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress() # TODO not sure if still needed
+
+## Do/while Loop
+do_loop_start    = Regex(r"(\w+\s*:)?\s*do",re.IGNORECASE).suppress()
+fortran_do       = do_loop_start + assignment + COMMA + arithmetic_expression + Optional(COMMA + arithmetic_expression,default=None)
+fortran_do_while = do_loop_start + WHILE + LPAR + arithmetic_logical_expression + RPAR 
+
+# attributes/qualifiers
+INTENT,IN,OUT,INOUT,DIMENSION = makeCaselessLiteral(\
+  "intent,in,out,inout,dimension")
+INTENT = INTENT.suppress()
+DIMENSION = DIMENSION.suppress()
+
+# TODO get rid of this too
+comment            = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
+
+raw_identifier     = pyparsing_common.identifier.copy() # produces a string instead of a identifier translator tree node
+raw_identifier_list = Group(delimitedList(raw_identifier))

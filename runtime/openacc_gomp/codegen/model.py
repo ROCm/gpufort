@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import pprint
 
@@ -47,7 +49,6 @@ if __name__ == "__main__":
     dimensions = range(0,maxDims+1)
     context = { 
             "mappings"   : mappings, 
-            "datatypes"  : datatypes,
             "datatypes"  : datatypes,
             "dimensions" : dimensions }
     

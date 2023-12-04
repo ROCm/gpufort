@@ -1,5 +1,5 @@
-FC    = hipfc
-HIPCC = hipcc
+FC    ?= hipfc
+HIPCC ?= hipcc
 
 GPUFORT_INC = -I$(shell gpufort --print-path)/include
 

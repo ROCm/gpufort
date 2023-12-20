@@ -9,8 +9,73 @@
 
 #include "internal/auxiliary.h"
 #include "internal/gpufortrt_core.h"
+  
+int gpufortrt_get_default_async(void) {
+  return gpufortrt::internal::default_async_arg;  
+}
 
-int gpufortrt_async_noval = -1;
+void gpufortrt_set_default_async(int async_arg) {
+  gpufortrt::internal::default_async_arg = async_arg;
+}
+
+void gpufortrt_set_device_num(int dev_num, gpufortrt_device_t dev_type) {
+  HIP_CHECK(hipSetDevice(dev_num)) // TODO backend specific, externalize
+}
+
+int gpufortrt_get_device_num(gpufortrt_device_t dev_type) {
+  int dev_num;
+  HIP_CHECK(hipGetDevice(&dev_num))
+  return dev_num;
+}
+
+size_t gpufortrt_get_property(int dev_num,
+                              gpufortrt_device_property_t property) {
+  switch ( property ) {
+    case gpufortrt_property_memory:
+      size_t free;
+      size_t total;
+      HIP_CHECK(hipMemGetInfo(&free, &total))
+      return total;
+      break;
+    case gpufortrt_free_memory:
+      size_t free;
+      size_t total;
+      HIP_CHECK(hipMemGetInfo(&free, &total))
+      return free;
+      break;
+    case gpufortrt_property_shared_memory_support:
+      int result;
+      HIP_CHECK(hipDeviceGetAttribute(&result,hipDeviceAttributeManagedMemory,dev_num))
+      return result;
+      break;
+    default:
+      throw std::invalid_argument("gpufortrt_get_property: property type must be 'gpufortrt_property_memory', 'gpufortrt_free_memory', or 'gpufortrt_property_shared_memory_support'");
+      break;
+  }
+}
+
+const 
+char* gpufortrt_get_property_string(int dev_num,
+                                    gpufortrt_device_property_t property) {
+      throw std::invalid_argument("gpufortrt_get_property_string: not implemented"); // TODO implement
+}
+
+// Explicit Fortran interfaces that assume device number starts from 1
+void gpufortrt_set_device_num_f(int dev_num, gpufortrt_device_t dev_type) {
+  gpufortrt_set_device_num(dev_num-1,dev_type);
+}
+int gpufortrt_get_device_num_f(gpufortrt_device_t dev_type) {
+  return gpufortrt_get_device_num(dev_type)+1;
+}
+size_t gpufortrt_get_property_f(int dev_num,
+                                gpufortrt_device_property_t property) {
+  return gpufortrt_get_property(dev_num-1,property);
+}
+const 
+char* gpufortrt_get_property_string_f(int dev_num,
+                                      gpufortrt_device_property_t property) {
+  return gpufortrt_get_property_string(dev_num-1,property);
+}
 
 void gpufortrt_mapping_init(
     gpufortrt_mapping_t* mapping,
@@ -60,8 +125,26 @@ void gpufortrt_shutdown() {
   gpufortrt::internal::record_list.destroy();
   gpufortrt::internal::queue_record_list.destroy();
 }
+  
+namespace gpufortrt {
+  namespace internal {
+      std::tuple<bool/*blocking*/,int/*async_arg*/> check_async_arg(const int async_arg) {
+      if ( async_arg >= gpufortrt_async_sync ) {
+        return std::make_tuple(
+                async_arg == gpufortrt_async_sync/*blocking*/,
+                async_arg);
+      } else {
+        int default_async_arg = gpufortrt::internal::default_async_arg;
+        return std::make_tuple(
+                default_async_arg == gpufortrt_async_sync/*blocking*/,
+                default_async_arg);
+      }
+    }
+  }
+}
 
 namespace {
+
   void* no_create_action(const gpufortrt_counter_t ctr_to_update,
                          void* hostptr,
                          std::size_t num_bytes) {
@@ -260,10 +343,15 @@ void gpufortrt_data_end() {
 void gpufortrt_data_start_async(gpufortrt_mapping_t* mappings,int num_mappings,int async_arg) {
   if ( !gpufortrt::internal::initialized ) gpufortrt_init();
   gpufortrt::internal::structured_region_stack.enter_structured_region();
+  
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
   ::apply_mappings(mappings,
                    num_mappings,
                    gpufortrt_counter_structured,
-                   false,async_arg,false/*finalize*/);
+                   blocking,/*blocking*/
+                   async_val,
+                   false/*finalize*/);
 }
 
 void gpufortrt_data_end_async(int async_arg) {
@@ -288,10 +376,13 @@ void gpufortrt_enter_exit_data_async(gpufortrt_mapping_t* mappings,
                                      int async_arg,
                                      bool finalize) {
   if ( !gpufortrt::internal::initialized ) gpufortrt_init();
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
   ::apply_mappings(mappings,
                  num_mappings,
                  gpufortrt_counter_dynamic,
-                 false,async_arg,
+                 blocking,/*blocking*/
+                 async_val,
                  finalize);
 }
 
@@ -302,7 +393,7 @@ void* gpufortrt_present(void* hostptr,std::size_t num_bytes) {
     num_bytes,
     gpufortrt_map_kind_present,
     false,/*never_deallocate*/
-    true/*blocking*/,
+    true,/*blocking*/
     gpufortrt_async_noval);
 }
 
@@ -317,8 +408,8 @@ void* gpufortrt_create(void* hostptr,std::size_t num_bytes,bool never_deallocate
     gpufortrt_async_noval);
 }
 
-void* gpufortrt_create_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
-  return gpufortrt_create(hostptr,num_bytes,never_deallocate);
+void gpufortrt_create_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
+  gpufortrt_create(hostptr,num_bytes,never_deallocate);
 }
 
 void gpufortrt_delete(void* hostptr,std::size_t num_bytes) {
@@ -336,26 +427,30 @@ void gpufortrt_delete_finalize(void* hostptr,std::size_t num_bytes) {
     num_bytes,
     gpufortrt_map_kind_delete,
     true/*finalize*/,
-    true/*blocking*/,
+    true,/*blocking*/
     gpufortrt_async_noval);
 }
 void gpufortrt_delete_async(void* hostptr,std::size_t num_bytes,int async_arg) {
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
   ::decrement_release_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_delete,
     false/*finalize*/,
-    false/*blocking*/,
-    async_arg);
+    blocking,
+    async_val);
 }
 void gpufortrt_delete_finalize_async(void* hostptr,std::size_t num_bytes,int async_arg) {
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
   ::decrement_release_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_delete,
     true/*finalize*/,
-    false/*blocking*/,
-    async_arg);
+    blocking,
+    async_val);
 }
 
 void gpufortrt_copyout(void* hostptr,std::size_t num_bytes) {
@@ -364,7 +459,7 @@ void gpufortrt_copyout(void* hostptr,std::size_t num_bytes) {
     num_bytes,
     gpufortrt_map_kind_copyout,
     false/*finalize*/,
-    true/*blocking*/,
+    true,/*blocking*/
     gpufortrt_async_noval);
 }
 void gpufortrt_copyout_finalize(void* hostptr,std::size_t num_bytes) {
@@ -373,26 +468,30 @@ void gpufortrt_copyout_finalize(void* hostptr,std::size_t num_bytes) {
     num_bytes,
     gpufortrt_map_kind_copyout,
     true/*finalize*/,
-    true/*blocking*/,
+    true,/*blocking*/
     gpufortrt_async_noval);
 }
 void gpufortrt_copyout_async(void* hostptr,std::size_t num_bytes,int async_arg) {
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
   ::decrement_release_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copyout,
     false/*finalize*/,
-    false/*blocking*/,
-    async_arg);
+    blocking,
+    async_val);
 }
 void gpufortrt_copyout_finalize_async(void* hostptr,std::size_t num_bytes,int async_arg) {
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
   ::decrement_release_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copyout,
     true/*finalize*/,
-    false/*blocking*/,
-    async_arg);
+    blocking,
+    async_val);
 }
 
 void* gpufortrt_copyin(void* hostptr,std::size_t num_bytes,bool never_deallocate) {
@@ -402,39 +501,20 @@ void* gpufortrt_copyin(void* hostptr,std::size_t num_bytes,bool never_deallocate
     num_bytes,
     gpufortrt_map_kind_copyin,
     never_deallocate,
-    true/*blocking*/,
+    true,/*blocking*/
     gpufortrt_async_noval);
 }
-void* gpufortrt_copyin_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
-  return ::create_increment_action(
+void gpufortrt_copyin_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
+  bool blocking; int async_val;
+  std::tie(blocking,async_val) = gpufortrt::internal::check_async_arg(async_arg);
+  create_increment_action(
     gpufortrt_counter_dynamic,
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copyin,
     never_deallocate,
-    false/*blocking*/,
-    async_arg);
-}
-
-void* gpufortrt_copy(void* hostptr,std::size_t num_bytes,bool never_deallocate) {
-  return ::create_increment_action(
-    gpufortrt_counter_dynamic,
-    hostptr,
-    num_bytes,
-    gpufortrt_map_kind_copy,
-    never_deallocate,
-    true/*blocking*/,
-    gpufortrt_async_noval);
-}
-void* gpufortrt_copy_async(void* hostptr,std::size_t num_bytes,int async_arg,bool never_deallocate) {
-  return ::create_increment_action(
-    gpufortrt_counter_dynamic,
-    hostptr,
-    num_bytes,
-    gpufortrt_map_kind_copy,
-    never_deallocate,
-    false/*blocking*/,
-    async_arg);
+    blocking,
+    async_val);
 }
 
 namespace {
@@ -553,6 +633,31 @@ void gpufortrt_wait_all_async(int* async_arg,int num_async,
       HIP_CHECK(hipStreamWaitEvent(queue_async,event,0)) // TODO backend specific, externalize
     }
   }
+}
+  
+int gpufortrt_async_test(int wait_arg) {
+  gpufortrt::internal::queue_record_list.synchronize(wait_arg);
+}
+
+int gpufortrt_async_test_device(int wait_arg, int dev_num) {
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_async_test(wait_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+int gpufortrt_async_test_all() {
+  for (size_t i = 0; i < queue_record_list.size(); i++) {
+    auto& queue = gpufortrt::internal::queue_record_list[i].queue;
+    HIP_CHECK(hipStreamQuery(queue))// TODO backend specific, externalize
+  } 
+}
+
+int gpufortrt_async_test_all_device(int dev_num) {
+  gpufortrt_set_device_num(dev_num);
+  int result = gpufortrt_async_test(dev_num);
+  gpufortrt_set_device_num(current_device_num);
+  return result;
 }
   
 void* gpufortrt_deviceptr(void* hostptr) {

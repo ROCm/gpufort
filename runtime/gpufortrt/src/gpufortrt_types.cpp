@@ -1,4 +1,7 @@
 #include "gpufortrt_types.h"
+int gpufortrt_async_noval = -1;
+int gpufortrt_async_sync = -2;
+int gpufortrt_async_default = -3;
 
 gpufortrt_queue_t gpufortrt_default_queue = nullptr;
 

@@ -29,11 +29,17 @@
   * No thread-safe access (unless all required arrays are present)
   * No standard-compliant runtime API (might change long term) 
 
+  Requirements:
+  * `python3` with `jinja2` package is required to generate some of the interfaces
+     this runtime is using.
+  * Non-standard GNU Fortran extension `sizeof` must be supported by the used Fortran compiler
+  * Assumed-type, assumed-rank arrays must be supported by the used Fortran compiler
+
+
 ## Runtime subfolders
 
 * `openacc_gomp`: contains extended interfaces to GCC's LIBGOMP.
-* `gpufortrt`: contains a minimal non-standard-compliant runtime written 
-  completely in Fortran, which can be used teaching purposes
+* `gpufortrt`: contains a minimal non-standard-compliant runtime.
 
 ## Building
 
@@ -43,22 +49,6 @@ make
 ```
 
 Take a look into the `Makefile` in each folder and adapt it to your needs.
-Certain Makefile variables can be overwritten via the environment variables  
-`FC`, `HIPFORT_INC`, `FCFLAGS`, `CXX`, `CXXFLAGS`.
+Certain Makefile variables can be overwritten via environment variables.
 
-Example:
 
-```
-cd <runtime_subfolder>
-FC=/usr/bin/gfortran HIPFORT_INC=/opt/rocm/hipfort/install/include/ make clean all
-```
-
-> **NOTE:** `python3` with `jinja2` package installed is required to use the codegen target.`
-
-## Outlook
-
-* We require a standard-compliant, thread-safe HIP C++ based runtime that can
-  be used/built for HIP devices from different vendors (AMD, NVIDIA) to
-  support efforts such as GPUFORT. Main purpose of the runtime must be
-  mapping data between host and device and managing HIP streams.
-  Other features are optional.

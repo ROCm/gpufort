@@ -16,10 +16,16 @@ double gpufortrt::internal::REUSE_THRESHOLD = 0.9;
 int gpufortrt::internal::NUM_REFS_TO_DEALLOCATE = -5;
 
 // global variables
+int gpufortrt::internal::default_async_arg = gpufortrt_async_noval;
+
 bool gpufortrt::internal::initialized = false;
+
 std::size_t gpufortrt::internal::num_records = 0; 
+
 gpufortrt::internal::record_list_t gpufortrt::internal::record_list;
+
 gpufortrt::internal::queue_record_list_t gpufortrt::internal::queue_record_list;
+
 gpufortrt::internal::structured_region_stack_t gpufortrt::internal::structured_region_stack;
 
 bool gpufortrt::internal::implies_allocate_device_buffer(
